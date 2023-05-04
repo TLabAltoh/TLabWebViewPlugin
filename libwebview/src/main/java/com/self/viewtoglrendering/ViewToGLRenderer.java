@@ -4,7 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.util.Log;
@@ -59,8 +59,14 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     //
 
     public void createSurface(int webWidth, int webHeight) {
+        Log.i("libwebview", "libwebview---createSurface: create surface start");
         releaseSurface();
-        if (mGlSurfaceTexture[0] <= 0) return;
+        Log.i("libwebview", "libwebview---createSurface: check point 0");
+
+        // When used with Unity VR, commenting out this section made it work.
+        // if (mGlSurfaceTexture[0] <= 0) return;
+
+        Log.i("libwebview", "libwebview---createSurface: check point 1");
 
         //attach the texture to a surface.
         //It's a clue class for rendering an android view to gl level
@@ -68,13 +74,16 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
         mSurfaceTexture.setDefaultBufferSize(webWidth, webHeight);
         mSurface = new Surface(mSurfaceTexture);
 
+        Log.i("libwebview", "libwebview---createSurface: check point 2");
+
         if (textureCapture == null) return;
         textureCapture.onInputSizeChanged(mTextureWidth, mTextureHeight);
+        Log.i("libwebview", "libwebview---createSurface: create surface finish");
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        final String extensions = GLES20.glGetString(GLES20.GL_EXTENSIONS);
+        final String extensions = GLES30.glGetString(GLES30.GL_EXTENSIONS);
         Log.d(TAG, extensions);
         if (textureCapture != null) {
             textureCapture.init();
@@ -91,7 +100,9 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        Log.i("libwebview", "libwebview---onSurfaceChanged: surface change start");
         createSurface(width, height);
+        Log.i("libwebview", "libwebview---onSurfaceChanged: surface change finish");
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -99,20 +110,24 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     //
 
     public void createTexture() {
+        Log.i("libwebview", "libwebview---createSurface: create texture start");
         // Generate the texture to where android view will be rendered
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glGenTextures(1, mGlSurfaceTexture, 0);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glGenTextures(1, mGlSurfaceTexture, 0);
         checkGlError("Texture generate");
 
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mGlSurfaceTexture[0]);
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mGlSurfaceTexture[0]);
         checkGlError("Texture bind");
 
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER,GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        // GLES20 --> GLES30
 
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER,GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+        Log.i("libwebview", "libwebview---createSurface: create texture finish");
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -123,6 +138,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 gl) {
         synchronized (this) {
             Log.i("libwebview", "libwebview---onDrawFrame: Surface image update start");
+
             // update texture
             mSurfaceTexture.updateTexImage();
 
@@ -157,7 +173,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     public void checkGlError(String op) {
         int error;
 
-        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR)
+        while ((error = GLES30.glGetError()) != GLES30.GL_NO_ERROR)
             Log.e(TAG, op + ": glError " + GLUtils.getEGLErrorString(error));
     }
 

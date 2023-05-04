@@ -2,7 +2,6 @@ package com.self.viewtoglrendering;
 
 import android.content.Context;
 import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.util.Log;
 
@@ -98,9 +97,9 @@ public class TextureCapture
 
         if (mGLProgId == 0) return;
 
-        mGLPositionIndex = GLES20.glGetAttribLocation(mGLProgId, "position");
-        mGLTextureCoordinateIndex = GLES20.glGetAttribLocation(mGLProgId,"inputTextureCoordinate");
-        mGLInputImageTextureIndex = GLES20.glGetUniformLocation(mGLProgId, "inputImageTexture");
+        mGLPositionIndex = GLES30.glGetAttribLocation(mGLProgId, "position");
+        mGLTextureCoordinateIndex = GLES30.glGetAttribLocation(mGLProgId,"inputTextureCoordinate");
+        mGLInputImageTextureIndex = GLES30.glGetUniformLocation(mGLProgId, "inputImageTexture");
     }
 
     private String readShaderFromRawResource(Context context, int resourceId) {
@@ -140,7 +139,7 @@ public class TextureCapture
         mIsInitialized = false;
         destroyFboTexture();
         destoryVbo();
-        GLES20.glDeleteProgram(mGLProgId);
+        GLES30.glDeleteProgram(mGLProgId);
         if (mEglCore != null) {
             mEglCore.release();
             mEglCore = null;
@@ -200,22 +199,22 @@ public class TextureCapture
         mGLCubeId = new int[1];
         mGLTextureCoordinateId = new int[1];
 
-        GLES20.glGenBuffers(1, mGLCubeId, 0);
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mGLCubeId[0]);
-        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, mGLCubeBuffer.capacity() * 4, mGLCubeBuffer, GLES20.GL_STATIC_DRAW);
+        GLES30.glGenBuffers(1, mGLCubeId, 0);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLCubeId[0]);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLCubeBuffer.capacity() * 4, mGLCubeBuffer, GLES30.GL_STATIC_DRAW);
 
-        GLES20.glGenBuffers(1, mGLTextureCoordinateId, 0);
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mGLTextureCoordinateId[0]);
-        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * 4, mGLTextureBuffer, GLES20.GL_STATIC_DRAW);
+        GLES30.glGenBuffers(1, mGLTextureCoordinateId, 0);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLTextureCoordinateId[0]);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * 4, mGLTextureBuffer, GLES30.GL_STATIC_DRAW);
     }
 
     private void destoryVbo() {
         if (mGLCubeId != null) {
-            GLES20.glDeleteBuffers(1, mGLCubeId, 0);
+            GLES30.glDeleteBuffers(1, mGLCubeId, 0);
             mGLCubeId = null;
         }
         if (mGLTextureCoordinateId != null) {
-            GLES20.glDeleteBuffers(1, mGLTextureCoordinateId, 0);
+            GLES30.glDeleteBuffers(1, mGLTextureCoordinateId, 0);
             mGLTextureCoordinateId = null;
         }
     }
@@ -238,18 +237,18 @@ public class TextureCapture
         mGLFboId = new int[1];
         mGLFboTexId = new int[1];
 
-        GLES20.glGenFramebuffers(1, mGLFboId, 0);
-        GLES20.glGenTextures(1, mGLFboTexId, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mGLFboTexId[0]);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, textureWidth, textureHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mGLFboId[0]);
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mGLFboTexId[0], 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES30.glGenFramebuffers(1, mGLFboId, 0);
+        GLES30.glGenTextures(1, mGLFboTexId, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mGLFboTexId[0]);
+        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, textureWidth, textureHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
+        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
 
         // Create PBO
         if (mEglCore.getGlVersion() >= 3 && mUsePBO) {
@@ -260,7 +259,7 @@ public class TextureCapture
             mGLPboReady = new boolean[glPbos.length];
             for (int i = 0; i < glPbos.length; i++) {
                 GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, glPbos[i]);
-                int errNo = GLES20.glGetError();
+                int errNo = GLES30.glGetError();
                 if (errNo != 0) {
                     bError = true;
                     break;
@@ -285,11 +284,11 @@ public class TextureCapture
 
     private void destroyFboTexture() {
         if (mGLFboTexId != null) {
-            GLES20.glDeleteTextures(mGLFboTexId.length, mGLFboTexId, 0);
+            GLES30.glDeleteTextures(mGLFboTexId.length, mGLFboTexId, 0);
             mGLFboTexId = null;
         }
         if (mGLFboId != null) {
-            GLES20.glDeleteFramebuffers(mGLFboId.length, mGLFboId, 0);
+            GLES30.glDeleteFramebuffers(mGLFboId.length, mGLFboId, 0);
             mGLFboId = null;
         }
         if (mGLPboId != null) {
@@ -308,51 +307,51 @@ public class TextureCapture
         Log.i("TlabBrowser", "libwebview---onDrawFrameFrame: draw start");
 
         //Log.d("TextureCapture", "onDrawFrame:" + textureId);
-        GLES20.glGetError();
-        GLES20.glUseProgram(mGLProgId);
+        GLES30.glGetError();
+        GLES30.glUseProgram(mGLProgId);
         //GlUtil.checkGlError("glUseProgram ProgId=" + mGLProgId);
 
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mGLCubeId[0]);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLCubeId[0]);
         //GlUtil.checkGlError("glBindBuffer");
-        GLES20.glEnableVertexAttribArray(mGLPositionIndex);
+        GLES30.glEnableVertexAttribArray(mGLPositionIndex);
         //GlUtil.checkGlError("glEnableVertexAttribArray");
-        GLES20.glVertexAttribPointer(mGLPositionIndex, 2, GLES20.GL_FLOAT, false, 4 * 2, 0);
+        GLES30.glVertexAttribPointer(mGLPositionIndex, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
         //GlUtil.checkGlError("glVertexAttribPointer");
 
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mGLTextureCoordinateId[0]);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLTextureCoordinateId[0]);
         //GlUtil.checkGlError("glBindBuffer");
-        GLES20.glEnableVertexAttribArray(mGLTextureCoordinateIndex);
+        GLES30.glEnableVertexAttribArray(mGLTextureCoordinateIndex);
         //GlUtil.checkGlError("glEnableVertexAttribArray");
-        GLES20.glVertexAttribPointer(mGLTextureCoordinateIndex, 2, GLES20.GL_FLOAT, false, 4 * 2, 0);
+        GLES30.glVertexAttribPointer(mGLTextureCoordinateIndex, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
         //GlUtil.checkGlError("glVertexAttribPointer");
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         //GlUtil.checkGlError("glActiveTexture");
-        GLES20.glBindTexture(external? GLES11Ext.GL_TEXTURE_EXTERNAL_OES : GLES20.GL_TEXTURE_2D, textureId);
+        GLES30.glBindTexture(external? GLES11Ext.GL_TEXTURE_EXTERNAL_OES : GLES30.GL_TEXTURE_2D, textureId);
         //GlUtil.checkGlError("glBindTexture textureId=" + textureId);
-        GLES20.glUniform1i(mGLInputImageTextureIndex, 0);
+        GLES30.glUniform1i(mGLInputImageTextureIndex, 0);
         //GlUtil.checkGlError("glUniform1i");
 
-        GLES20.glViewport(0, 0, mInputWidth, mInputHeight);
+        GLES30.glViewport(0, 0, mInputWidth, mInputHeight);
         //GlUtil.checkGlError("glViewport");
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mGLFboId[0]);
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
         //GlUtil.checkGlError("glBindFramebuffer");
-        GLES20.glDisable(GLES20.GL_CULL_FACE);
+        GLES30.glDisable(GLES30.GL_CULL_FACE);
         //GlUtil.checkGlError("glDisable");
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
         //GlUtil.checkGlError("glDrawArrays");
 
         // GLSurface to buffer
-        GLES20.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mGLFboBuffer);
+        GLES30.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mGLFboBuffer);
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
 
-        GLES20.glBindTexture(external? GLES11Ext.GL_TEXTURE_EXTERNAL_OES : GLES20.GL_TEXTURE_2D, 0);
+        GLES30.glBindTexture(external? GLES11Ext.GL_TEXTURE_EXTERNAL_OES : GLES30.GL_TEXTURE_2D, 0);
 
-        GLES20.glDisableVertexAttribArray(mGLPositionIndex);
-        GLES20.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
+        GLES30.glDisableVertexAttribArray(mGLPositionIndex);
+        GLES30.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
 
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
 
         Log.i("TlabBrowser", "libwebview---onDrawFrameFrame: Frame draw end");
 

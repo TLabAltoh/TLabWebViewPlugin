@@ -15,5 +15,5 @@ OS: Windows 10
 Build and use with .aar
 
 ## Link
-[UnityAsset using this plugin](https://github.com/TLabAltoh/TLabWebView)  
-[Reference repositorie](https://bitbucket.org/HoshiyamaTakaaki/pixelreadstest/src/master/)
+- [UnityAsset using this plugin](https://github.com/TLabAltoh/TLabWebView)  
+- [Reference repositorie](https://bitbucket.org/HoshiyamaTakaaki/pixelreadstest/src/master/)

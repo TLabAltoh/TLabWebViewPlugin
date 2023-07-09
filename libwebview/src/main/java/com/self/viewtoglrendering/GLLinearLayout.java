@@ -9,10 +9,15 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
 
     private ViewToGLRenderer mViewToGLRenderer;
 
+    public float mRatioWidth = 1;
+    public float mRatioHeight = 1;
+
     // default constructors
 
-    public GLLinearLayout(Context context) {
+    public GLLinearLayout(Context context, float ratioWidth, float ratioHeight) {
         super(context);
+        mRatioWidth = ratioWidth;
+        mRatioHeight = ratioHeight;
     }
 
     public GLLinearLayout(Context context, AttributeSet attrs) {
@@ -30,11 +35,12 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
 
         Canvas glAttachedCanvas = mViewToGLRenderer.onDrawViewBegin();
         if (glAttachedCanvas != null) {
-            //prescale canvas to make sure content fits
-            glAttachedCanvas.scale(1, 1);
-            //draw the view to provided canvas
+            // prescale canvas to make sure content fits
+            //glAttachedCanvas.scale(1, 1);
+            // draw the view to provided canvas
             super.draw(glAttachedCanvas);
         }
+
         // notify the canvas is updated
         mViewToGLRenderer.onDrawViewEnd();
     }

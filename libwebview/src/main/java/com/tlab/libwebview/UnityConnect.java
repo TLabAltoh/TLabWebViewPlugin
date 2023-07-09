@@ -91,16 +91,16 @@ public class UnityConnect  extends Fragment {
     //
 
     public static void initialize(int webWidth, int webHeight,
-                                  int TextureWidth, int textureHeight,
+                                  int textureWidth, int textureHeight,
                                   int screenWidth, int screenHeight, String url)
     {
-        if(webWidth == 0 || webHeight == 0) {
+        if(webWidth <= 0 || webHeight <= 0) {
             Log.i("libwebview", "initialize: web resolution unsuitable");
             return;
         }
         mWebWidth = webWidth;
         mWebHeight = webHeight;
-        mTextureWidth = TextureWidth;
+        mTextureWidth = textureWidth;
         mTextureHeight = textureHeight;
         mScreenWidth = screenWidth;
         mScreenHeight = screenHeight;
@@ -142,11 +142,11 @@ public class UnityConnect  extends Fragment {
         mViewToGlRenderer.SetTextureResolution(mTextureWidth, mTextureHeight);
         mViewToGlRenderer.SetWebResolution(mWebWidth, mWebHeight);
 
-        Log.i("TlabBrowser", "libwebview---initWebView: texture resolution finished");
+        Log.i("tlabwebview", "texture resolution finished");
 
         mViewToGlRenderer.createTexture();
 
-        Log.i("TlabBrowser", "libwebview---initWebView: createTexture() finished");
+        Log.i("tlabwebview", "createTexture() finished");
 
         mViewToGlRenderer.createTextureCapture(
                 UnityPlayer.currentActivity,
@@ -154,8 +154,8 @@ public class UnityConnect  extends Fragment {
                 R.raw.fragment_oes
         );
 
-        Log.i("TlabBrowser", "libwebview---initWebView: createTextureCapture() finished");
-        Log.i("TlabBrowser", "libwebview---initWebView: mViewToGLRenderer created");
+        Log.i("tlabwebview", "createTextureCapture() finished");
+        Log.i("tlabwebview", "mViewToGLRenderer created");
 
         UnityPlayer.currentActivity.runOnUiThread(new Runnable() {
             @SuppressLint("SetJavaScriptEnabled")
@@ -169,7 +169,7 @@ public class UnityConnect  extends Fragment {
                 mLayout.setY(mScreenHeight);
                 mLayout.setBackgroundColor(0x00000000);
 
-                Log.i("TlabBrowser", "libwebview---initWebView: mLayout created");
+                Log.i("tlabwebview", "mLayout created");
 
                 // mGLSurfaceView settings
                 mGLSurfaceView = new GLSurfaceView(UnityPlayer.currentActivity);
@@ -179,16 +179,20 @@ public class UnityConnect  extends Fragment {
                 mGLSurfaceView.setRenderer(mViewToGlRenderer);
                 mGLSurfaceView.setBackgroundColor(0x00000000);
 
-                Log.i("TlabBrowser", "libwebview---initWebView: mGLSurfaceView created");
+                Log.i("tlabwebview", "mGLSurfaceView created");
 
                 // mGlLayout settings
-                mGlLayout = new GLLinearLayout(UnityPlayer.currentActivity);
+                mGlLayout = new GLLinearLayout(
+                        UnityPlayer.currentActivity,
+                        (float)mTextureWidth / mWebWidth,
+                        (float)mTextureHeight / mWebHeight
+                );
                 mGlLayout.setOrientation(GLLinearLayout.VERTICAL);
                 mGlLayout.setGravity(Gravity.START);
                 mGlLayout.setViewToGLRenderer(mViewToGlRenderer);
                 mGlLayout.setBackgroundColor(0x00000000);
 
-                Log.i("TlabBrowser", "libwebview---initWebView: mGlLayout created");
+                Log.i("tlabwebview", "mGlLayout created");
 
                 if (mWebView == null) mWebView = new BitmapWebView(UnityPlayer.currentActivity);
 
@@ -206,7 +210,8 @@ public class UnityConnect  extends Fragment {
                     }
 
                     @Override
-                    public void onReceivedHttpAuthRequest(WebView view, final HttpAuthHandler handler, final String host, final String realm) {
+                    public void onReceivedHttpAuthRequest(WebView view, final HttpAuthHandler handler,
+                                                          final String host, final String realm) {
                         String userName = null;
                         String userPass = null;
 
@@ -272,13 +277,11 @@ public class UnityConnect  extends Fragment {
                         }
                     }
 
-                    // falseで通常処理trueで中止(多分)
                     @Override
                     public boolean shouldOverrideUrlLoading(WebView view, String url) {
                         canGoBack = mWebView.canGoBack();
                         canGoForward = mWebView.canGoForward();
-                        if (url.startsWith("http://") || url.startsWith("https://")
-                                || url.startsWith("file://") || url.startsWith("javascript:")) {
+                        if (url.startsWith("http://") || url.startsWith("https://") ||  url.startsWith("file://") || url.startsWith("javascript:")) {
                             // Let webview handle the URL
                             return false;
                         } else if (url.startsWith("unity:")) {
@@ -290,6 +293,7 @@ public class UnityConnect  extends Fragment {
                         return true;
                     }
                 });
+
                 mWebView.setWebChromeClient(new WebChromeClient());
                 mWebView.getSettings().setJavaScriptEnabled(true);
                 mWebView.setInitialScale(100);
@@ -311,7 +315,7 @@ public class UnityConnect  extends Fragment {
                 webSettings.setAllowUniversalAccessFromFileURLs(true);
                 webSettings.setMediaPlaybackRequiresUserGesture(false);
                 if (userAgent != null && userAgent.length() > 0){
-                    Log.i("TlabBrowser", "libwebview---initWebView: setUserAgentString(" + userAgent.toString() + ")");
+                    Log.i("tlabwebview", "setUserAgentString(" + userAgent.toString() + ")");
                     webSettings.setUserAgentString(userAgent);
                 }
                 webSettings.setDefaultTextEncodingName("utf-8");
@@ -357,7 +361,7 @@ public class UnityConnect  extends Fragment {
             }
         });
 
-        Log.i("TlabBrowser", "libwebview---initWebView: webView initialized");
+        Log.i("tlabwebview", "webView initialized");
     }
 
     public void Destroy() {
@@ -379,13 +383,13 @@ public class UnityConnect  extends Fragment {
 
     public static byte[] getPixel() {
         if (m_Instance == null) {
-            Log.i("TlabBrowser: ", "libwebview--getPixel: Texture data does not exists");
+            Log.i("tlabwebview: ", "texture data does not exists");
             return new byte[0];
         }
 
         byte[] data = m_Instance.mViewToGlRenderer.getTexturePixels();
         m_Instance.mGlLayout.postInvalidate();
-        Log.i("TlabBrowser: ", "libwebview--getPixel: Texture data exists");
+        // Log.i("tlabwebview", "texture data exists");
         return data;
     }
 
@@ -468,9 +472,7 @@ public class UnityConnect  extends Fragment {
     public void ZoomIn(){
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
             mWebView.zoomIn();
         }});
     }
@@ -478,9 +480,7 @@ public class UnityConnect  extends Fragment {
     public void ZoomOut(){
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
             mWebView.zoomOut();
         }});
     }
@@ -520,29 +520,25 @@ public class UnityConnect  extends Fragment {
             // Dispatch touch event to view
             mWebView.dispatchTouchEvent(event);
         }});
-        Log.i("TlabBrowser", "libwebview---TouchEvent: event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
+        Log.i("tlabwebview", "touch event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
     }
 
     public void GoBack() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
             mWebView.goBack();
         }});
-        Log.i("TlabBrowser", "libwebview---GoBack: Page backed out");
+        Log.i("tlabwebview", "page backed out");
     }
 
     public void GoForward() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
             mWebView.goForward();
         }});
-        Log.i("TlabBrowser", "libwebview---GoForward: Page forwarded");
+        Log.i("tlabwebview", "page forwarded");
     }
 
     public void SetMargins(int left, int top, int right, int bottom) {
@@ -564,51 +560,38 @@ public class UnityConnect  extends Fragment {
     public void SetVisibility(final boolean visibility) {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
+
             if (visibility) {
                 mWebView.setVisibility(View.VISIBLE);
                 mWebView.requestFocus();
-            } else {
+            } else
                 mWebView.setVisibility(View.INVISIBLE);
-            }
         }});
     }
 
     public void AddCustomHeader(final String headerKey, final String headerValue) {
-        if (mCustomHeaders == null) {
-            return;
-        }
+        if (mCustomHeaders == null) return;
         mCustomHeaders.put(headerKey, headerValue);
     }
 
     public String GetCustomHeaderValue(final String headerKey) {
-        if (mCustomHeaders == null) {
-            return null;
-        }
+        if (mCustomHeaders == null) return null;
 
-        if (!mCustomHeaders.containsKey(headerKey)) {
-            return null;
-        }
+        if (!mCustomHeaders.containsKey(headerKey)) return null;
+
         return this.mCustomHeaders.get(headerKey);
     }
 
     public void RemoveCustomHeader(final String headerKey) {
-        if (mCustomHeaders == null) {
-            return;
-        }
+        if (mCustomHeaders == null) return;
 
-        if (this.mCustomHeaders.containsKey(headerKey)) {
+        if (this.mCustomHeaders.containsKey(headerKey))
             this.mCustomHeaders.remove(headerKey);
-        }
     }
 
     public void ClearCustomHeader() {
-        if (mCustomHeaders == null) {
-            return;
-        }
-
+        if (mCustomHeaders == null) return;
         this.mCustomHeaders.clear();
     }
 

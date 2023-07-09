@@ -110,7 +110,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     //
 
     public void createTexture() {
-        Log.i("libwebview", "libwebview---createSurface: create texture start");
+        Log.i("tlabwebview", "create texture start");
         // Generate the texture to where android view will be rendered
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glGenTextures(1, mGlSurfaceTexture, 0);
@@ -127,7 +127,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
         GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
 
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
-        Log.i("libwebview", "libwebview---createSurface: create texture finish");
+        Log.i("tlabwebview", "finish create texture");
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         synchronized (this) {
-            Log.i("libwebview", "libwebview---onDrawFrame: Surface image update start");
+            Log.i("tlabwebview", "surface image update start");
 
             // update texture
             mSurfaceTexture.updateTexImage();
@@ -147,7 +147,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
             textureCapture.onDrawFrame(getGLSurfaceTexture(), true);
             mCaptureData = textureCapture.getGLFboBuffer();
 
-            Log.i("libwebview", "libwebview---onDrawFrame: Surface image updated");
+            Log.i("tlabwebview", "surface image updated");
         }
     }
 

@@ -156,7 +156,7 @@ public class TextureCapture
         loadSamplerShader();
     }
 
-    protected void onDestroy() {}
+    protected void onDestroy() { }
 
     // --------------------------------------------------------------------------------------------------------------------------
     // Is this initialized ?
@@ -304,7 +304,7 @@ public class TextureCapture
     public int onDrawFrame(int textureId, boolean external) {
         if (!mIsInitialized || mGLFboId == null) return -1;
 
-        Log.i("TlabBrowser", "libwebview---onDrawFrameFrame: draw start");
+        //Log.i("libwebview", "draw frame start");
 
         //Log.d("TextureCapture", "onDrawFrame:" + textureId);
         GLES30.glGetError();
@@ -353,7 +353,7 @@ public class TextureCapture
 
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
 
-        Log.i("TlabBrowser", "libwebview---onDrawFrameFrame: Frame draw end");
+        //Log.i("libwebview", "finish draw frame");
 
         return mGLFboTexId[0];
     }

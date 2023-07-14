@@ -15,6 +15,8 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.InputDevice;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -375,6 +377,7 @@ public class UnityConnect  extends Fragment {
                 mWebView = null;
             }
         });
+        Log.i("tlabwebview", "libwebview---Destroy: destroy webview");
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -423,6 +426,16 @@ public class UnityConnect  extends Fragment {
         m_Instance.TouchEvent(x, y, event);
     }
 
+    public static void keyEvent(char key){
+        if(m_Instance == null)return;
+        m_Instance.KeyEvent(key);
+    }
+
+    public static void backSpaceKey(){
+        if(m_Instance == null)return;
+        m_Instance.BackSpaceKey();
+    }
+
     public static void goBack() {
         if (m_Instance == null) return;
         m_Instance.GoBack();
@@ -455,7 +468,7 @@ public class UnityConnect  extends Fragment {
                 mWebView.loadUrl(mLoadUrl);
             }
         }});
-        Log.i("TlabBrowser", "libwebview---LoadURL: url: " + url.toString() + " loaded");
+        Log.i("tlabwebview", "libwebview---LoadURL: url: " + url.toString() + " loaded");
     }
 
     public void LoadHTML(final String html, final String baseURL) {
@@ -520,7 +533,34 @@ public class UnityConnect  extends Fragment {
             // Dispatch touch event to view
             mWebView.dispatchTouchEvent(event);
         }});
-        Log.i("tlabwebview", "touch event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
+        // Log.i("tlabwebview", "touch event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
+    }
+
+    public static char toLower(char c) {
+        if (c >= 'A' && c <= 'Z') {
+            c += 0x20;/*  www. jav a  2 s. c  o m*/
+        }
+        return c;
+    }
+
+    public  void KeyEvent(char key){
+        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
+            if (mWebView == null) return;
+
+            KeyCharacterMap kcm = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
+            KeyEvent[] events = kcm.getEvents(new char[]{key});
+            for (int i = 0; i < events.length; i++)
+                mWebView.dispatchKeyEvent(events[i]);
+        }});
+        //Log.i("tlabwebview", "key event dispatched");
+    }
+
+    public void BackSpaceKey() {
+        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
+            if (mWebView == null) return;
+            mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+            mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+        }});
     }
 
     public void GoBack() {

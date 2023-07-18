@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
+import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
@@ -42,6 +43,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 
 public class UnityConnect  extends Fragment {
 
@@ -296,7 +298,39 @@ public class UnityConnect  extends Fragment {
                     }
                 });
 
-                mWebView.setWebChromeClient(new WebChromeClient());
+                mWebView.setWebChromeClient(new WebChromeClient(){
+                    @Override
+                    public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message resultMsg) {
+                        /*
+                        newWebView.add(new BitmapWebView(UnityPlayer.currentActivity));
+                        WebSettings webSettings = newWebView.getSettings();
+                        webSettings.setJavaScriptEnabled(true);
+                        webSettings.setSupportMultipleWindows(true);
+                        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+                        webSettings.setDomStorageEnabled(true);
+                        webSettings.setAllowFileAccess(true);
+                        webSettings.setUserAgentString(dbHelper.getUserConfig().get("userAgent"));
+                        newWebView.setFocusable(true);
+                        newWebView.setFocusableInTouchMode(true);
+
+                        newWebView.setWebViewClient(new WebViewClient());
+                        newWebView.setWebChromeClient(new WebChromeClient(){
+                            @Override
+                            public void onCloseWindow(WebView window) {
+                                window.setVisibility(View.GONE);
+                                myWebView.removeView(window);
+                            }
+                        });
+                        myWebView.addView(newWebView);
+
+                        WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                        transport.setWebView(newWebView);
+                        resultMsg.sendToTarget();
+                        return true;
+                         */
+                        return false;
+                    }
+                });
                 mWebView.getSettings().setJavaScriptEnabled(true);
                 mWebView.setInitialScale(100);
                 mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
@@ -311,6 +345,7 @@ public class UnityConnect  extends Fragment {
                 webSettings.setLoadWithOverviewMode(true);
                 webSettings.setUseWideViewPort(true);
                 webSettings.setSupportZoom(true);
+                webSettings.setSupportMultipleWindows(true);    // add
                 webSettings.setBuiltInZoomControls(false);
                 webSettings.setDisplayZoomControls(true);
                 webSettings.setJavaScriptEnabled(true);
@@ -566,7 +601,7 @@ public class UnityConnect  extends Fragment {
     public void GoBack() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) return;
+            if (mWebView == null || !canGoBack) return;
             mWebView.goBack();
         }});
         Log.i("tlabwebview", "page backed out");
@@ -575,7 +610,7 @@ public class UnityConnect  extends Fragment {
     public void GoForward() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) return;
+            if (mWebView == null || !canGoForward) return;
             mWebView.goForward();
         }});
         Log.i("tlabwebview", "page forwarded");

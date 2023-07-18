@@ -137,7 +137,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         synchronized (this) {
-            Log.i("tlabwebview", "surface image update start");
+            //Log.i("tlabwebview", "surface image update start");
 
             // update texture
             mSurfaceTexture.updateTexImage();
@@ -147,7 +147,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
             textureCapture.onDrawFrame(getGLSurfaceTexture(), true);
             mCaptureData = textureCapture.getGLFboBuffer();
 
-            Log.i("tlabwebview", "surface image updated");
+            //Log.i("tlabwebview", "surface image updated");
         }
     }
 

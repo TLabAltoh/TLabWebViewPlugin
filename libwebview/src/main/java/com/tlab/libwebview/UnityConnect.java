@@ -456,6 +456,11 @@ public class UnityConnect  extends Fragment {
         m_Instance.ZoomOut();
     }
 
+    public static void evaluateJS(String js){
+        if(m_Instance == null) return;
+        m_Instance.EvaluateJS(js);
+    }
+
     public static void touchEvent(int x, int y, int event) {
         if(m_Instance == null) return;
         m_Instance.TouchEvent(x, y, event);
@@ -490,55 +495,56 @@ public class UnityConnect  extends Fragment {
     // Browser manipulation functions
     //
 
-    public void LoadURL(@NonNull String url) {
+    public void LoadURL(String url) {
         mLoadUrl = url;
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
-            if (mCustomHeaders != null && !mCustomHeaders.isEmpty()) {
+            if (mWebView == null) return;
+
+            if (mCustomHeaders != null && !mCustomHeaders.isEmpty())
                 mWebView.loadUrl(mLoadUrl, mCustomHeaders);
-            } else {
+            else
                 mWebView.loadUrl(mLoadUrl);
-            }
         }});
-        Log.i("tlabwebview", "libwebview---LoadURL: url: " + url.toString() + " loaded");
+
+        //Log.i("tlabwebview", "libwebview---LoadURL: url: " + url.toString() + " loaded");
     }
 
     public void LoadHTML(final String html, final String baseURL) {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
+
             mWebView.loadDataWithBaseURL(baseURL, html, "text/html", "UTF8", null);
         }});
-        Log.i("TlabBrowser", "libwebview---LoadHTML: html: " + baseURL.toString() + "loaded");
+        //Log.i("TlabBrowser", "libwebview---LoadHTML: html: " + baseURL.toString() + "loaded");
     }
 
     public void ZoomIn(){
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
             if (mWebView == null) return;
+
             mWebView.zoomIn();
         }});
+        //Log.i("TlabBrowser", "libwebview---ZoomIn");
     }
 
     public void ZoomOut(){
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
             if (mWebView == null) return;
+
             mWebView.zoomOut();
         }});
+        //Log.i("TlabBrowser", "libwebview---ZoomOut");
     }
 
     public void EvaluateJS(final String js) {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
+
             mWebView.loadUrl("javascript:" + js);
         }});
     }
@@ -604,7 +610,7 @@ public class UnityConnect  extends Fragment {
             if (mWebView == null || !canGoBack) return;
             mWebView.goBack();
         }});
-        Log.i("tlabwebview", "page backed out");
+        //Log.i("tlabwebview", "page backed out");
     }
 
     public void GoForward() {
@@ -613,7 +619,7 @@ public class UnityConnect  extends Fragment {
             if (mWebView == null || !canGoForward) return;
             mWebView.goForward();
         }});
-        Log.i("tlabwebview", "page forwarded");
+        //Log.i("tlabwebview", "page forwarded");
     }
 
     public void SetMargins(int left, int top, int right, int bottom) {
@@ -625,9 +631,8 @@ public class UnityConnect  extends Fragment {
         params.setMargins(left, top, right, bottom);
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) {
-                return;
-            }
+            if (mWebView == null) return;
+
             mWebView.setLayoutParams(params);
         }});
     }

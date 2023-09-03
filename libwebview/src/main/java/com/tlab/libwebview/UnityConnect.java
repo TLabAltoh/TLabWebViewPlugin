@@ -95,6 +95,7 @@ public class UnityConnect  extends Fragment {
     private static int mScreenWidth;
     private static int mScreenHeight;
     private static int mDlOption;
+    private static String mSubDir;
     private static String mLoadUrl;
 
     private boolean canGoBack;
@@ -111,7 +112,7 @@ public class UnityConnect  extends Fragment {
     public static void initialize(int webWidth, int webHeight,
                                   int textureWidth, int textureHeight,
                                   int screenWidth, int screenHeight,
-                                  String url, int dlOption)
+                                  String url, int dlOption, String subDir)
     {
         if(webWidth <= 0 || webHeight <= 0) {
             Log.i("libwebview", "initialize: web resolution unsuitable");
@@ -125,6 +126,7 @@ public class UnityConnect  extends Fragment {
         mScreenWidth = screenWidth;
         mScreenHeight = screenHeight;
         mLoadUrl = url;
+        mSubDir = subDir;
         mDlOption = dlOption;
 
         if (m_Instance != null) return;
@@ -370,16 +372,12 @@ public class UnityConnect  extends Fragment {
                         String downloadDir;
                         if(mDlOption == DlOption.applicationFolder.ordinal()){
                             downloadDir = context.getExternalFilesDir(null).getPath();
-                        }else
+                            request.setDestinationInExternalFilesDir(context, mSubDir, filename);
+                        }else{
                             downloadDir = Environment.DIRECTORY_DOWNLOADS;
+                            request.setDestinationInExternalPublicDir(downloadDir, filename);
+                        }
 
-                        /*
-                        Toast.makeText(context, downloadDir + "/" + filename, Toast.LENGTH_LONG).show();
-                        return;
-                        */
-
-                        request.setDestinationInExternalFilesDir(context, "downloads", filename);
-                        //request.setDestinationInExternalPublicDir(downloadDir, filename);
                         DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(context.DOWNLOAD_SERVICE);
                         dm.enqueue(request);
 

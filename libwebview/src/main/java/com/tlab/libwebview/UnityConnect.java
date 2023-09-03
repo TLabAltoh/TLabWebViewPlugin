@@ -3,6 +3,7 @@ package com.tlab.libwebview;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DownloadManager;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -11,6 +12,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
@@ -22,7 +24,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
+import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
+import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -32,6 +36,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -39,6 +44,7 @@ import com.unity3d.player.UnityPlayer;
 import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -77,15 +83,23 @@ public class UnityConnect  extends Fragment {
     // Web variables.
     //
 
+    private enum DlOption{
+        applicationFolder,
+        downloadFolder
+    };
+
     private static int mWebWidth;
     private static int mWebHeight;
     private static int mTextureWidth;
     private static int mTextureHeight;
     private static int mScreenWidth;
     private static int mScreenHeight;
+    private static int mDlOption;
+    private static String mLoadUrl;
+
     private boolean canGoBack;
     private boolean canGoForward;
-    private static String mLoadUrl;
+
     private String gameObject;
     private String userAgent;
     private Hashtable<String, String> mCustomHeaders;
@@ -96,12 +110,14 @@ public class UnityConnect  extends Fragment {
 
     public static void initialize(int webWidth, int webHeight,
                                   int textureWidth, int textureHeight,
-                                  int screenWidth, int screenHeight, String url)
+                                  int screenWidth, int screenHeight,
+                                  String url, int dlOption)
     {
         if(webWidth <= 0 || webHeight <= 0) {
             Log.i("libwebview", "initialize: web resolution unsuitable");
             return;
         }
+
         mWebWidth = webWidth;
         mWebHeight = webHeight;
         mTextureWidth = textureWidth;
@@ -109,6 +125,7 @@ public class UnityConnect  extends Fragment {
         mScreenWidth = screenWidth;
         mScreenHeight = screenHeight;
         mLoadUrl = url;
+        mDlOption = dlOption;
 
         if (m_Instance != null) return;
         m_Instance = new UnityConnect();
@@ -254,9 +271,8 @@ public class UnityConnect  extends Fragment {
 
                     @Override
                     public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                        if (mCustomHeaders == null || mCustomHeaders.isEmpty()) {
+                        if (mCustomHeaders == null || mCustomHeaders.isEmpty())
                             return super.shouldInterceptRequest(view, url);
-                        }
 
                         try {
                             HttpURLConnection urlCon = (HttpURLConnection) (new URL(url)).openConnection();
@@ -264,9 +280,8 @@ public class UnityConnect  extends Fragment {
                             // cf. http://d.hatena.ne.jp/faw/20070903/1188796959 (in Japanese)
                             urlCon.setRequestProperty("User-Agent", userAgent);
 
-                            for (HashMap.Entry<String, String> entry : mCustomHeaders.entrySet()) {
+                            for (HashMap.Entry<String, String> entry : mCustomHeaders.entrySet())
                                 urlCon.setRequestProperty(entry.getKey(), entry.getValue());
-                            }
 
                             urlCon.connect();
 
@@ -329,6 +344,46 @@ public class UnityConnect  extends Fragment {
                         return true;
                          */
                         return false;
+                    }
+                });
+
+                mWebView.setDownloadListener(new DownloadListener() {
+                    // https://gist.github.com/miktam/107a414ec43de181b481
+                    // https://teratail.com/questions/115988
+                    public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                        Context context = UnityPlayer.currentActivity.getApplicationContext();
+
+                        String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+
+                        request.setMimeType(mimetype);
+                        //------------------------COOKIE!!------------------------
+                        String cookies = CookieManager.getInstance().getCookie(url);
+                        request.addRequestHeader("cookie", cookies);
+                        //------------------------COOKIE!!------------------------
+                        request.addRequestHeader("User-Agent", userAgent);
+                        request.setDescription("Downloading file...");
+                        request.setTitle(filename);
+                        request.allowScanningByMediaScanner();
+                        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+
+                        String downloadDir;
+                        if(mDlOption == DlOption.applicationFolder.ordinal()){
+                            downloadDir = context.getExternalFilesDir(null).getPath();
+                        }else
+                            downloadDir = Environment.DIRECTORY_DOWNLOADS;
+
+                        /*
+                        Toast.makeText(context, downloadDir + "/" + filename, Toast.LENGTH_LONG).show();
+                        return;
+                        */
+
+                        request.setDestinationInExternalFilesDir(context, "downloads", filename);
+                        //request.setDestinationInExternalPublicDir(downloadDir, filename);
+                        DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(context.DOWNLOAD_SERVICE);
+                        dm.enqueue(request);
+
+                        Toast.makeText(context, filename + "　download is completed..", Toast.LENGTH_LONG).show();
                     }
                 });
                 mWebView.getSettings().setJavaScriptEnabled(true);

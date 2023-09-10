@@ -26,6 +26,7 @@ import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
+import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceResponse;
@@ -97,6 +98,7 @@ public class UnityConnect  extends Fragment {
     private static int mDlOption;
     private static String mSubDir;
     private static String mLoadUrl;
+    private static String mHTMLCash;
 
     private boolean canGoBack;
     private boolean canGoForward;
@@ -314,8 +316,7 @@ public class UnityConnect  extends Fragment {
                         return true;
                     }
                 });
-
-                mWebView.setWebChromeClient(new WebChromeClient(){
+                mWebView.setWebChromeClient(new WebChromeClient() {
                     @Override
                     public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message resultMsg) {
                         /*
@@ -348,7 +349,6 @@ public class UnityConnect  extends Fragment {
                         return false;
                     }
                 });
-
                 mWebView.setDownloadListener(new DownloadListener() {
                     // https://gist.github.com/miktam/107a414ec43de181b481
                     // https://teratail.com/questions/115988
@@ -394,6 +394,7 @@ public class UnityConnect  extends Fragment {
                 mWebView.setVerticalScrollBarEnabled(true);
                 mWebView.setBackgroundColor(0x00000000);
                 mWebView.zoomIn();
+                mWebView.addJavascriptInterface(new TLabJavascriptInterface(), "TLabWebViewActivity");
                 WebSettings webSettings = mWebView.getSettings();
                 webSettings.setLoadWithOverviewMode(true);
                 webSettings.setUseWideViewPort(true);
@@ -469,6 +470,19 @@ public class UnityConnect  extends Fragment {
     }
 
     // ---------------------------------------------------------------------------------------------------------
+    // javascript interface
+    //
+
+    public class TLabJavascriptInterface
+    {
+        @JavascriptInterface
+        public void viewSource(final String src) {
+            mHTMLCash = src;
+            Log.i("tlabwebview", "capture HTML source success");
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
     // java's unity interface.
     //
 
@@ -482,6 +496,21 @@ public class UnityConnect  extends Fragment {
         m_Instance.mGlLayout.postInvalidate();
         // Log.i("tlabwebview", "texture data exists");
         return data;
+    }
+
+    public static String getCaptured(){
+        if(m_Instance == null) return "";
+        return mHTMLCash;
+    }
+
+    public static void captureElementById(String id){
+        if(m_Instance == null) return;
+        m_Instance.LoadURL("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)");
+    }
+
+    public static void capturePage(){
+        if(m_Instance == null) return;
+        m_Instance.LoadURL("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)");
     }
 
     public static void setUserAgent(String ua) {
@@ -637,7 +666,7 @@ public class UnityConnect  extends Fragment {
         return c;
     }
 
-    public  void KeyEvent(char key){
+    public void KeyEvent(char key){
         UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
             if (mWebView == null) return;
 

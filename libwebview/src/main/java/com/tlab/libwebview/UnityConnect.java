@@ -103,7 +103,6 @@ public class UnityConnect  extends Fragment {
     private boolean canGoBack;
     private boolean canGoForward;
 
-    private String gameObject;
     private String userAgent;
     private Hashtable<String, String> mCustomHeaders;
 
@@ -228,13 +227,6 @@ public class UnityConnect  extends Fragment {
                 // mWebView settings
                 mWebView.setWebViewClient(new WebViewClient() {
                     @Override
-                    public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                        mWebView.loadUrl("about:blank");
-                        canGoBack = mWebView.canGoBack();
-                        canGoForward = mWebView.canGoForward();
-                    }
-
-                    @Override
                     public void onReceivedHttpAuthRequest(WebView view, final HttpAuthHandler handler,
                                                           final String host, final String realm) {
                         String userName = null;
@@ -271,33 +263,6 @@ public class UnityConnect  extends Fragment {
                     public void onLoadResource(WebView view, String url) {
                         canGoBack = mWebView.canGoBack();
                         canGoForward = mWebView.canGoForward();
-                    }
-
-                    @Override
-                    public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                        if (mCustomHeaders == null || mCustomHeaders.isEmpty())
-                            return super.shouldInterceptRequest(view, url);
-
-                        try {
-                            HttpURLConnection urlCon = (HttpURLConnection) (new URL(url)).openConnection();
-                            // The following should make HttpURLConnection have a same user-agent of webView)
-                            // cf. http://d.hatena.ne.jp/faw/20070903/1188796959 (in Japanese)
-                            urlCon.setRequestProperty("User-Agent", userAgent);
-
-                            for (HashMap.Entry<String, String> entry : mCustomHeaders.entrySet())
-                                urlCon.setRequestProperty(entry.getKey(), entry.getValue());
-
-                            urlCon.connect();
-
-                            return new WebResourceResponse(
-                                    urlCon.getContentType().split(";", 2)[0],
-                                    urlCon.getContentEncoding(),
-                                    urlCon.getInputStream()
-                            );
-
-                        } catch (Exception e) {
-                            return super.shouldInterceptRequest(view, url);
-                        }
                     }
 
                     @Override
@@ -369,16 +334,14 @@ public class UnityConnect  extends Fragment {
                         request.allowScanningByMediaScanner();
                         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
 
-                        String downloadDir;
-                        if(mDlOption == DlOption.applicationFolder.ordinal()){
-                            downloadDir = context.getExternalFilesDir(null).getPath();
+                        if(mDlOption == DlOption.applicationFolder.ordinal()) {
                             request.setDestinationInExternalFilesDir(context, mSubDir, filename);
-                        }else{
-                            downloadDir = Environment.DIRECTORY_DOWNLOADS;
+                        }else if(mDlOption == DlOption.downloadFolder.ordinal()) {
+                            String downloadDir = Environment.DIRECTORY_DOWNLOADS;
                             request.setDestinationInExternalPublicDir(downloadDir, filename);
                         }
 
-                        DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(context.DOWNLOAD_SERVICE);
+                        DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
                         dm.enqueue(request);
 
                         Toast.makeText(context, filename + "　download is completed..", Toast.LENGTH_LONG).show();
@@ -387,16 +350,21 @@ public class UnityConnect  extends Fragment {
                 mWebView.getSettings().setJavaScriptEnabled(true);
                 mWebView.setInitialScale(100);
                 mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+                // --------- drawing cache setting
                 mWebView.clearCache(true);
-                mWebView.setDrawingCacheEnabled(true);
+                //mWebView.setDrawingCacheEnabled(true);
+                // ---------
                 mWebView.setLongClickable(false);
                 mWebView.setVisibility(View.VISIBLE);
                 mWebView.setVerticalScrollBarEnabled(true);
                 mWebView.setBackgroundColor(0x00000000);
-                mWebView.zoomIn();
                 mWebView.addJavascriptInterface(new TLabJavascriptInterface(), "TLabWebViewActivity");
                 WebSettings webSettings = mWebView.getSettings();
                 webSettings.setLoadWithOverviewMode(true);
+                // --------- enable cache
+                webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                webSettings.setAppCacheEnabled(true);
+                // ---------
                 webSettings.setUseWideViewPort(true);
                 webSettings.setSupportZoom(true);
                 webSettings.setSupportMultipleWindows(true);    // add
@@ -412,12 +380,6 @@ public class UnityConnect  extends Fragment {
                 webSettings.setDefaultTextEncodingName("utf-8");
                 webSettings.setDatabaseEnabled(true);
                 webSettings.setDomStorageEnabled(true);
-                webSettings.setDatabasePath(
-                        mWebView.getContext().getDir(
-                                "databases",
-                                Context.MODE_PRIVATE
-                        ).getPath()
-                );
 
                 UnityPlayer.currentActivity.addContentView(
                         mLayout,
@@ -457,14 +419,12 @@ public class UnityConnect  extends Fragment {
 
     public void Destroy() {
         final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {
-            public void run() {
-                if (mWebView == null) return;
-                mWebView.stopLoading();
-                mGlLayout.removeView(mWebView);
-                mWebView.destroy();
-                mWebView = null;
-            }
+        a.runOnUiThread(() -> {
+            if (mWebView == null) return;
+            mWebView.stopLoading();
+            mGlLayout.removeView(mWebView);
+            mWebView.destroy();
+            mWebView = null;
         });
         Log.i("tlabwebview", "libwebview---Destroy: destroy webview");
     }
@@ -518,14 +478,14 @@ public class UnityConnect  extends Fragment {
         m_Instance.userAgent = ua;
     }
 
-    public static void setGameObjectString(String gos) {
-        if (m_Instance == null) return;
-        m_Instance.gameObject = gos;
-    }
-
     public static void loadUrl(String url) {
         if (m_Instance == null) return;
         m_Instance.LoadURL(url);
+    }
+
+    public static void loadHtml(final String html, final String baseURL){
+        if(m_Instance == null)return;
+        m_Instance.LoadHTML(html, baseURL);
     }
 
     public static void zoomIn(){
@@ -554,7 +514,7 @@ public class UnityConnect  extends Fragment {
     }
 
     public static void backSpaceKey(){
-        if(m_Instance == null)return;
+        if(m_Instance == null) return;
         m_Instance.BackSpaceKey();
     }
 
@@ -568,6 +528,21 @@ public class UnityConnect  extends Fragment {
         m_Instance.GoForward();
     }
 
+    public static void clearCash(boolean includeDiskFiles){
+        if (m_Instance == null) return;
+        m_Instance.ClearCache(includeDiskFiles);
+    }
+
+    public static void clearHistory(){
+        if(m_Instance == null) return;
+        m_Instance.ClearHistory();
+    }
+
+    public static void clearCookie(){
+        if(m_Instance == null) return;
+        m_Instance.ClearCookies();
+    }
+
     public static void setVisible(boolean visible) {
         if (m_Instance == null) return;
         m_Instance.SetVisibility(visible);
@@ -577,72 +552,63 @@ public class UnityConnect  extends Fragment {
     // Browser manipulation functions
     //
 
-    public void LoadURL(String url) {
+    public void LoadURL(final String url) {
         mLoadUrl = url;
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
 
             if (mCustomHeaders != null && !mCustomHeaders.isEmpty())
                 mWebView.loadUrl(mLoadUrl, mCustomHeaders);
             else
                 mWebView.loadUrl(mLoadUrl);
-        }});
-
-        //Log.i("tlabwebview", "libwebview---LoadURL: url: " + url.toString() + " loaded");
+        });
+        //Log.i("tlabwebview", "url loaded: " + url.toString());
     }
 
     public void LoadHTML(final String html, final String baseURL) {
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
-
             mWebView.loadDataWithBaseURL(baseURL, html, "text/html", "UTF8", null);
-        }});
-        //Log.i("TlabBrowser", "libwebview---LoadHTML: html: " + baseURL.toString() + "loaded");
+        });
+        //Log.i("tlabwebview", "html loaded: " + baseURL.toString());
     }
 
     public void ZoomIn(){
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
-
             mWebView.zoomIn();
-        }});
-        //Log.i("TlabBrowser", "libwebview---ZoomIn");
+        });
+        //Log.i("tlabwebview", "zoom in");
     }
 
     public void ZoomOut(){
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
-
             mWebView.zoomOut();
-        }});
-        //Log.i("TlabBrowser", "libwebview---ZoomOut");
+        });
+        //Log.i("tlabwebview", "zoom out");
     }
 
     public void EvaluateJS(final String js) {
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
-
             mWebView.loadUrl("javascript:" + js);
-        }});
+        });
+        //Log.i("tlabwebview", "evaluate javascript: " + js);
     }
 
-    public void TouchEvent(int x, int y, int eventNum) {
-        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
+    public void TouchEvent(final int x, final int y, final int eventNum) {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
 
             // Obtain MotionEvent object
             // https://banbara-studio.hatenablog.com/entry/2018/04/02/130902
-            long downTime = SystemClock.uptimeMillis();
-            long eventTime = SystemClock.uptimeMillis() + 50;
-            int source = InputDevice.SOURCE_CLASS_POINTER;
+            final long downTime = SystemClock.uptimeMillis();
+            final long eventTime = SystemClock.uptimeMillis() + 50;
+            final int source = InputDevice.SOURCE_CLASS_POINTER;
 
             // List of meta states found here: developer.android.com/reference/android/view/KeyEvent.html#getMetaState()
-            int metaState = 0;
+            final int metaState = 0;
             MotionEvent event = MotionEvent.obtain(
                     downTime,
                     eventTime,
@@ -655,53 +621,81 @@ public class UnityConnect  extends Fragment {
 
             // Dispatch touch event to view
             mWebView.dispatchTouchEvent(event);
-        }});
+        });
         // Log.i("tlabwebview", "touch event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
     }
 
-    public static char toLower(char c) {
-        if (c >= 'A' && c <= 'Z') {
-            c += 0x20;/*  www. jav a  2 s. c  o m*/
-        }
-        return c;
-    }
-
     public void KeyEvent(char key){
-        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
-
             KeyCharacterMap kcm = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
             KeyEvent[] events = kcm.getEvents(new char[]{key});
-            for (int i = 0; i < events.length; i++)
-                mWebView.dispatchKeyEvent(events[i]);
-        }});
-        //Log.i("tlabwebview", "key event dispatched");
+            for (KeyEvent event : events) mWebView.dispatchKeyEvent(event);
+        });
+        //Log.i("tlabwebview", "key event dispatched: " + key);
     }
 
     public void BackSpaceKey() {
-        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
             mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
-        }});
+        });
+        //Log.i("tlabwebview", "back space key dispatched");
     }
 
     public void GoBack() {
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null || !canGoBack) return;
             mWebView.goBack();
-        }});
+        });
         //Log.i("tlabwebview", "page backed out");
     }
 
     public void GoForward() {
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null || !canGoForward) return;
             mWebView.goForward();
-        }});
+        });
         //Log.i("tlabwebview", "page forwarded");
+    }
+
+    public void SetVisibility(final boolean visibility) {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if (mWebView == null) return;
+
+            if (visibility) {
+                mWebView.setVisibility(View.VISIBLE);
+                mWebView.requestFocus();
+            } else
+                mWebView.setVisibility(View.INVISIBLE);
+        });
+        //Log.i("tlabwebview", "set visibility: " + visibility);
+    }
+
+    public void ClearCache(final boolean includeDiskFiles){
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if(mWebView == null) return;
+            mWebView.clearCache(includeDiskFiles);
+        });
+        //Log.i("tlabwebview", "web cache cleared");
+    }
+
+    public void ClearCookies() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if(mWebView == null) return;
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager.getInstance().flush();
+        });
+        //Log.i("tlabwebview", "cookie cleared");
+    }
+
+    public void ClearHistory(){
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if(mWebView == null) return;
+            mWebView.clearHistory();
+        });
+        //Log.i("tlabwebview", "clear history");
     }
 
     public void SetMargins(int left, int top, int right, int bottom) {
@@ -711,24 +705,9 @@ public class UnityConnect  extends Fragment {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 Gravity.NO_GRAVITY);
         params.setMargins(left, top, right, bottom);
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
             if (mWebView == null) return;
-
             mWebView.setLayoutParams(params);
-        }});
-    }
-
-    public void SetVisibility(final boolean visibility) {
-        final Activity a = UnityPlayer.currentActivity;
-        a.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) return;
-
-            if (visibility) {
-                mWebView.setVisibility(View.VISIBLE);
-                mWebView.requestFocus();
-            } else
-                mWebView.setVisibility(View.INVISIBLE);
         }});
     }
 
@@ -739,39 +718,18 @@ public class UnityConnect  extends Fragment {
 
     public String GetCustomHeaderValue(final String headerKey) {
         if (mCustomHeaders == null) return null;
-
         if (!mCustomHeaders.containsKey(headerKey)) return null;
-
         return this.mCustomHeaders.get(headerKey);
     }
 
     public void RemoveCustomHeader(final String headerKey) {
         if (mCustomHeaders == null) return;
-
-        if (this.mCustomHeaders.containsKey(headerKey))
-            this.mCustomHeaders.remove(headerKey);
+        this.mCustomHeaders.remove(headerKey);
     }
 
     public void ClearCustomHeader() {
         if (mCustomHeaders == null) return;
         this.mCustomHeaders.clear();
-    }
-
-    public void ClearCookies() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-        {
-            CookieManager.getInstance().removeAllCookies(null);
-            CookieManager.getInstance().flush();
-        } else {
-            final Activity a = UnityPlayer.currentActivity;
-            CookieSyncManager cookieSyncManager = CookieSyncManager.createInstance(a);
-            cookieSyncManager.startSync();
-            CookieManager cookieManager = CookieManager.getInstance();
-            cookieManager.removeAllCookie();
-            cookieManager.removeSessionCookie();
-            cookieSyncManager.stopSync();
-            cookieSyncManager.sync();
-        }
     }
 
     private void showHttpAuthDialog(final HttpAuthHandler handler, final String host,
@@ -791,20 +749,16 @@ public class UnityConnect  extends Fragment {
         layout.addView(etUserPass);
         mHttpAuthDialog.setView(layout);
 
-        mHttpAuthDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                String userName = etUserName.getText().toString();
-                String userPass = etUserPass.getText().toString();
-                mWebView.setHttpAuthUsernamePassword(host, realm, userName, userPass);
-                handler.proceed(userName, userPass);
-                //mHttpAuthDialog = null;
-            }
+        mHttpAuthDialog.setPositiveButton("OK", (dialog, whichButton) -> {
+            String userName = etUserName.getText().toString();
+            String userPass = etUserPass.getText().toString();
+            mWebView.setHttpAuthUsernamePassword(host, realm, userName, userPass);
+            handler.proceed(userName, userPass);
+            //mHttpAuthDialog = null;
         });
-        mHttpAuthDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                handler.cancel();
-                //mHttpAuthDialog = null;
-            }
+        mHttpAuthDialog.setNegativeButton("Cancel", (dialog, whichButton) -> {
+            handler.cancel();
+            //mHttpAuthDialog = null;
         });
         mHttpAuthDialog.create().show();
     }

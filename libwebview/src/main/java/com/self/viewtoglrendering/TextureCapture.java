@@ -3,7 +3,6 @@ package com.self.viewtoglrendering;
 import android.content.Context;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
-import android.util.Log;
 
 import com.android.grafika.gles.EglCore;
 import com.android.grafika.gles.GlUtil;
@@ -138,7 +137,7 @@ public class TextureCapture
     public final void destroy() {
         mIsInitialized = false;
         destroyFboTexture();
-        destoryVbo();
+        destroyVbo();
         GLES30.glDeleteProgram(mGLProgId);
         if (mEglCore != null) {
             mEglCore.release();
@@ -208,7 +207,7 @@ public class TextureCapture
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * 4, mGLTextureBuffer, GLES30.GL_STATIC_DRAW);
     }
 
-    private void destoryVbo() {
+    private void destroyVbo() {
         if (mGLCubeId != null) {
             GLES30.glDeleteBuffers(1, mGLCubeId, 0);
             mGLCubeId = null;

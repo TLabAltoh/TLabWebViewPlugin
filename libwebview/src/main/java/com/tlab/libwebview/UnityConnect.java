@@ -6,12 +6,10 @@ import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Message;
 import android.os.SystemClock;
@@ -23,13 +21,11 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -39,26 +35,16 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-
 import com.unity3d.player.UnityPlayer;
 import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
-import java.io.File;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
+
+// Android Studio Collapse definitions and methods
+// https://stackoverflow.com/questions/18445044/android-studio-collapse-definitions-and-methods
 
 public class UnityConnect  extends Fragment {
-
-    // ---------------------------------------------------------------------------------------------------------
-    // Instance.
-    //
-
-    private static UnityConnect m_Instance;
 
     // ---------------------------------------------------------------------------------------------------------
     // Renderer
@@ -87,7 +73,7 @@ public class UnityConnect  extends Fragment {
     private enum DlOption{
         applicationFolder,
         downloadFolder
-    };
+    }
 
     private static int mWebWidth;
     private static int mWebHeight;
@@ -110,7 +96,7 @@ public class UnityConnect  extends Fragment {
     // Initialize this class
     //
 
-    public static void initialize(int webWidth, int webHeight,
+    public void initialize(int webWidth, int webHeight,
                                   int textureWidth, int textureHeight,
                                   int screenWidth, int screenHeight,
                                   String url, int dlOption, String subDir)
@@ -130,9 +116,7 @@ public class UnityConnect  extends Fragment {
         mSubDir = subDir;
         mDlOption = dlOption;
 
-        if (m_Instance != null) return;
-        m_Instance = new UnityConnect();
-        m_Instance.initWebView();
+        initWebView();
     }
 
     public boolean IsInitialized() {
@@ -410,7 +394,7 @@ public class UnityConnect  extends Fragment {
                         )
                 );
 
-                if (mLoadUrl != null) LoadURL(mLoadUrl);
+                if (mLoadUrl != null) loadUrl(mLoadUrl);
             }
         });
 
@@ -446,113 +430,30 @@ public class UnityConnect  extends Fragment {
     // java's unity interface.
     //
 
-    public static byte[] getPixel() {
-        if (m_Instance == null) {
-            Log.i("tlabwebview: ", "texture data does not exists");
-            return new byte[0];
-        }
-
-        byte[] data = m_Instance.mViewToGlRenderer.getTexturePixels();
-        m_Instance.mGlLayout.postInvalidate();
+    public byte[] getPixel() {
+        byte[] data = mViewToGlRenderer.getTexturePixels();
+        mGlLayout.postInvalidate();
         // Log.i("tlabwebview", "texture data exists");
         return data;
     }
 
-    public static String getCaptured(){
-        if(m_Instance == null) return "";
+    public String getCaptured(){
         return mHTMLCash;
     }
 
-    public static void captureElementById(String id){
-        if(m_Instance == null) return;
-        m_Instance.LoadURL("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)");
+    public void captureElementById(String id){
+        loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)");
     }
 
-    public static void capturePage(){
-        if(m_Instance == null) return;
-        m_Instance.LoadURL("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)");
+    public void capturePage(){
+        loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)");
     }
 
-    public static void setUserAgent(String ua) {
-        if (m_Instance == null) return;
-        m_Instance.userAgent = ua;
+    public void setUserAgent(String ua) {
+        userAgent = ua;
     }
 
-    public static void loadUrl(String url) {
-        if (m_Instance == null) return;
-        m_Instance.LoadURL(url);
-    }
-
-    public static void loadHtml(final String html, final String baseURL){
-        if(m_Instance == null)return;
-        m_Instance.LoadHTML(html, baseURL);
-    }
-
-    public static void zoomIn(){
-        if(m_Instance == null) return;
-        m_Instance.ZoomIn();
-    }
-
-    public static void zoomOut(){
-        if(m_Instance == null) return;
-        m_Instance.ZoomOut();
-    }
-
-    public static void evaluateJS(String js){
-        if(m_Instance == null) return;
-        m_Instance.EvaluateJS(js);
-    }
-
-    public static void touchEvent(int x, int y, int event) {
-        if(m_Instance == null) return;
-        m_Instance.TouchEvent(x, y, event);
-    }
-
-    public static void keyEvent(char key){
-        if(m_Instance == null)return;
-        m_Instance.KeyEvent(key);
-    }
-
-    public static void backSpaceKey(){
-        if(m_Instance == null) return;
-        m_Instance.BackSpaceKey();
-    }
-
-    public static void goBack() {
-        if (m_Instance == null) return;
-        m_Instance.GoBack();
-    }
-
-    public static void goForward() {
-        if (m_Instance == null) return;
-        m_Instance.GoForward();
-    }
-
-    public static void clearCash(boolean includeDiskFiles){
-        if (m_Instance == null) return;
-        m_Instance.ClearCache(includeDiskFiles);
-    }
-
-    public static void clearHistory(){
-        if(m_Instance == null) return;
-        m_Instance.ClearHistory();
-    }
-
-    public static void clearCookie(){
-        if(m_Instance == null) return;
-        m_Instance.ClearCookies();
-    }
-
-    public static void setVisible(boolean visible) {
-        if (m_Instance == null) return;
-        m_Instance.SetVisibility(visible);
-    }
-
-    // ---------------------------------------------------------------------------------------------------------
-    // Browser manipulation functions
-    //
-
-    public void LoadURL(final String url) {
+    public void loadUrl(String url) {
         mLoadUrl = url;
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
@@ -565,7 +466,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "url loaded: " + url.toString());
     }
 
-    public void LoadHTML(final String html, final String baseURL) {
+    public void loadHtml(final String html, final String baseURL){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             mWebView.loadDataWithBaseURL(baseURL, html, "text/html", "UTF8", null);
@@ -573,7 +474,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "html loaded: " + baseURL.toString());
     }
 
-    public void ZoomIn(){
+    public void zoomIn(){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             mWebView.zoomIn();
@@ -581,7 +482,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "zoom in");
     }
 
-    public void ZoomOut(){
+    public void zoomOut(){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             mWebView.zoomOut();
@@ -589,7 +490,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "zoom out");
     }
 
-    public void EvaluateJS(final String js) {
+    public void evaluateJS(String js){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             mWebView.loadUrl("javascript:" + js);
@@ -597,7 +498,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "evaluate javascript: " + js);
     }
 
-    public void TouchEvent(final int x, final int y, final int eventNum) {
+    public void touchEvent(int x, int y, int eventNum) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
 
@@ -625,7 +526,7 @@ public class UnityConnect  extends Fragment {
         // Log.i("tlabwebview", "touch event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
     }
 
-    public void KeyEvent(char key){
+    public void keyEvent(char key){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             KeyCharacterMap kcm = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
@@ -635,7 +536,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "key event dispatched: " + key);
     }
 
-    public void BackSpaceKey() {
+    public void backSpaceKey(){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
             mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
@@ -644,7 +545,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "back space key dispatched");
     }
 
-    public void GoBack() {
+    public void goBack() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null || !canGoBack) return;
             mWebView.goBack();
@@ -652,7 +553,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "page backed out");
     }
 
-    public void GoForward() {
+    public void goForward() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null || !canGoForward) return;
             mWebView.goForward();
@@ -660,20 +561,7 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "page forwarded");
     }
 
-    public void SetVisibility(final boolean visibility) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
-
-            if (visibility) {
-                mWebView.setVisibility(View.VISIBLE);
-                mWebView.requestFocus();
-            } else
-                mWebView.setVisibility(View.INVISIBLE);
-        });
-        //Log.i("tlabwebview", "set visibility: " + visibility);
-    }
-
-    public void ClearCache(final boolean includeDiskFiles){
+    public void clearCash(boolean includeDiskFiles){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if(mWebView == null) return;
             mWebView.clearCache(includeDiskFiles);
@@ -681,7 +569,15 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "web cache cleared");
     }
 
-    public void ClearCookies() {
+    public void clearHistory(){
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if(mWebView == null) return;
+            mWebView.clearHistory();
+        });
+        //Log.i("tlabwebview", "clear history");
+    }
+
+    public void clearCookie(){
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if(mWebView == null) return;
             CookieManager.getInstance().removeAllCookies(null);
@@ -690,15 +586,24 @@ public class UnityConnect  extends Fragment {
         //Log.i("tlabwebview", "cookie cleared");
     }
 
-    public void ClearHistory(){
+    public void setVisible(boolean visible) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) return;
-            mWebView.clearHistory();
+            if (mWebView == null) return;
+
+            if (visible) {
+                mWebView.setVisibility(View.VISIBLE);
+                mWebView.requestFocus();
+            } else
+                mWebView.setVisibility(View.INVISIBLE);
         });
-        //Log.i("tlabwebview", "clear history");
+        //Log.i("tlabwebview", "set visibility: " + visibility);
     }
 
-    public void SetMargins(int left, int top, int right, int bottom) {
+    // ---------------------------------------------------------------------------------------------------------
+    //
+    //
+
+    private void SetMargins(int left, int top, int right, int bottom) {
         final FrameLayout.LayoutParams params
                 = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -711,23 +616,23 @@ public class UnityConnect  extends Fragment {
         }});
     }
 
-    public void AddCustomHeader(final String headerKey, final String headerValue) {
+    private void AddCustomHeader(final String headerKey, final String headerValue) {
         if (mCustomHeaders == null) return;
         mCustomHeaders.put(headerKey, headerValue);
     }
 
-    public String GetCustomHeaderValue(final String headerKey) {
+    private String GetCustomHeaderValue(final String headerKey) {
         if (mCustomHeaders == null) return null;
         if (!mCustomHeaders.containsKey(headerKey)) return null;
         return this.mCustomHeaders.get(headerKey);
     }
 
-    public void RemoveCustomHeader(final String headerKey) {
+    private void RemoveCustomHeader(final String headerKey) {
         if (mCustomHeaders == null) return;
         this.mCustomHeaders.remove(headerKey);
     }
 
-    public void ClearCustomHeader() {
+    private void ClearCustomHeader() {
         if (mCustomHeaders == null) return;
         this.mCustomHeaders.clear();
     }

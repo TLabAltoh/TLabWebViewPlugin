@@ -89,6 +89,7 @@ public class UnityConnect  extends Fragment {
     private boolean canGoBack;
     private boolean canGoForward;
 
+    private String androiString;
     private String userAgent;
     private Hashtable<String, String> mCustomHeaders;
 
@@ -450,7 +451,33 @@ public class UnityConnect  extends Fragment {
     }
 
     public void setUserAgent(String ua) {
+        // https://developer.mozilla.org/ja/docs/Web/HTTP/Headers/User-Agent/Firefox
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if(mWebView == null) return;
+
+            try {
+                //String androidString = mWebView.getSettings().getUserAgentString().substring(userAgent.indexOf("("), userAgent.indexOf(")") + 1);
+                //userAgent = mWebView.getSettings().getUserAgentString().replace(androidString,"X11; Ubuntu; Linux x86_64");
+                mWebView.getSettings().setUserAgentString(ua);
+                mWebView.reload();
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        });
+
         userAgent = ua;
+    }
+
+    public void captureUserAgent(){
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if(mWebView == null) return;
+            userAgent = mWebView.getSettings().getUserAgentString();
+        });
+    }
+
+    public String getUserAgent() {
+        return userAgent;
     }
 
     public void loadUrl(String url) {

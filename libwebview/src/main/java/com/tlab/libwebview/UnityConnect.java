@@ -9,13 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.opengl.EGL14;
-import android.opengl.EGL15;
-import android.opengl.EGLConfig;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
-import android.opengl.GLSurfaceView;
 import android.os.Environment;
 import android.os.Message;
 import android.os.SystemClock;
@@ -47,6 +40,18 @@ import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
 import java.util.Hashtable;
+
+// opengl EGL
+import android.opengl.EGL14;
+import android.opengl.EGL15;
+import android.opengl.EGLConfig;
+import android.opengl.EGLContext;
+import android.opengl.EGLDisplay;
+import android.opengl.EGLSurface;
+import android.opengl.GLSurfaceView;
+
+// khronos EGL
+import javax.microedition.khronos.egl.EGL10;
 
 // Android Studio Collapse definitions and methods
 // https://stackoverflow.com/questions/18445044/android-studio-collapse-definitions-and-methods
@@ -158,7 +163,7 @@ public class UnityConnect extends Fragment {
         else
             Log.i(TAG, "check exist and egl context created !!");
 
-        EGL14.eglMakeCurrent(mDisplay, mDSurface, mRSurface, mContext);
+        //EGL14.eglMakeCurrent(mDisplay, mDSurface, mRSurface, mContext);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -210,7 +215,7 @@ public class UnityConnect extends Fragment {
             mLayout.setY(mScreenHeight);
             mLayout.setBackgroundColor(0x00000000);
 
-            Log.i("tlabwebview", "mLayout created");
+            Log.i(TAG, "mLayout created");
 
             // mGLSurfaceView settings
             mGLSurfaceView = new GLSurfaceView(UnityPlayer.currentActivity);
@@ -220,7 +225,7 @@ public class UnityConnect extends Fragment {
             mGLSurfaceView.setRenderer(mViewToGlRenderer);
             mGLSurfaceView.setBackgroundColor(0x00000000);
 
-            Log.i("tlabwebview", "mGLSurfaceView created");
+            Log.i(TAG, "mGLSurfaceView created");
 
             // mGlLayout settings
             mGlLayout = new GLLinearLayout(
@@ -233,7 +238,7 @@ public class UnityConnect extends Fragment {
             mGlLayout.setViewToGLRenderer(mViewToGlRenderer);
             mGlLayout.setBackgroundColor(0x00000000);
 
-            Log.i("tlabwebview", "mGlLayout created");
+            Log.i(TAG, "mGlLayout created");
 
             if (mWebView == null) mWebView = new BitmapWebView(UnityPlayer.currentActivity);
 
@@ -365,7 +370,7 @@ public class UnityConnect extends Fragment {
                     Toast.makeText(context, filename + "　download is completed..", Toast.LENGTH_LONG).show();
                 }
             });
-            mWebView.getSettings().setJavaScriptEnabled(true);
+            //mWebView.getSettings().setJavaScriptEnabled(true);
             mWebView.setInitialScale(100);
             mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
             // --------- drawing cache setting
@@ -455,7 +460,7 @@ public class UnityConnect extends Fragment {
         @JavascriptInterface
         public void viewSource(final String src) {
             mHTMLCash = src;
-            Log.i("tlabwebview", "capture HTML source success");
+            Log.i(TAG, "capture HTML source success");
         }
     }
 

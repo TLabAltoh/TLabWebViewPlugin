@@ -34,24 +34,25 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.self.viewtoglrendering.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;
 
 import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
 import java.util.Hashtable;
-
-// opengl EGL
+// opengl
+import android.content.Context;
+import android.util.AttributeSet;
 import android.opengl.EGL14;
 import android.opengl.EGL15;
-import android.opengl.EGLConfig;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
 import android.opengl.GLSurfaceView;
-
-// khronos EGL
+import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 
 // Android Studio Collapse definitions and methods
 // https://stackoverflow.com/questions/18445044/android-studio-collapse-definitions-and-methods
@@ -64,7 +65,8 @@ public class UnityConnect extends Fragment {
     //
 
     private ViewToGLRenderer mViewToGlRenderer;
-    private GLSurfaceView mGLSurfaceView;
+    private CustomGLSurfaceView mGLSurfaceView;
+    //private GLSurfaceView mGLSurfaceView;
 
     // ---------------------------------------------------------------------------------------------------------
     // Views.
@@ -103,12 +105,13 @@ public class UnityConnect extends Fragment {
 
     private boolean canGoBack;
     private boolean canGoForward;
+    private boolean initialized = false;
 
     private String androiString;
     private String userAgent;
     private Hashtable<String, String> mCustomHeaders;
 
-    private final String TAG = "libwebview";
+    private final static String TAG = "libwebview";
 
     // ---------------------------------------------------------------------------------------------------------
     // Initialize this class
@@ -137,28 +140,36 @@ public class UnityConnect extends Fragment {
     }
 
     public boolean IsInitialized() {
-        return mWebView != null;
+        return initialized;
     }
 
     // ---------------------------------------------------------------------------------------------------------
     // Save eglcontext to share texture ptr
     //
 
-    private EGLContext mContext = EGL14.EGL_NO_CONTEXT;
-    private EGLDisplay mDisplay = EGL14.EGL_NO_DISPLAY;
-    private EGLSurface mDSurface = EGL14.EGL_NO_SURFACE;
-    private EGLSurface mRSurface = EGL14.EGL_NO_SURFACE;
+    private static EGLContext mContext = EGL10.EGL_NO_CONTEXT;
+    private static EGLDisplay mDisplay = EGL10.EGL_NO_DISPLAY;
+    private static EGLSurface mDSurface = EGL10.EGL_NO_SURFACE;
+    private static EGLSurface mRSurface = EGL10.EGL_NO_SURFACE;
 
-    private void checkEGLContextExist(){
-        mContext = EGL14.eglGetCurrentContext();
-        mDisplay = EGL14.eglGetCurrentDisplay();
-        mDSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW);
-        mRSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_READ);
+    public static void unityJNITest() { Log.i(TAG, "success !"); }
+
+    public static void checkEGLContextExist(){
+        if(mContext != EGL10.EGL_NO_CONTEXT){
+            Log.i(TAG, "egl has already been acquired. Skip processing");
+            return;
+        }
+
+        EGL10 egl = (EGL10)EGLContext.getEGL();
+        mContext = egl.eglGetCurrentContext();
+        mDisplay = egl.eglGetCurrentDisplay();
+        mDSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
+        mRSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
 
         Log.i(TAG, "thread name: " + Thread.currentThread().getName());
         Log.i(TAG, "context class name: " + mContext.getClass().getName());
 
-        if(mContext == EGL14.EGL_NO_CONTEXT)
+        if(mContext == EGL10.EGL_NO_CONTEXT)
             Log.i(TAG, "check exist but egl context is not created");
         else
             Log.i(TAG, "check exist and egl context created !!");
@@ -195,12 +206,9 @@ public class UnityConnect extends Fragment {
         //                          |
         //                          | mGLSurfaceView
 
-        checkEGLContextExist();
-
         mViewToGlRenderer = new ViewToGLRenderer();
         mViewToGlRenderer.SetTextureResolution(mTextureWidth, mTextureHeight);
         mViewToGlRenderer.SetWebResolution(mWebWidth, mWebHeight);
-        mViewToGlRenderer.saveEGLContext(mContext, mDisplay, mDSurface, mRSurface);
         mViewToGlRenderer.createTextureCapture(UnityPlayer.currentActivity, mTexId, R.raw.vertex, R.raw.fragment_oes);
 
         Log.i(TAG, "unity texture id: " + mTexId);
@@ -218,10 +226,12 @@ public class UnityConnect extends Fragment {
             Log.i(TAG, "mLayout created");
 
             // mGLSurfaceView settings
-            mGLSurfaceView = new GLSurfaceView(UnityPlayer.currentActivity);
-            mGLSurfaceView.setEGLContextClientVersion(2);
+            mGLSurfaceView = new CustomGLSurfaceView(UnityPlayer.currentActivity);
+            //mGLSurfaceView = new GLSurfaceView(UnityPlayer.currentActivity);
+            mGLSurfaceView.setEGLContextClientVersion(3);
             mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
             mGLSurfaceView.setPreserveEGLContextOnPause(true);
+            mGLSurfaceView.setSharedContext(mContext);
             mGLSurfaceView.setRenderer(mViewToGlRenderer);
             mGLSurfaceView.setBackgroundColor(0x00000000);
 
@@ -307,33 +317,31 @@ public class UnityConnect extends Fragment {
             mWebView.setWebChromeClient(new WebChromeClient() {
                 @Override
                 public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message resultMsg) {
-                    /*
-                    newWebView.add(new BitmapWebView(UnityPlayer.currentActivity));
-                    WebSettings webSettings = newWebView.getSettings();
-                    webSettings.setJavaScriptEnabled(true);
-                    webSettings.setSupportMultipleWindows(true);
-                    webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-                    webSettings.setDomStorageEnabled(true);
-                    webSettings.setAllowFileAccess(true);
-                    webSettings.setUserAgentString(dbHelper.getUserConfig().get("userAgent"));
-                    newWebView.setFocusable(true);
-                    newWebView.setFocusableInTouchMode(true);
-
-                    newWebView.setWebViewClient(new WebViewClient());
-                    newWebView.setWebChromeClient(new WebChromeClient(){
-                        @Override
-                        public void onCloseWindow(WebView window) {
-                            window.setVisibility(View.GONE);
-                            myWebView.removeView(window);
-                        }
-                    });
-                    myWebView.addView(newWebView);
-
-                    WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-                    transport.setWebView(newWebView);
-                    resultMsg.sendToTarget();
-                    return true;
-                     */
+//                    newWebView.add(new BitmapWebView(UnityPlayer.currentActivity));
+//                    WebSettings webSettings = newWebView.getSettings();
+//                    webSettings.setJavaScriptEnabled(true);
+//                    webSettings.setSupportMultipleWindows(true);
+//                    webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+//                    webSettings.setDomStorageEnabled(true);
+//                    webSettings.setAllowFileAccess(true);
+//                    webSettings.setUserAgentString(dbHelper.getUserConfig().get("userAgent"));
+//                    newWebView.setFocusable(true);
+//                    newWebView.setFocusableInTouchMode(true);
+//
+//                    newWebView.setWebViewClient(new WebViewClient());
+//                    newWebView.setWebChromeClient(new WebChromeClient(){
+//                        @Override
+//                        public void onCloseWindow(WebView window) {
+//                            window.setVisibility(View.GONE);
+//                            myWebView.removeView(window);
+//                        }
+//                    });
+//                    myWebView.addView(newWebView);
+//
+//                    WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+//                    transport.setWebView(newWebView);
+//                    resultMsg.sendToTarget();
+//                    return true;
                     return false;
                 }
             });
@@ -397,7 +405,7 @@ public class UnityConnect extends Fragment {
             webSettings.setAllowUniversalAccessFromFileURLs(true);
             webSettings.setMediaPlaybackRequiresUserGesture(false);
             if (userAgent != null && userAgent.length() > 0){
-                Log.i("tlabwebview", "setUserAgentString(" + userAgent.toString() + ")");
+                Log.i(TAG, "setUserAgentString(" + userAgent.toString() + ")");
                 webSettings.setUserAgentString(userAgent);
             }
             webSettings.setDefaultTextEncodingName("utf-8");
@@ -434,9 +442,11 @@ public class UnityConnect extends Fragment {
             );
 
             if (mLoadUrl != null) loadUrl(mLoadUrl);
-        });
 
-        Log.i(TAG, "webView initialized");
+            initialized = true;
+
+            Log.i(TAG, "webView initialized");
+        });
     }
 
     public void Destroy() {
@@ -468,9 +478,11 @@ public class UnityConnect extends Fragment {
     // java's unity interface.
     //
 
+    public void updateSurface() { mGlLayout.postInvalidate(); }
+
     public byte[] getPixel() {
         byte[] data = mViewToGlRenderer.getTexturePixels();
-        mGlLayout.postInvalidate();
+        updateSurface();
         // Log.i("tlabwebview", "texture data exists");
         return data;
     }

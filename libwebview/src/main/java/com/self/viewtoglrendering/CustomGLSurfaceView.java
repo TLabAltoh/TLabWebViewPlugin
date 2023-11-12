@@ -4,18 +4,24 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLSurface;
 
 import android.util.AttributeSet;
 import android.content.Context;
+import android.opengl.EGL14;
 import android.opengl.EGL15;
 import android.opengl.GLSurfaceView;
 
 public class CustomGLSurfaceView extends GLSurfaceView {
 
-    private EGLContext mContext = EGL10.EGL_NO_CONTEXT;
+    private EGLContext mSharedEGLContext = EGL10.EGL_NO_CONTEXT;
 
-    private int[] getContextAttributes() { return new int[] { 0x3098 /* 0x3098 EGL_CONTEXT_CLIENT_VERSION */, EGL15.EGL_OPENGL_ES3_BIT /* EGL_OPENGL_ES3_BIT */, EGL10.EGL_NONE }; }
+    // https://developer.android.com/reference/android/opengl/EGL14#EGL_CONTEXT_CLIENT_VERSION
+
+    private int[] getContextAttributes() { return new int[] {
+            EGL14.EGL_CONTEXT_CLIENT_VERSION /* 0x3098 EGL_CONTEXT_CLIENT_VERSION */,
+            3 /* EGL15.EGL_OPENGL_ES3_BIT */,
+            EGL10.EGL_NONE };
+    }
 
     private EGLContextFactory mEGLContextFactory = new EGLContextFactory() {
 
@@ -24,8 +30,8 @@ public class CustomGLSurfaceView extends GLSurfaceView {
 
         @Override
         public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig config) {
-            EGLContext context = egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, getContextAttributes());
-            return mContext;
+            EGLContext context = egl.eglCreateContext(display, config, mSharedEGLContext, getContextAttributes());
+            return context;
         }
     };
 
@@ -35,9 +41,7 @@ public class CustomGLSurfaceView extends GLSurfaceView {
         super.setRenderer(renderer);
     }
 
-    public void setContext(EGLContext context){
-        mContext = context;
-    }
+    public void setSharedContext(EGLContext sharedEGLContext){ mSharedEGLContext = sharedEGLContext; }
 
     public CustomGLSurfaceView(Context context) { super(context); }
 

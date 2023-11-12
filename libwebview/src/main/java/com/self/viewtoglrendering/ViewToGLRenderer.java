@@ -5,9 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGL15;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
@@ -15,7 +12,11 @@ import android.opengl.GLUtils;
 import android.util.Log;
 import android.view.Surface;
 
+import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 public class ViewToGLRenderer implements GLSurfaceView.Renderer {
@@ -67,100 +68,21 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     // EGL context util
     //
 
-    // Saved eglcontext from "unitumain"
-    private EGLContext mSavedContext = EGL14.EGL_NO_CONTEXT;
-    private EGLDisplay mSavedDisplay = EGL14.EGL_NO_DISPLAY;
-    private EGLSurface mSavedDSurface = EGL14.EGL_NO_SURFACE;
-    private EGLSurface mSavedRSurface = EGL14.EGL_NO_SURFACE;
-
-    private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
-    private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
-    private EGLSurface mEGLDSurface = EGL14.EGL_NO_SURFACE;
-    private EGLSurface mEGLRSurface = EGL14.EGL_NO_SURFACE;
-
-    public void saveEGLContext(EGLContext context, EGLDisplay display, EGLSurface dSurface, EGLSurface rSurface){
-        mSavedContext = context;
-        mSavedDisplay = display;
-        mSavedDSurface = dSurface;
-        mSavedRSurface = rSurface;
-    }
+    private EGLContext mEGLContext = EGL10.EGL_NO_CONTEXT;
+    private EGLDisplay mEGLDisplay = EGL10.EGL_NO_DISPLAY;
+    private EGLSurface mEGLDSurface = EGL10.EGL_NO_SURFACE;
+    private EGLSurface mEGLRSurface = EGL10.EGL_NO_SURFACE;
 
     private void checkEGLContext(){
+        EGL10 egl = (EGL10) EGLContext.getEGL();
+        mEGLContext = egl.eglGetCurrentContext();
         Log.i(TAG, "thread name: " + Thread.currentThread().getName());
         Log.i(TAG, "context class name: " + mEGLContext.getClass().getName());
-        Log.i(TAG, "same context: " + (mEGLContext == EGL14.eglGetCurrentContext()));
 
-        if(mSavedContext == EGL14.EGL_NO_CONTEXT)
+        if(mEGLContext == EGL10.EGL_NO_CONTEXT)
             Log.i(TAG, "check exist but egl context is not created");
         else
             Log.i(TAG, "check exist and egl context created !!");
-    }
-
-    /**
-     * https://stackoverflow.com/questions/40787339/unity3d-render-opengl-fbo-to-texture-in-android-java
-     * Prepares EGL.  We want a GLES 2.0 context and a surface that supports recording.
-     */
-    private void eglSetup() {
-        mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-        if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
-            Log.d(TAG, "unable to get EGL14 display");
-            throw new RuntimeException("unable to get EGL14 display");
-        }
-        int[] version = new int[2];
-        if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
-            Log.d(TAG, "unable to initialize EGL14");
-            throw new RuntimeException("unable to initialize EGL14");
-        }
-
-        // Configure EGL for recording and OpenGL ES 2.0.
-        // TODO: siwtch 2.0 --> 3.0
-        int EGL_RECORDABLE_ANDROID = 0x3142;
-        int[] attribList;
-        attribList = new int[]{
-                EGL14.EGL_RED_SIZE, 8,
-                EGL14.EGL_GREEN_SIZE, 8,
-                EGL14.EGL_BLUE_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, EGL15.EGL_OPENGL_ES3_BIT,
-                EGL_RECORDABLE_ANDROID, 1,
-                EGL14.EGL_NONE
-        };
-        android.opengl.EGLConfig[] configs = new android.opengl.EGLConfig[1];
-        int[] numConfigs = new int[1];
-
-        EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0);
-        checkEglError("eglCreateContext RGB888+recordable ES2");
-
-        // Configure context for OpenGL ES 2.0.
-        // TODO: siwtch 2.0 --> 3.0
-        int[] attrib_list = {
-                EGL14.EGL_CONTEXT_CLIENT_VERSION, 3,
-                EGL14.EGL_NONE
-        };
-
-        mEGLContext = EGL14.eglCreateContext(mEGLDisplay, configs[0], mSavedContext, attrib_list, 0);
-        checkEglError("eglCreateContext");
-
-        // Create a window surface, and attach it to the Surface we received.
-        int[] surfaceAttribs = { EGL14.EGL_NONE };
-        mEGLDSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW);
-        mEGLRSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_READ);
-        checkEglError("eglCreateWindowSurface");
-
-        EGL14.eglMakeCurrent(mEGLDisplay, mEGLDSurface, mEGLRSurface, mEGLContext);
-        checkEglError("eglMakeCurrent");
-
-        Log.i(TAG, "make eglcontext done !");
-    }
-
-    /**
-     * Checks for EGL errors. Throws an exception if one is found.
-     */
-    private void checkEglError(String msg) {
-        int error;
-        if ((error = EGL14.eglGetError()) != EGL14.EGL_SUCCESS) {
-            Log.d(TAG, msg + ": EGL error: 0x" + Integer.toHexString(error));
-            throw new RuntimeException(msg + ": EGL error: 0x" + Integer.toHexString(error));
-        }
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -199,7 +121,6 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         final String extensions = GLES30.glGetString(GLES30.GL_EXTENSIONS);
         Log.d(TAG, extensions);
-        eglSetup();
         checkEGLContext();
         if (textureCapture != null) textureCapture.init();
         Log.i(TAG, "onSurfaceCreated: function called");
@@ -215,8 +136,8 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         Log.i(TAG, "onSurfaceChanged: surface change start");
-        createSurface(width, height);
         createTexture();
+        createSurface(width, height);
         Log.i(TAG, "onSurfaceChanged: surface change finish");
     }
 
@@ -241,8 +162,8 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
         GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
         GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
 
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
-        Log.i(TAG, "finish create texture");
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        Log.i(TAG, "finish create texture: " + mGlSurfaceTexture[0]);
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -269,7 +190,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
         mSurfaceCanvas = null;
         if (mSurface != null) {
             try {
-                // mSurfaceCanvas = mSurface.lockCanvas(null);
+                //mSurfaceCanvas = mSurface.lockCanvas(null);
                 // https://learn.microsoft.com/en-us/dotnet/api/android.views.surface.lockhardwarecanvas?view=xamarin-android-sdk-13
                 mSurfaceCanvas = mSurface.lockHardwareCanvas();
             }catch (Exception e){
@@ -345,10 +266,10 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     // Create texture capture
     //
 
-    public void createTextureCapture(Context context, int texId, int vs, int fs) {
+    public void createTextureCapture(Context context, int textureId, int vs, int fs) {
         textureCapture = new TextureCapture();
         textureCapture.flipY();
-        textureCapture.setTexId(texId);
+        textureCapture.setTexId(textureId);
         textureCapture.loadSamplerShaderProg(context, vs, fs);
     }
 }

@@ -22,9 +22,12 @@ import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.util.Log;
 
+import javax.microedition.khronos.opengles.GL;
+
 public class TextureCapture
 {
-    private final String TAG = "libwebview";
+    private static final String TAG = "libwebview";
+    private static final int SIZEOF_FLOAT = Float.SIZE / 8;
 
     private EglCore mEglCore;
 
@@ -100,11 +103,20 @@ public class TextureCapture
     private void loadSamplerShader() {
         mGLProgId = GlUtil.createProgram(mVertexShaderProg, mFragmentShaderProg);
 
-        if (mGLProgId == 0) return;
+        if (mGLProgId == 0){
+            Log.i(TAG, "load sampler sahder filed");
+            return;
+        }else{
+            Log.i(TAG, "load sampler sahder success");
+        }
 
         mGLPositionIndex = GLES30.glGetAttribLocation(mGLProgId, "position");
         mGLTextureCoordinateIndex = GLES30.glGetAttribLocation(mGLProgId,"inputTextureCoordinate");
         mGLInputImageTextureIndex = GLES30.glGetUniformLocation(mGLProgId, "inputImageTexture");
+
+        Log.i(TAG, "mGLPositionIndex: " + mGLPositionIndex);
+        Log.i(TAG, "mGLTextureCoordinateIndex: " + mGLTextureCoordinateIndex);
+        Log.i(TAG, "mGLInputImageTextureIndex: " + mGLInputImageTextureIndex);
     }
 
     private String readShaderFromRawResource(Context context, int resourceId) {
@@ -180,6 +192,7 @@ public class TextureCapture
     //
 
     protected void onInit() {
+        GLES30.glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
         initVbo();
         loadSamplerShader();
     }
@@ -218,10 +231,10 @@ public class TextureCapture
                 1.0f, 1.0f // Top right.
         };
 
-        mGLCubeBuffer = ByteBuffer.allocateDirect(VEX_CUBE.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        mGLCubeBuffer.put(mFlipY? VEX_CUBE_F : VEX_CUBE).position(0);
+        mGLCubeBuffer = ByteBuffer.allocateDirect(VEX_CUBE.length * SIZEOF_FLOAT).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mGLCubeBuffer.put(mFlipY ? VEX_CUBE_F : VEX_CUBE).position(0);
 
-        mGLTextureBuffer = ByteBuffer.allocateDirect(TEX_COORD.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mGLTextureBuffer = ByteBuffer.allocateDirect(TEX_COORD.length * SIZEOF_FLOAT).order(ByteOrder.nativeOrder()).asFloatBuffer();
         mGLTextureBuffer.put(TEX_COORD).position(0);
 
         mGLCubeId = new int[1];
@@ -229,11 +242,11 @@ public class TextureCapture
 
         GLES30.glGenBuffers(1, mGLCubeId, 0);
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLCubeId[0]);
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLCubeBuffer.capacity() * 4, mGLCubeBuffer, GLES30.GL_STATIC_DRAW);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLCubeBuffer.capacity() * SIZEOF_FLOAT, mGLCubeBuffer, GLES30.GL_STATIC_DRAW);
 
         GLES30.glGenBuffers(1, mGLTextureCoordinateId, 0);
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLTextureCoordinateId[0]);
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * 4, mGLTextureBuffer, GLES30.GL_STATIC_DRAW);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * SIZEOF_FLOAT, mGLTextureBuffer, GLES30.GL_STATIC_DRAW);
     }
 
     private void destroyVbo() {
@@ -358,40 +371,41 @@ public class TextureCapture
 
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLCubeId[0]);
         //GlUtil.checkGlError("glBindBuffer");
-        GLES30.glEnableVertexAttribArray(mGLPositionIndex);
-        //GlUtil.checkGlError("glEnableVertexAttribArray");
         GLES30.glVertexAttribPointer(mGLPositionIndex, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
         //GlUtil.checkGlError("glVertexAttribPointer");
+        GLES30.glEnableVertexAttribArray(mGLPositionIndex);
+        //GlUtil.checkGlError("glEnableVertexAttribArray");
 
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLTextureCoordinateId[0]);
         //GlUtil.checkGlError("glBindBuffer");
-        GLES30.glEnableVertexAttribArray(mGLTextureCoordinateIndex);
-        //GlUtil.checkGlError("glEnableVertexAttribArray");
         GLES30.glVertexAttribPointer(mGLTextureCoordinateIndex, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
         //GlUtil.checkGlError("glVertexAttribPointer");
+        GLES30.glEnableVertexAttribArray(mGLTextureCoordinateIndex);
+        //GlUtil.checkGlError("glEnableVertexAttribArray");
 
         GLES30.glBindBuffer( GLES30.GL_ARRAY_BUFFER, 0 );
 
         // ----------------
 
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
-        //GlUtil.checkGlError("glBindFramebuffer");
         GLES30.glUniform1i(mGLInputImageTextureIndex, 0);
         //GlUtil.checkGlError("glUniform1i");
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
+        //GlUtil.checkGlError("glBindFramebuffer");
         GLES30.glDisable(GLES30.GL_CULL_FACE);
         //GlUtil.checkGlError("glDisable");
+        //GLES30.glCullFace(GLES30.GL_BACK);
+        //GlUtil.checkGlError("glCullFace");
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
         //GlUtil.checkGlError("glDrawArrays");
 
-        GLES30.glFlush();
+        GLES30.glDisableVertexAttribArray(mGLPositionIndex);
+        GLES30.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
 
+        //GLES30.glFlush();
         //GLES30.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mGLFboBuffer);
 
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-
-        GLES30.glDisableVertexAttribArray(mGLPositionIndex);
-        GLES30.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
 
         //Log.i(TAG, "finish draw frame");
 

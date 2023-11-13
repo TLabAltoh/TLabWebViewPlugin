@@ -247,6 +247,18 @@ public class UnityConnect extends Fragment {
             mGlLayout.setGravity(Gravity.START);
             mGlLayout.setViewToGLRenderer(mViewToGlRenderer);
             mGlLayout.setBackgroundColor(0x00000000);
+//            new Thread(new Runnable() {
+//                public void run() {
+//                    while(true){
+//                        try {
+//                            Thread.sleep(100);
+//                        } catch (InterruptedException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                        mGlLayout.postInvalidate();
+//                    }
+//                }
+//            }).start();
 
             Log.i(TAG, "mGlLayout created");
 
@@ -478,7 +490,11 @@ public class UnityConnect extends Fragment {
     // java's unity interface.
     //
 
-    public void updateSurface() { mGlLayout.postInvalidate(); }
+    public void updateSurface() {
+        //mGLSurfaceView.postInvalidate();
+        mGlLayout.postInvalidate();
+        //mLayout.invalidate();
+    }
 
     public byte[] getPixel() {
         byte[] data = mViewToGlRenderer.getTexturePixels();
@@ -524,13 +540,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
-    public String getUserAgent() {
-        return userAgent;
-    }
+    public String getUserAgent() { return userAgent; }
 
-    public String getCurrentUrl() {
-        return mActualUrl;
-    }
+    public String getCurrentUrl() { return mActualUrl; }
 
     public void loadUrl(String url) {
         mLoadUrl = url;

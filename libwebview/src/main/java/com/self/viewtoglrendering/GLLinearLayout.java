@@ -45,7 +45,5 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
         mViewToGLRenderer.onDrawViewEnd();
     }
 
-    public void setViewToGLRenderer(ViewToGLRenderer viewToGLRenderer) {
-        mViewToGLRenderer = viewToGLRenderer;
-    }
+    public void setViewToGLRenderer(ViewToGLRenderer viewToGLRenderer) { mViewToGLRenderer = viewToGLRenderer; }
 }

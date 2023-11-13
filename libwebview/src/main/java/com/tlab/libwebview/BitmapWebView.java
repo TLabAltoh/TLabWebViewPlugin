@@ -9,8 +9,6 @@ import com.self.viewtoglrendering.GLLinearLayout;
 
 public class BitmapWebView extends WebView {
 
-    private GLLinearLayout mGlLayout;
-
     public BitmapWebView(Context context) {
         super(context);
     }

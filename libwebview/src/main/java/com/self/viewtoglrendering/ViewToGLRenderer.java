@@ -73,16 +73,41 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     private EGLSurface mEGLDSurface = EGL10.EGL_NO_SURFACE;
     private EGLSurface mEGLRSurface = EGL10.EGL_NO_SURFACE;
 
+    private void overwriteEGL(){
+        EGL10 egl = (EGL10) EGLContext.getEGL();
+        //EGL10.EGL_SURFACE_TYPE
+        egl.eglMakeCurrent(mEGLDisplay, mEGLDSurface, mEGLRSurface, mEGLContext);
+        egl.eglWaitGL();
+        Log.i(TAG, "EGL overwrite completed.");
+    }
+
+    public void saveEGL(EGLContext context, EGLDisplay display, EGLSurface drawSurface, EGLSurface readSurface) {
+        mEGLContext = context;
+        mEGLDisplay = display;
+        mEGLDSurface = drawSurface;
+        mEGLRSurface = readSurface;
+        Log.i(TAG, "EGL save is completed");
+    }
+
     private void checkEGLContext(){
         EGL10 egl = (EGL10) EGLContext.getEGL();
-        mEGLContext = egl.eglGetCurrentContext();
+        EGLContext context = egl.eglGetCurrentContext();
+        EGLDisplay display = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+        EGLSurface drawSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
+        EGLSurface readSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
+
         Log.i(TAG, "thread name: " + Thread.currentThread().getName());
         Log.i(TAG, "context class name: " + mEGLContext.getClass().getName());
 
-        if(mEGLContext == EGL10.EGL_NO_CONTEXT)
+        if(context == EGL10.EGL_NO_CONTEXT)
             Log.i(TAG, "check exist but egl context is not created");
         else
             Log.i(TAG, "check exist and egl context created !!");
+
+        if(display == mEGLDisplay)
+            Log.i(TAG, "same egl component: " + display);
+        else
+            Log.i(TAG, "diffrent egl component: " + display);
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -90,8 +115,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     //
 
     public void createSurface(int webWidth, int webHeight) {
-        //setEGLContext();
-        //eglSetup();
+        //overwriteEGL();
 
         Log.i(TAG, "createSurface: create surface start");
         releaseSurface();
@@ -121,7 +145,6 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         final String extensions = GLES30.glGetString(GLES30.GL_EXTENSIONS);
         Log.d(TAG, extensions);
-        checkEGLContext();
         if (textureCapture != null) textureCapture.init();
         Log.i(TAG, "onSurfaceCreated: function called");
     }

@@ -3,6 +3,7 @@ package com.self.viewtoglrendering;
 import android.content.Context;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
+import android.opengl.GLES11;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 
@@ -149,7 +150,7 @@ public class TextureCapture
     // Initialize
     //
 
-    private void makeEGLCurrent(EGLContext context){
+    private void makeEGLCurrent(EGLContext context) {
         EGLDisplay display = EGL14.eglGetCurrentDisplay();
         EGLSurface dSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW);
         EGLSurface rSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_READ);
@@ -278,24 +279,28 @@ public class TextureCapture
         mGLFboId = new int[1];
         mGLFboTexId = new int[1];
 
-//        GLES30.glGenFramebuffers(1, mGLFboId, 0);
-//        GLES30.glGenTextures(1, mGLFboTexId, 0);
-//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mGLFboTexId[0]);
-//        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, textureWidth, textureHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
-//        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
-//        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
-//        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
-//        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
-//        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
-//        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
-//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
-//        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-
-        mGLFboTexId[0] = mTexId;
+        // Conventional method, read textures to CPU and pass to Unity
         GLES30.glGenFramebuffers(1, mGLFboId, 0);
+        GLES30.glGenTextures(1, mGLFboTexId, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mGLFboTexId[0]);
+        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, textureWidth, textureHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
         GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
+
+        // A technique for updating textures via a Frame Buffer Object, which requires sharing EGLContext,
+        // but has limitations due to operations not allowed on some devices.
+        // I wanted to use this technique with Oculus, but gave up because I could not access the EGLContext
+//        mGLFboTexId[0] = mTexId;
+//        GLES30.glGenFramebuffers(1, mGLFboId, 0);
+//        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
+//        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
+//        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
 
         Log.i(TAG, "mGLFboTexid[0]: " + mGLFboTexId[0] + " . mGLFboId[0]: " + mGLFboId[0]);
 
@@ -393,16 +398,18 @@ public class TextureCapture
         //GlUtil.checkGlError("glBindFramebuffer");
         GLES30.glDisable(GLES30.GL_CULL_FACE);
         //GlUtil.checkGlError("glDisable");
-        //GLES30.glCullFace(GLES30.GL_BACK);
-        //GlUtil.checkGlError("glCullFace");
+//        GLES30.glCullFace(GLES30.GL_BACK);
+//        GlUtil.checkGlError("glCullFace");
+//        GlUtil.checkGlError("glEGLImageTargetTexture2DOES");
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
         //GlUtil.checkGlError("glDrawArrays");
 
+        // Conventional method of copying data to CPU
+        GLES30.glFlush();
+        GLES30.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mGLFboBuffer);
+
         GLES30.glDisableVertexAttribArray(mGLPositionIndex);
         GLES30.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
-
-        //GLES30.glFlush();
-        //GLES30.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mGLFboBuffer);
 
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);

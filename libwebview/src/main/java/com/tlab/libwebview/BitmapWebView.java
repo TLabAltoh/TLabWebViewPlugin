@@ -26,7 +26,5 @@ public class BitmapWebView extends WebView {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-    }
+    protected void onDraw(Canvas canvas) { super.onDraw(canvas); }
 }

@@ -1,9 +1,9 @@
 package com.self.viewtoglrendering;
 
 import android.content.Context;
+import android.hardware.HardwareBuffer;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
-import android.opengl.GLES11;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 
@@ -23,7 +23,7 @@ import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.util.Log;
 
-import javax.microedition.khronos.opengles.GL;
+import com.robot9.shared.SharedTexture;
 
 public class TextureCapture
 {
@@ -71,18 +71,15 @@ public class TextureCapture
     // FBO (pixel data on GPU)
     //
 
-    private int mTexId;
     private int[] mGLFboId;
     private int[] mGLFboTexId;
     private Buffer mGLFboBuffer;
 
+    private HardwareBuffer sharedBuffer;
+    private SharedTexture sharedTexture;
+
     private int mNowWritePboId;
     private int mNowReadPboId;
-
-    public void flipY()
-    {
-        mFlipY = true;
-    }
 
     // --------------------------------------------------------------------------------------------------------------------------
     // Sampler shader prog
@@ -144,31 +141,18 @@ public class TextureCapture
     // Texture unity side
     //
 
-    public void setTexId(int texId) { mTexId = texId; }
+    public void setSharedBuffer(HardwareBuffer sharedBuffer) {
+        this.sharedBuffer = sharedBuffer;
+    }
 
     // --------------------------------------------------------------------------------------------------------------------------
     // Initialize
     //
 
-    private void makeEGLCurrent(EGLContext context) {
-        EGLDisplay display = EGL14.eglGetCurrentDisplay();
-        EGLSurface dSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW);
-        EGLSurface rSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_READ);
-
-        EGL14.eglMakeCurrent(display, dSurface, rSurface, context);
-    }
-
     public void init() {
         if (mIsInitialized) return;
 
         EGLContext context = EGL14.eglGetCurrentContext();
-
-//        if(context == EGL14.EGL_NO_CONTEXT)
-//            Log.i(TAG, "egl context not created !");
-//        else{
-//            makeEGLCurrent(context);
-//            Log.i(TAG, "egl context created !!");
-//        }
 
         mEglCore = new EglCore(context, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
 
@@ -210,6 +194,12 @@ public class TextureCapture
 
     // --------------------------------------------------------------------------------------------------------------------------
     // Vbo util (vertex buffer object)
+    //
+
+    public void flipY()
+    {
+        mFlipY = true;
+    }
 
     private void initVbo() {
         final float VEX_CUBE[] = {
@@ -280,14 +270,23 @@ public class TextureCapture
         mGLFboTexId = new int[1];
 
         // Conventional method, read textures to CPU and pass to Unity
-        GLES30.glGenFramebuffers(1, mGLFboId, 0);
+        // EGLContext sharing did not work, so we used the method of binding HardwareBuffer to the texture
         GLES30.glGenTextures(1, mGLFboTexId, 0);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mGLFboTexId[0]);
-        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, textureWidth, textureHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+        //GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, textureWidth, textureHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+
+        if(sharedTexture == null && sharedBuffer != null){
+            sharedTexture = new SharedTexture(sharedBuffer);
+            Log.i(TAG, "shared texture created in texture capture");
+        }
+        boolean result = sharedTexture.bindTexture(mGLFboTexId[0]);
+        Log.i(TAG, "shared texture bind result: " + result);
+
+        GLES30.glGenFramebuffers(1, mGLFboId, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
         GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
@@ -349,6 +348,10 @@ public class TextureCapture
             GLES30.glDeleteBuffers(mGLPboId.length, mGLPboId, 0);
             mGLPboId = null;
         }
+        if(sharedTexture != null){
+            sharedTexture.release();
+            sharedTexture = null;
+        }
     }
 
     // --------------------------------------------------------------------------------------------------------------------------
@@ -398,19 +401,15 @@ public class TextureCapture
         //GlUtil.checkGlError("glBindFramebuffer");
         GLES30.glDisable(GLES30.GL_CULL_FACE);
         //GlUtil.checkGlError("glDisable");
-//        GLES30.glCullFace(GLES30.GL_BACK);
-//        GlUtil.checkGlError("glCullFace");
-//        GlUtil.checkGlError("glEGLImageTargetTexture2DOES");
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
         //GlUtil.checkGlError("glDrawArrays");
 
         // Conventional method of copying data to CPU
         GLES30.glFlush();
-        GLES30.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mGLFboBuffer);
+        //GLES30.glReadPixels(0, 0, mInputWidth, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mGLFboBuffer);
 
         GLES30.glDisableVertexAttribArray(mGLPositionIndex);
         GLES30.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
-
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 

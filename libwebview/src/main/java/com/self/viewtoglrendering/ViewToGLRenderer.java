@@ -3,8 +3,7 @@ package com.self.viewtoglrendering;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
-import android.opengl.EGL14;
-import android.opengl.EGL15;
+import android.hardware.HardwareBuffer;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
@@ -62,7 +61,6 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
 
     private TextureCapture textureCapture;
     private byte[] mCaptureData;
-    private int mTexturePtr;
 
     // ------------------------------------------------------------------------------------------------
     // EGL context util
@@ -203,7 +201,7 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
 
             if (textureCapture == null) return;
 
-            mTexturePtr = textureCapture.onDrawFrame(getGLSurfaceTexture());
+            textureCapture.onDrawFrame(getGLSurfaceTexture());
 
             //Log.i(TAG, "surface image updated");
         }
@@ -247,10 +245,6 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     // Get texture data
     //
 
-    public int getTexturePtr(){
-        return mTexturePtr;
-    }
-
     public byte[] getTexturePixels() {
         mCaptureData = textureCapture.getGLFboBuffer();
         return mCaptureData;
@@ -289,10 +283,10 @@ public class ViewToGLRenderer implements GLSurfaceView.Renderer {
     // Create texture capture
     //
 
-    public void createTextureCapture(Context context, int textureId, int vs, int fs) {
+    public void createTextureCapture(Context context, int vs, int fs, HardwareBuffer sharedBuffer) {
         textureCapture = new TextureCapture();
         textureCapture.flipY();
-        textureCapture.setTexId(textureId);
+        textureCapture.setSharedBuffer(sharedBuffer);
         textureCapture.loadSamplerShaderProg(context, vs, fs);
     }
 }

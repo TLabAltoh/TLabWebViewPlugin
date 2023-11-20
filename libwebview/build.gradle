@@ -5,19 +5,25 @@ plugins {
 android {
     namespace "com.tlab.libwebview"
     //compileSdk 30
-    compileSdk 31
-    //compileSdk 33
+    //compileSdk 31
+    compileSdk 32
     //buildToolsVersion "30.0.3"
 
     defaultConfig {
-        //minSdk 23
-        minSdk 29
+        minSdk 26
+        //minSdk 29
         //targetSdk 30
-        targetSdk 31
-        //targetSdk 32
+        //targetSdk 31
+        targetSdk 32
         versionCode 1
         versionName "1.0"
         consumerProguardFiles "consumer-rules.pro"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++11'
+            }
+        }
     }
 
     buildTypes {
@@ -32,8 +38,8 @@ android {
     }
     externalNativeBuild{
         cmake{
-            version "3.24.0"
             path="src/main/cpp/CMakeLists.txt"
+            version "3.24.0"
         }
     }
 }

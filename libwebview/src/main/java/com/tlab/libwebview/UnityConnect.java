@@ -1,6 +1,5 @@
 package com.tlab.libwebview;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
@@ -8,8 +7,10 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.hardware.HardwareBuffer;
 import android.net.Uri;
 import android.opengl.EGLExt;
+import android.opengl.GLES30;
 import android.os.Environment;
 import android.os.Message;
 import android.os.SystemClock;
@@ -38,17 +39,15 @@ import android.widget.Toast;
 import com.self.viewtoglrendering.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;
 
+import com.robot9.shared.SharedTexture;
 import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
+import java.util.ArrayDeque;
 import java.util.Hashtable;
-// opengl
-import android.content.Context;
-import android.util.AttributeSet;
+
 import android.opengl.EGL14;
 import android.opengl.EGL15;
-import android.opengl.GLSurfaceView;
-import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -59,7 +58,6 @@ import javax.microedition.khronos.egl.EGLSurface;
 // https://stackoverflow.com/questions/18445044/android-studio-collapse-definitions-and-methods
 
 public class UnityConnect extends Fragment {
-//public class UnityConnect {
 
     // ---------------------------------------------------------------------------------------------------------
     // Renderer
@@ -67,7 +65,6 @@ public class UnityConnect extends Fragment {
 
     private ViewToGLRenderer mViewToGlRenderer;
     private CustomGLSurfaceView mGLSurfaceView;
-    //private GLSurfaceView mGLSurfaceView;
 
     // ---------------------------------------------------------------------------------------------------------
     // Views.
@@ -91,22 +88,25 @@ public class UnityConnect extends Fragment {
         downloadFolder
     }
 
-    private static int mWebWidth;
-    private static int mWebHeight;
-    private static int mTextureWidth;
-    private static int mTextureHeight;
-    private static int mScreenWidth;
-    private static int mScreenHeight;
-    private static int mTexId;
-    private static int mDlOption;
-    private static String mSubDir;
-    private static String mLoadUrl;
-    private static String mActualUrl;
-    private static String mHTMLCash;
+    private int webWidth;
+    private int webHeight;
+    private int textureWidth;
+    private int textureHeight;
+    private int screenWidth;
+    private int screenHeight;
+    private int dlOption;
+    private String subDir;
+    private String loadUrl;
+    private String actualUrl;
+    private String htmlCash;
 
     private boolean canGoBack;
     private boolean canGoForward;
     private boolean initialized = false;
+
+    private static final Hashtable texturePairQueueDic = new Hashtable();
+    private SharedTexture sharedTexture;
+    private int sharedTextureId = 0;
 
     private String androiString;
     private String userAgent;
@@ -121,21 +121,20 @@ public class UnityConnect extends Fragment {
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
-                           String url, int dlOption, String subDir, int texId)
+                           String url, int dlOption, String subDir)
     {
         if(webWidth <= 0 || webHeight <= 0) return;
 
-        mWebWidth = webWidth;
-        mWebHeight = webHeight;
-        mTextureWidth = textureWidth;
-        mTextureHeight = textureHeight;
-        mScreenWidth = screenWidth;
-        mScreenHeight = screenHeight;
-        mTexId = texId;
+        this.webWidth = webWidth;
+        this.webHeight = webHeight;
+        this.textureWidth = textureWidth;
+        this.textureHeight = textureHeight;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
 
-        mLoadUrl = url;
-        mSubDir = subDir;
-        mDlOption = dlOption;
+        this.loadUrl = url;
+        this.subDir = subDir;
+        this.dlOption = dlOption;
 
         initWebView();
     }
@@ -154,12 +153,8 @@ public class UnityConnect extends Fragment {
     private static EGLSurface mRSurface = EGL10.EGL_NO_SURFACE;
     private static EGLConfig[] mConfig = new EGLConfig[1];
 
-    public static void unityJNITest() {
-        // Test code for calling Java methods in GL.IssuePluginEvent
-        Log.i(TAG, "success !");
-    }
-
-    private static int findConfigAttrib(EGL10 egl, EGLDisplay display, EGLConfig config, int attribute, int defaultValue) {
+    private static int findConfigAttrib(EGL10 egl,
+                                        EGLDisplay display, EGLConfig config, int attribute, int defaultValue) {
         int[] value = new int[1];
         if(egl.eglGetConfigAttrib(display, config, attribute, value)) {
             return value[0];
@@ -289,8 +284,8 @@ public class UnityConnect extends Fragment {
         mDSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
         mRSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
 
-        enumAvailableCongifs();
-        enumContextAttrinute();
+//        enumAvailableCongifs();
+//        enumContextAttrinute();
         chooseEGLConfig();
 
         Log.i(TAG, "thread name: " + Thread.currentThread().getName());
@@ -319,11 +314,74 @@ public class UnityConnect extends Fragment {
         //egl.eglMakeCurrent(mDisplay, mDSurface, mRSurface, mContext);
     }
 
+    public static void unityJNITest() {
+        // Test code for calling Java methods in GL.IssuePluginEvent
+        Log.i(TAG, "success !");
+    }
+
     // ---------------------------------------------------------------------------------------------------------
     // Test function (not included in the release)
     //
 
     public void createContextTest() { }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // Shared Texture Utility
+    //
+
+    private static String createTableKey(Integer a, Integer b){
+        String key = a.toString() + b.toString();
+        Log.i(TAG, "key: " + key);
+        return key;
+    }
+
+    public static void generateSharedTexture(int textureWidth, int textureHeight) {
+        String key = createTableKey(textureWidth, textureHeight);
+
+        ArrayDeque<SharedTexturePair> queue;
+        if(texturePairQueueDic.containsKey(key)){
+            queue = (ArrayDeque<SharedTexturePair>)texturePairQueueDic.get(key);
+        }else{
+            queue = new ArrayDeque<>();
+            texturePairQueueDic.put(key, queue);
+        }
+
+        int[] textures = new int[1];
+        GLES30.glGenTextures(textures.length, textures, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+
+        SharedTexture sharedTexture = new SharedTexture(textureWidth, textureHeight);
+
+        sharedTexture.bindTexture(textures[0]);
+
+        queue.add(new SharedTexturePair(textures[0], sharedTexture));
+
+        Log.i(TAG, "create shared texture pair success: " + key);
+    }
+
+    private boolean bindUnityTexture(){
+        String key = createTableKey(textureWidth, textureHeight);
+        ArrayDeque<SharedTexturePair> queue;
+        if(texturePairQueueDic.containsKey(key)){
+            queue = (ArrayDeque<SharedTexturePair>)texturePairQueueDic.get(key);
+        }else{
+            Log.i(TAG, "target queue is not exist");
+            return false;
+        }
+
+        SharedTexturePair sharedTexturePair = queue.poll();
+
+        sharedTextureId = sharedTexturePair.id;
+        sharedTexture = sharedTexturePair.texture;
+
+        Log.i(TAG, "shared texture created in unity connect !");
+
+        return true;
+    }
 
     // ---------------------------------------------------------------------------------------------------------
     // Initialize webview
@@ -348,23 +406,34 @@ public class UnityConnect extends Fragment {
         //                          |
         //                          | mGLSurfaceView
 
+        if(!bindUnityTexture()){
+            return;
+        }
+
         UnityPlayer.currentActivity.runOnUiThread(() -> {
 
             mViewToGlRenderer = new ViewToGLRenderer();
-            mViewToGlRenderer.SetTextureResolution(mTextureWidth, mTextureHeight);
-            mViewToGlRenderer.SetWebResolution(mWebWidth, mWebHeight);
+            mViewToGlRenderer.SetTextureResolution(textureWidth, textureHeight);
+            mViewToGlRenderer.SetWebResolution(webWidth, webHeight);
             mViewToGlRenderer.saveEGL(mContext, mDisplay, mDSurface, mRSurface);
-            mViewToGlRenderer.createTextureCapture(UnityPlayer.currentActivity, mTexId, R.raw.vertex, R.raw.fragment_oes);
+            HardwareBuffer sharedBuffer = sharedTexture.getHardwareBuffer();
+            Log.i(TAG, "shared buffer is null: " + (sharedBuffer == null));
+            mViewToGlRenderer.createTextureCapture(
+                    UnityPlayer.currentActivity,
+                    R.raw.vertex,
+                    R.raw.fragment_oes,
+                    sharedBuffer
+            );
 
-            Log.i(TAG, "unity texture id: " + mTexId);
+            Log.i(TAG, "unity texture id: " + sharedTextureId);
             Log.i(TAG, "mViewToGLRenderer created");
 
             // mLayout settings
             mLayout = new RelativeLayout(UnityPlayer.currentActivity);
             mLayout.setGravity(Gravity.TOP);
             // set view to out of display.
-            mLayout.setX(mScreenWidth);
-            mLayout.setY(mScreenHeight);
+            mLayout.setX(screenWidth);
+            mLayout.setY(screenHeight);
             mLayout.setBackgroundColor(0x00000000);
 
             Log.i(TAG, "mLayout created");
@@ -383,8 +452,8 @@ public class UnityConnect extends Fragment {
             // mGlLayout settings
             mGlLayout = new GLLinearLayout(
                     UnityPlayer.currentActivity,
-                    (float)mTextureWidth / mWebWidth,
-                    (float)mTextureHeight / mWebHeight
+                    (float)textureWidth / webWidth,
+                    (float)textureHeight / webHeight
             );
             mGlLayout.setOrientation(GLLinearLayout.VERTICAL);
             mGlLayout.setGravity(Gravity.START);
@@ -444,7 +513,7 @@ public class UnityConnect extends Fragment {
                 public void onPageFinished(WebView view, String url) {
                     canGoBack = mWebView.canGoBack();
                     canGoForward = mWebView.canGoForward();
-                    mActualUrl = url;
+                    actualUrl = url;
                 }
 
                 @Override
@@ -520,9 +589,9 @@ public class UnityConnect extends Fragment {
                     request.allowScanningByMediaScanner();
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
 
-                    if(mDlOption == DlOption.applicationFolder.ordinal()) {
-                        request.setDestinationInExternalFilesDir(context, mSubDir, filename);
-                    }else if(mDlOption == DlOption.downloadFolder.ordinal()) {
+                    if(dlOption == DlOption.applicationFolder.ordinal()) {
+                        request.setDestinationInExternalFilesDir(context, subDir, filename);
+                    }else if(dlOption == DlOption.downloadFolder.ordinal()) {
                         String downloadDir = Environment.DIRECTORY_DOWNLOADS;
                         request.setDestinationInExternalPublicDir(downloadDir, filename);
                     }
@@ -549,7 +618,7 @@ public class UnityConnect extends Fragment {
             webSettings.setLoadWithOverviewMode(true);
             // --------- enable cache
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-            //webSettings.setAppCacheEnabled(true); // deprecated in API level 33.
+            webSettings.setAppCacheEnabled(true); // deprecated in API level 33.
             // ---------
             webSettings.setUseWideViewPort(true);
             webSettings.setSupportZoom(true);
@@ -570,8 +639,8 @@ public class UnityConnect extends Fragment {
             UnityPlayer.currentActivity.addContentView(
                     mLayout,
                     new RelativeLayout.LayoutParams(
-                            mWebWidth,
-                            mWebHeight
+                            webWidth,
+                            webHeight
                     )
             );
             mGlLayout.addView(
@@ -596,11 +665,11 @@ public class UnityConnect extends Fragment {
                     )
             );
 
-            if (mLoadUrl != null) loadUrl(mLoadUrl);
-
-            initialized = true;
+            if (loadUrl != null) loadUrl(loadUrl);
 
             Log.i(TAG, "webView initialized");
+
+            initialized = true;
         });
     }
 
@@ -612,6 +681,11 @@ public class UnityConnect extends Fragment {
             mGlLayout.removeView(mWebView);
             mWebView.destroy();
             mWebView = null;
+
+            if(sharedTexture != null){
+                sharedTexture.release();
+                sharedTexture = null;
+            }
         });
         Log.i(TAG, "destroy webview");
     }
@@ -624,7 +698,7 @@ public class UnityConnect extends Fragment {
     {
         @JavascriptInterface
         public void viewSource(final String src) {
-            mHTMLCash = src;
+            htmlCash = src;
             Log.i(TAG, "capture HTML source success");
         }
     }
@@ -646,10 +720,13 @@ public class UnityConnect extends Fragment {
         return data;
     }
 
-    public int getTexPtr() { return mViewToGlRenderer.getTexturePtr(); }
+    public int getTexturePtr() {
+        updateSurface();
+        return sharedTextureId;
+    }
 
     public String getCaptured(){
-        return mHTMLCash;
+        return htmlCash;
     }
 
     public void captureElementById(String id){ loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)"); }
@@ -685,17 +762,17 @@ public class UnityConnect extends Fragment {
 
     public String getUserAgent() { return userAgent; }
 
-    public String getCurrentUrl() { return mActualUrl; }
+    public String getCurrentUrl() { return actualUrl; }
 
     public void loadUrl(String url) {
-        mLoadUrl = url;
+        loadUrl = url;
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) return;
 
             if (mCustomHeaders != null && !mCustomHeaders.isEmpty())
-                mWebView.loadUrl(mLoadUrl, mCustomHeaders);
+                mWebView.loadUrl(loadUrl, mCustomHeaders);
             else
-                mWebView.loadUrl(mLoadUrl);
+                mWebView.loadUrl(loadUrl);
         });
         //Log.i("tlabwebview", "url loaded: " + url.toString());
     }

@@ -1,21 +1,17 @@
 package com.self.viewtoglrendering;
 
-import javax.microedition.khronos.egl.EGL;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLSurface;
-import javax.microedition.khronos.opengles.GL;
 
-import android.opengl.EGLExt;
+import android.util.Log;
 import android.util.AttributeSet;
 import android.content.Context;
 import android.opengl.EGL14;
 import android.opengl.EGL15;
+import android.opengl.EGLExt;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
-import android.view.SurfaceHolder;
 
 // An attempt to share EGLContext and update textures from a Frame Buffer Object.
 
@@ -26,9 +22,9 @@ public class CustomGLSurfaceView extends GLSurfaceView {
     private EGLDisplay mSharedEGLDisplay = EGL10.EGL_NO_DISPLAY;
     private EGLConfig[] mSharedConfigs = new EGLConfig[1];
 
-    // https://developer.android.com/reference/android/opengl/EGL14#EGL_CONTEXT_CLIENT_VERSION
-
-    private int[] getContextAttributes() { return new int[] {
+    private int[] getContextAttributes() {
+        // https://developer.android.com/reference/android/opengl/EGL14#EGL_CONTEXT_CLIENT_VERSION
+        return new int[] {
             EGL14.EGL_CONTEXT_CLIENT_VERSION /* 0x3098 */, 3 ,
             EGL15.EGL_CONTEXT_MAJOR_VERSION, 3,
             EGL15.EGL_CONTEXT_MINOR_VERSION, 2,
@@ -51,15 +47,9 @@ public class CustomGLSurfaceView extends GLSurfaceView {
             //EGLContext context = egl.eglCreateContext(display, config, mSharedEGLContext, getContextAttributes());
             EGLContext context = egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, getContextAttributes());
 
-//            if(egl.eglGetError() != EGL10.EGL_SUCCESS)
-//                Log.i(TAG, "create custom surface an error ocured !");
-//            else
-//                Log.i(TAG, "create custom surface successed !");
-
             Log.i(TAG, "create custom surface view's egl context done !");
 
             return context;
-            //return mSharedEGLContext;
         }
     };
 

@@ -152,183 +152,183 @@ public class UnityConnect extends Fragment {
 
     // These codes are left as an experience.
 
-    private static EGLContext mContext = EGL10.EGL_NO_CONTEXT;
-    private static EGLDisplay mDisplay = EGL10.EGL_NO_DISPLAY;
-    private static EGLSurface mDSurface = EGL10.EGL_NO_SURFACE;
-    private static EGLSurface mRSurface = EGL10.EGL_NO_SURFACE;
-    private static EGLConfig[] mConfig = new EGLConfig[1];
+//    private static EGLContext mContext = EGL10.EGL_NO_CONTEXT;
+//    private static EGLDisplay mDisplay = EGL10.EGL_NO_DISPLAY;
+//    private static EGLSurface mDSurface = EGL10.EGL_NO_SURFACE;
+//    private static EGLSurface mRSurface = EGL10.EGL_NO_SURFACE;
+//    private static EGLConfig[] mConfig = new EGLConfig[1];
 
-    private static int findConfigAttrib(EGL10 egl,
-                                        EGLDisplay display, EGLConfig config, int attribute, int defaultValue) {
-        int[] value = new int[1];
-        if(egl.eglGetConfigAttrib(display, config, attribute, value)) {
-            return value[0];
-        }
+//    private static int findConfigAttrib(EGL10 egl,
+//                                        EGLDisplay display, EGLConfig config, int attribute, int defaultValue) {
+//        int[] value = new int[1];
+//        if(egl.eglGetConfigAttrib(display, config, attribute, value)) {
+//            return value[0];
+//        }
+//
+//        return defaultValue;
+//    }
 
-        return defaultValue;
-    }
+//    private static void enumAvailableCongifs() {
+//        EGL10 egl = (EGL10)EGLContext.getEGL();
+//        EGLDisplay display = egl.eglGetCurrentDisplay();
+//        // Find out how many EGLConfigs exist
+//        final int[] num_config = new int[1];
+//        egl.eglGetConfigs(display, null, 0, num_config);
+//        // Allocate and retrieve the EGLConfigs/handles
+//        int configCount = num_config[0];
+//        final EGLConfig[] configs = new EGLConfig[configCount];
+//        egl.eglGetConfigs(display, configs, configCount, num_config);
+//
+//        EGLConfig bestMatch = null;
+//        int bestR = Integer.MAX_VALUE, bestG = Integer.MAX_VALUE;
+//        int bestB = Integer.MAX_VALUE, bestA = Integer.MAX_VALUE;
+//        int bestD = Integer.MAX_VALUE, bestS = Integer.MAX_VALUE;
+//        for(int i = 0; i < num_config[0]; i++){
+//            EGLConfig config = configs[i];
+//            int r = findConfigAttrib(egl, display, config, EGL10.EGL_RED_SIZE, 0);
+//            int g = findConfigAttrib(egl, display, config, EGL10.EGL_GREEN_SIZE, 0);
+//            int b = findConfigAttrib(egl, display, config, EGL10.EGL_BLUE_SIZE, 0);
+//            int a = findConfigAttrib(egl, display, config, EGL10.EGL_ALPHA_SIZE, 0);
+//            int d = findConfigAttrib(egl, display, config, EGL10.EGL_DEPTH_SIZE, 0);
+//            int s = findConfigAttrib(egl, display, config, EGL10.EGL_STENCIL_SIZE, 0);
+//            int renderable_type = findConfigAttrib(egl, display, config, EGL10.EGL_RENDERABLE_TYPE, 0);
+//
+//            Log.i(TAG, "configs[" + i + "]" + configs[0]);
+//            Log.i(TAG, "configs[" + i + "] :" +
+//                    "r: " + r + " " +
+//                    "g: " + g + " " +
+//                    "b: " + b + " " +
+//                    "a: " + a + " " +
+//                    "d: " + d + " " +
+//                    "s: " + s + " " +
+//                    "renderable_type: " + renderable_type);
+//        }
+//    }
 
-    private static void enumAvailableCongifs() {
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        EGLDisplay display = egl.eglGetCurrentDisplay();
-        // Find out how many EGLConfigs exist
-        final int[] num_config = new int[1];
-        egl.eglGetConfigs(display, null, 0, num_config);
-        // Allocate and retrieve the EGLConfigs/handles
-        int configCount = num_config[0];
-        final EGLConfig[] configs = new EGLConfig[configCount];
-        egl.eglGetConfigs(display, configs, configCount, num_config);
+//    private static int getContextAttribute(EGL10 egl, EGLContext context, EGLDisplay display, int attribute){
+//        final int[] values = new int[1];
+//        egl.eglQueryContext(display, context, attribute, values);
+//        return values[0];
+//    }
 
-        EGLConfig bestMatch = null;
-        int bestR = Integer.MAX_VALUE, bestG = Integer.MAX_VALUE;
-        int bestB = Integer.MAX_VALUE, bestA = Integer.MAX_VALUE;
-        int bestD = Integer.MAX_VALUE, bestS = Integer.MAX_VALUE;
-        for(int i = 0; i < num_config[0]; i++){
-            EGLConfig config = configs[i];
-            int r = findConfigAttrib(egl, display, config, EGL10.EGL_RED_SIZE, 0);
-            int g = findConfigAttrib(egl, display, config, EGL10.EGL_GREEN_SIZE, 0);
-            int b = findConfigAttrib(egl, display, config, EGL10.EGL_BLUE_SIZE, 0);
-            int a = findConfigAttrib(egl, display, config, EGL10.EGL_ALPHA_SIZE, 0);
-            int d = findConfigAttrib(egl, display, config, EGL10.EGL_DEPTH_SIZE, 0);
-            int s = findConfigAttrib(egl, display, config, EGL10.EGL_STENCIL_SIZE, 0);
-            int renderable_type = findConfigAttrib(egl, display, config, EGL10.EGL_RENDERABLE_TYPE, 0);
+//    private static void enumContextAttrinute() {
+//        EGL10 egl = (EGL10)EGLContext.getEGL();
+//        EGLContext context = egl.eglGetCurrentContext();
+//        EGLDisplay display = egl.eglGetCurrentDisplay();
+//
+//        int value;
+//        value = getContextAttribute(egl, context, display, EGL14.EGL_CONTEXT_CLIENT_VERSION);
+//        Log.i(TAG, "EGL14.EGL_CONTEXT_CLIENT_VERSION: " + value);
+//        value = getContextAttribute(egl, context, display, EGL14.EGL_CONTEXT_CLIENT_TYPE);
+//        Log.i(TAG, "EGL14.EGL_CONTEXT_CLIENT_TYPE: " + value);
+//        value = getContextAttribute(egl, context, display, EGL14.EGL_CONTEXT_LOST);
+//        Log.i(TAG, "EGL14.EGL_CONTEXT_LOST: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_MAJOR_VERSION);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_MAJOR_VERSION: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_MINOR_VERSION);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_MINOR_VERSION: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_DEBUG);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_DEBUG: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_PROFILE_MASK);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_PROFILE_MASK: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY: " + value);
+//        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_ROBUST_ACCESS);
+//        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_ROBUST_ACCESS: " + value);
+//        value = getContextAttribute(egl, context, display, EGLExt.EGL_CONTEXT_FLAGS_KHR);
+//        Log.i(TAG, "EGLExt.EGL_CONTEXT_FLAGS_KHR: " + value);
+//        value = getContextAttribute(egl, context, display, EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR);
+//        Log.i(TAG, "EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR: " + value);
+//        value = getContextAttribute(egl, context, display, EGLExt.EGL_CONTEXT_MINOR_VERSION_KHR);
+//        Log.i(TAG, "EGLExt.EGL_CONTEXT_MINOR_VERSION_KHR: " + value);
+//        value = getContextAttribute(egl, context, display, EGLExt.EGL_RECORDABLE_ANDROID);
+//        Log.i(TAG, "EGLExt.EGL_RECORDABLE_ANDROID: " + value);
+//        value = getContextAttribute(egl, context, display, EGLExt.EGL_OPENGL_ES3_BIT_KHR);
+//        Log.i(TAG, "EGLExt.EGL_OPENGL_ES3_BIT_KHR: " + value);
+//    }
 
-            Log.i(TAG, "configs[" + i + "]" + configs[0]);
-            Log.i(TAG, "configs[" + i + "] :" +
-                    "r: " + r + " " +
-                    "g: " + g + " " +
-                    "b: " + b + " " +
-                    "a: " + a + " " +
-                    "d: " + d + " " +
-                    "s: " + s + " " +
-                    "renderable_type: " + renderable_type);
-        }
-    }
+//    private static void chooseEGLConfig() {
+//        EGL10 egl = (EGL10)EGLContext.getEGL();
+//        EGLDisplay display = egl.eglGetCurrentDisplay();
+//        int[] attribList = new int[]{
+//                EGL10.EGL_DEPTH_SIZE, 0,
+//                EGL10.EGL_STENCIL_SIZE, 0,
+//                EGL10.EGL_RED_SIZE, 8,
+//                EGL10.EGL_GREEN_SIZE, 8,
+//                EGL10.EGL_BLUE_SIZE, 8,
+//                EGL10.EGL_ALPHA_SIZE, 8,
+//                EGL10.EGL_RENDERABLE_TYPE, 4,
+//                EGL10.EGL_NONE
+//        };
+//        // No error checking performed, minimum required code to elucidate logic
+//        // Expand on this logic to be more selective in choosing a configuration
+//        int[] numConfig = new int[1];
+//        egl.eglChooseConfig(display, attribList, null, 0, numConfig);
+//        int configSize = numConfig[0];
+//        EGLConfig[] eglConfigs = new EGLConfig[configSize];
+//        egl.eglChooseConfig(display, attribList, eglConfigs, configSize, numConfig);
+//
+//        mConfig[0] = eglConfigs[0];
+//    }
 
-    private static int getContextAttribute(EGL10 egl, EGLContext context, EGLDisplay display, int attribute){
-        final int[] values = new int[1];
-        egl.eglQueryContext(display, context, attribute, values);
-        return values[0];
-    }
+//    public static void checkEGLContextExist() {
+//        if(mContext != EGL10.EGL_NO_CONTEXT) {
+//            Log.i(TAG, "egl has already been acquired. Skip processing");
+//            return;
+//        }
+//
+//        EGL10 egl = (EGL10)EGLContext.getEGL();
+//        mContext = egl.eglGetCurrentContext();
+//        mDisplay = egl.eglGetCurrentDisplay();
+//        mDSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
+//        mRSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
+//
+////        enumAvailableCongifs();
+////        enumContextAttrinute();
+//        chooseEGLConfig();
+//
+//        Log.i(TAG, "thread name: " + Thread.currentThread().getName());
+//        Log.i(TAG, "context class name: " + mContext.getClass().getName());
+//
+//        if(mContext == EGL10.EGL_NO_CONTEXT)
+//            Log.i(TAG, "check exist but egl context is not created");
+//        else
+//            Log.i(TAG, "check exist and egl context created !!");
+//
+//        if(mDisplay == EGL10.EGL_NO_DISPLAY)
+//            Log.i(TAG, "check exist but egl display is not created");
+//        else
+//            Log.i(TAG, "check exist and egl display created !!");
+//
+//        if(mDSurface == EGL10.EGL_NO_SURFACE)
+//            Log.i(TAG, "check exist but egl draw surface is not created");
+//        else
+//            Log.i(TAG, "check exist and egl draw surface created !!");
+//
+//        if(mRSurface == EGL10.EGL_NO_SURFACE)
+//            Log.i(TAG, "check exist but egl read surface is not created");
+//        else
+//            Log.i(TAG, "check exist and egl read surface created !!");
+//
+//        //egl.eglMakeCurrent(mDisplay, mDSurface, mRSurface, mContext);
+//    }
 
-    private static void enumContextAttrinute() {
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        EGLContext context = egl.eglGetCurrentContext();
-        EGLDisplay display = egl.eglGetCurrentDisplay();
-
-        int value;
-        value = getContextAttribute(egl, context, display, EGL14.EGL_CONTEXT_CLIENT_VERSION);
-        Log.i(TAG, "EGL14.EGL_CONTEXT_CLIENT_VERSION: " + value);
-        value = getContextAttribute(egl, context, display, EGL14.EGL_CONTEXT_CLIENT_TYPE);
-        Log.i(TAG, "EGL14.EGL_CONTEXT_CLIENT_TYPE: " + value);
-        value = getContextAttribute(egl, context, display, EGL14.EGL_CONTEXT_LOST);
-        Log.i(TAG, "EGL14.EGL_CONTEXT_LOST: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_MAJOR_VERSION);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_MAJOR_VERSION: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_MINOR_VERSION);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_MINOR_VERSION: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_DEBUG);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_DEBUG: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_PROFILE_MASK);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_PROFILE_MASK: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY: " + value);
-        value = getContextAttribute(egl, context, display, EGL15.EGL_CONTEXT_OPENGL_ROBUST_ACCESS);
-        Log.i(TAG, "EGL15.EGL_CONTEXT_OPENGL_ROBUST_ACCESS: " + value);
-        value = getContextAttribute(egl, context, display, EGLExt.EGL_CONTEXT_FLAGS_KHR);
-        Log.i(TAG, "EGLExt.EGL_CONTEXT_FLAGS_KHR: " + value);
-        value = getContextAttribute(egl, context, display, EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR);
-        Log.i(TAG, "EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR: " + value);
-        value = getContextAttribute(egl, context, display, EGLExt.EGL_CONTEXT_MINOR_VERSION_KHR);
-        Log.i(TAG, "EGLExt.EGL_CONTEXT_MINOR_VERSION_KHR: " + value);
-        value = getContextAttribute(egl, context, display, EGLExt.EGL_RECORDABLE_ANDROID);
-        Log.i(TAG, "EGLExt.EGL_RECORDABLE_ANDROID: " + value);
-        value = getContextAttribute(egl, context, display, EGLExt.EGL_OPENGL_ES3_BIT_KHR);
-        Log.i(TAG, "EGLExt.EGL_OPENGL_ES3_BIT_KHR: " + value);
-    }
-
-    private static void chooseEGLConfig() {
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        EGLDisplay display = egl.eglGetCurrentDisplay();
-        int[] attribList = new int[]{
-                EGL10.EGL_DEPTH_SIZE, 0,
-                EGL10.EGL_STENCIL_SIZE, 0,
-                EGL10.EGL_RED_SIZE, 8,
-                EGL10.EGL_GREEN_SIZE, 8,
-                EGL10.EGL_BLUE_SIZE, 8,
-                EGL10.EGL_ALPHA_SIZE, 8,
-                EGL10.EGL_RENDERABLE_TYPE, 4,
-                EGL10.EGL_NONE
-        };
-        // No error checking performed, minimum required code to elucidate logic
-        // Expand on this logic to be more selective in choosing a configuration
-        int[] numConfig = new int[1];
-        egl.eglChooseConfig(display, attribList, null, 0, numConfig);
-        int configSize = numConfig[0];
-        EGLConfig[] eglConfigs = new EGLConfig[configSize];
-        egl.eglChooseConfig(display, attribList, eglConfigs, configSize, numConfig);
-
-        mConfig[0] = eglConfigs[0];
-    }
-
-    public static void checkEGLContextExist() {
-        if(mContext != EGL10.EGL_NO_CONTEXT) {
-            Log.i(TAG, "egl has already been acquired. Skip processing");
-            return;
-        }
-
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        mContext = egl.eglGetCurrentContext();
-        mDisplay = egl.eglGetCurrentDisplay();
-        mDSurface = egl.eglGetCurrentSurface(EGL10.EGL_DRAW);
-        mRSurface = egl.eglGetCurrentSurface(EGL10.EGL_READ);
-
-//        enumAvailableCongifs();
-//        enumContextAttrinute();
-        chooseEGLConfig();
-
-        Log.i(TAG, "thread name: " + Thread.currentThread().getName());
-        Log.i(TAG, "context class name: " + mContext.getClass().getName());
-
-        if(mContext == EGL10.EGL_NO_CONTEXT)
-            Log.i(TAG, "check exist but egl context is not created");
-        else
-            Log.i(TAG, "check exist and egl context created !!");
-
-        if(mDisplay == EGL10.EGL_NO_DISPLAY)
-            Log.i(TAG, "check exist but egl display is not created");
-        else
-            Log.i(TAG, "check exist and egl display created !!");
-
-        if(mDSurface == EGL10.EGL_NO_SURFACE)
-            Log.i(TAG, "check exist but egl draw surface is not created");
-        else
-            Log.i(TAG, "check exist and egl draw surface created !!");
-
-        if(mRSurface == EGL10.EGL_NO_SURFACE)
-            Log.i(TAG, "check exist but egl read surface is not created");
-        else
-            Log.i(TAG, "check exist and egl read surface created !!");
-
-        //egl.eglMakeCurrent(mDisplay, mDSurface, mRSurface, mContext);
-    }
-
-    public static void unityJNITest() {
-        // Test code for calling Java methods in GL.IssuePluginEvent
-        Log.i(TAG, "success !");
-    }
+//    public static void unityJNITest() {
+//        // Test code for calling Java methods in GL.IssuePluginEvent
+//        Log.i(TAG, "success !");
+//    }
 
     // ---------------------------------------------------------------------------------------------------------
     // Test function (not included in the release)
     //
 
-    public void createContextTest() { }
+//    public void createContextTest() { }
 
     // ---------------------------------------------------------------------------------------------------------
     // Shared Texture Utility
@@ -363,6 +363,7 @@ public class UnityConnect extends Fragment {
 
         sharedTexture.bindTexture(textures[0]);
 
+        assert queue != null;
         queue.add(new SharedTexturePair(textures[0], sharedTexture));
 
         Log.i(TAG, "create shared texture pair success: " + key);
@@ -420,7 +421,7 @@ public class UnityConnect extends Fragment {
             mViewToGlRenderer = new ViewToGLRenderer();
             mViewToGlRenderer.SetTextureResolution(textureWidth, textureHeight);
             mViewToGlRenderer.SetWebResolution(webWidth, webHeight);
-            mViewToGlRenderer.saveEGL(mContext, mDisplay, mDSurface, mRSurface);
+            //mViewToGlRenderer.saveEGL(mContext, mDisplay, mDSurface, mRSurface);
             HardwareBuffer sharedBuffer = sharedTexture.getHardwareBuffer();
             Log.i(TAG, "shared buffer is null: " + (sharedBuffer == null));
             mViewToGlRenderer.createTextureCapture(
@@ -449,7 +450,7 @@ public class UnityConnect extends Fragment {
             mGLSurfaceView.setEGLContextClientVersion(3);
             mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
             mGLSurfaceView.setPreserveEGLContextOnPause(true);
-            mGLSurfaceView.setSharedContext(mContext, mDisplay, mConfig);
+            //mGLSurfaceView.setSharedContext(mContext, mDisplay, mConfig);
             mGLSurfaceView.setRenderer(mViewToGlRenderer);
             mGLSurfaceView.setBackgroundColor(0x00000000);
             Log.i(TAG, "mGLSurfaceView created");

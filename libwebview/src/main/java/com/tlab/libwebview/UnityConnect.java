@@ -147,6 +147,11 @@ public class UnityConnect extends Fragment {
     // Save eglcontext to share texture ptr
     //
 
+    // To share textures between threads, I initially considered sharing EGLContext.
+    // However, there were cases where EGLContext could not be shared, so the current method uses a hardware buffer to share textures.
+
+    // These codes are left as an experience.
+
     private static EGLContext mContext = EGL10.EGL_NO_CONTEXT;
     private static EGLDisplay mDisplay = EGL10.EGL_NO_DISPLAY;
     private static EGLSurface mDSurface = EGL10.EGL_NO_SURFACE;
@@ -163,7 +168,7 @@ public class UnityConnect extends Fragment {
         return defaultValue;
     }
 
-    private static void enumAvailableCongifs(){
+    private static void enumAvailableCongifs() {
         EGL10 egl = (EGL10)EGLContext.getEGL();
         EGLDisplay display = egl.eglGetCurrentDisplay();
         // Find out how many EGLConfigs exist
@@ -206,7 +211,7 @@ public class UnityConnect extends Fragment {
         return values[0];
     }
 
-    private static void enumContextAttrinute(){
+    private static void enumContextAttrinute() {
         EGL10 egl = (EGL10)EGLContext.getEGL();
         EGLContext context = egl.eglGetCurrentContext();
         EGLDisplay display = egl.eglGetCurrentDisplay();
@@ -248,7 +253,7 @@ public class UnityConnect extends Fragment {
         Log.i(TAG, "EGLExt.EGL_OPENGL_ES3_BIT_KHR: " + value);
     }
 
-    private static void chooseEGLConfig(){
+    private static void chooseEGLConfig() {
         EGL10 egl = (EGL10)EGLContext.getEGL();
         EGLDisplay display = egl.eglGetCurrentDisplay();
         int[] attribList = new int[]{
@@ -272,8 +277,8 @@ public class UnityConnect extends Fragment {
         mConfig[0] = eglConfigs[0];
     }
 
-    public static void checkEGLContextExist(){
-        if(mContext != EGL10.EGL_NO_CONTEXT){
+    public static void checkEGLContextExist() {
+        if(mContext != EGL10.EGL_NO_CONTEXT) {
             Log.i(TAG, "egl has already been acquired. Skip processing");
             return;
         }
@@ -330,7 +335,7 @@ public class UnityConnect extends Fragment {
     //
 
     private static String createTableKey(Integer a, Integer b){
-        String key = a.toString() + b.toString();
+        String key = a.toString() + "x" + b.toString();
         Log.i(TAG, "key: " + key);
         return key;
     }

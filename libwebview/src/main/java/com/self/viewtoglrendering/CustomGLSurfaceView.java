@@ -18,9 +18,6 @@ import android.opengl.GLSurfaceView;
 public class CustomGLSurfaceView extends GLSurfaceView {
 
     private static final String TAG = "libwebview";
-//    private EGLContext mSharedEGLContext = EGL10.EGL_NO_CONTEXT;
-//    private EGLDisplay mSharedEGLDisplay = EGL10.EGL_NO_DISPLAY;
-//    private EGLConfig[] mSharedConfigs = new EGLConfig[1];
 
     private int[] getContextAttributes() {
         // https://developer.android.com/reference/android/opengl/EGL14#EGL_CONTEXT_CLIENT_VERSION
@@ -58,12 +55,6 @@ public class CustomGLSurfaceView extends GLSurfaceView {
         setEGLContextFactory(mEGLContextFactory);
         super.setRenderer(renderer);
     }
-
-//    public void setSharedContext(EGLContext sharedEGLContext, EGLDisplay display, EGLConfig[] configs) {
-//        mSharedEGLDisplay = display;
-//        mSharedEGLContext = sharedEGLContext;
-//        mSharedConfigs = configs;
-//    }
 
     public CustomGLSurfaceView(Context context) { super(context); }
 

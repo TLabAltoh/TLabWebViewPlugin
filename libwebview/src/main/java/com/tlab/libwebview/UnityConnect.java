@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.HardwareBuffer;
 import android.net.Uri;
-import android.opengl.EGLExt;
 import android.opengl.GLES30;
 import android.os.Environment;
 import android.os.Message;
@@ -45,17 +44,6 @@ import com.self.viewtoglrendering.GLLinearLayout;
 
 import java.util.ArrayDeque;
 import java.util.Hashtable;
-
-import android.opengl.EGL14;
-import android.opengl.EGL15;
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLSurface;
-
-// Android Studio Collapse definitions and methods
-// https://stackoverflow.com/questions/18445044/android-studio-collapse-definitions-and-methods
 
 public class UnityConnect extends Fragment {
 
@@ -123,7 +111,9 @@ public class UnityConnect extends Fragment {
                            int screenWidth, int screenHeight,
                            String url, int dlOption, String subDir)
     {
-        if(webWidth <= 0 || webHeight <= 0) return;
+        if(webWidth <= 0 || webHeight <= 0) {
+            return;
+        }
 
         this.webWidth = webWidth;
         this.webHeight = webHeight;
@@ -147,9 +137,8 @@ public class UnityConnect extends Fragment {
     // Shared Texture Utility
     //
 
-    private static String createTableKey(Integer a, Integer b){
+    private static String createTableKey(Integer a, Integer b) {
         String key = a.toString() + "x" + b.toString();
-        Log.i(TAG, "key: " + key);
         return key;
     }
 
@@ -178,8 +167,6 @@ public class UnityConnect extends Fragment {
 
         assert queue != null;
         queue.add(new SharedTexturePair(textures[0], sharedTexture));
-
-        Log.i(TAG, "create shared texture pair success: " + key);
     }
 
     private boolean bindUnityTexture(){
@@ -196,8 +183,6 @@ public class UnityConnect extends Fragment {
 
         sharedTextureId = sharedTexturePair.id;
         sharedTexture = sharedTexturePair.texture;
-
-        Log.i(TAG, "shared texture created in unity connect !");
 
         return true;
     }
@@ -244,9 +229,6 @@ public class UnityConnect extends Fragment {
                     sharedBuffer
             );
 
-            Log.i(TAG, "unity texture id: " + sharedTextureId);
-            Log.i(TAG, "mViewToGLRenderer created");
-
             // mLayout settings
             mLayout = new RelativeLayout(UnityPlayer.currentActivity);
             mLayout.setGravity(Gravity.TOP);
@@ -255,18 +237,13 @@ public class UnityConnect extends Fragment {
             mLayout.setY(screenHeight);
             mLayout.setBackgroundColor(0x00000000);
 
-            Log.i(TAG, "mLayout created");
-
             // mGLSurfaceView settings
             mGLSurfaceView = new CustomGLSurfaceView(UnityPlayer.currentActivity);
-            //mGLSurfaceView = new GLSurfaceView(UnityPlayer.currentActivity);
             mGLSurfaceView.setEGLContextClientVersion(3);
             mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
             mGLSurfaceView.setPreserveEGLContextOnPause(true);
-            //mGLSurfaceView.setSharedContext(mContext, mDisplay, mConfig);
             mGLSurfaceView.setRenderer(mViewToGlRenderer);
             mGLSurfaceView.setBackgroundColor(0x00000000);
-            Log.i(TAG, "mGLSurfaceView created");
 
             // mGlLayout settings
             mGlLayout = new GLLinearLayout(
@@ -278,22 +255,10 @@ public class UnityConnect extends Fragment {
             mGlLayout.setGravity(Gravity.START);
             mGlLayout.setViewToGLRenderer(mViewToGlRenderer);
             mGlLayout.setBackgroundColor(0x00000000);
-//            new Thread(new Runnable() {
-//                public void run() {
-//                    while(true){
-//                        try {
-//                            Thread.sleep(100);
-//                        } catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-//                        }
-//                        mGlLayout.postInvalidate();
-//                    }
-//                }
-//            }).start();
 
-            Log.i(TAG, "mGlLayout created");
-
-            if (mWebView == null) mWebView = new BitmapWebView(UnityPlayer.currentActivity);
+            if (mWebView == null) {
+                mWebView = new BitmapWebView(UnityPlayer.currentActivity);
+            }
 
             // --------------------------------------------------------------------------------------------------------
             // Settings each View and View Group
@@ -360,31 +325,6 @@ public class UnityConnect extends Fragment {
             mWebView.setWebChromeClient(new WebChromeClient() {
                 @Override
                 public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message resultMsg) {
-//                    newWebView.add(new BitmapWebView(UnityPlayer.currentActivity));
-//                    WebSettings webSettings = newWebView.getSettings();
-//                    webSettings.setJavaScriptEnabled(true);
-//                    webSettings.setSupportMultipleWindows(true);
-//                    webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-//                    webSettings.setDomStorageEnabled(true);
-//                    webSettings.setAllowFileAccess(true);
-//                    webSettings.setUserAgentString(dbHelper.getUserConfig().get("userAgent"));
-//                    newWebView.setFocusable(true);
-//                    newWebView.setFocusableInTouchMode(true);
-//
-//                    newWebView.setWebViewClient(new WebViewClient());
-//                    newWebView.setWebChromeClient(new WebChromeClient(){
-//                        @Override
-//                        public void onCloseWindow(WebView window) {
-//                            window.setVisibility(View.GONE);
-//                            myWebView.removeView(window);
-//                        }
-//                    });
-//                    myWebView.addView(newWebView);
-//
-//                    WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-//                    transport.setWebView(newWebView);
-//                    resultMsg.sendToTarget();
-//                    return true;
                     return false;
                 }
             });
@@ -448,7 +388,6 @@ public class UnityConnect extends Fragment {
             webSettings.setAllowUniversalAccessFromFileURLs(true);
             webSettings.setMediaPlaybackRequiresUserGesture(false);
             if (userAgent != null && userAgent.length() > 0){
-                Log.i(TAG, "setUserAgentString(" + userAgent.toString() + ")");
                 webSettings.setUserAgentString(userAgent);
             }
             webSettings.setDefaultTextEncodingName("utf-8");
@@ -486,8 +425,6 @@ public class UnityConnect extends Fragment {
 
             if (loadUrl != null) loadUrl(loadUrl);
 
-            Log.i(TAG, "webView initialized");
-
             initialized = true;
         });
     }
@@ -506,7 +443,6 @@ public class UnityConnect extends Fragment {
                 sharedTexture = null;
             }
         });
-        Log.i(TAG, "destroy webview");
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -518,7 +454,6 @@ public class UnityConnect extends Fragment {
         @JavascriptInterface
         public void viewSource(final String src) {
             htmlCash = src;
-            Log.i(TAG, "capture HTML source success");
         }
     }
 
@@ -527,15 +462,12 @@ public class UnityConnect extends Fragment {
     //
 
     public void updateSurface() {
-        //mGLSurfaceView.postInvalidate();
         mGlLayout.postInvalidate();
-        //mLayout.invalidate();
     }
 
     public byte[] getPixel() {
         byte[] data = mViewToGlRenderer.getTexturePixels();
         updateSurface();
-        // Log.i("tlabwebview", "texture data exists");
         return data;
     }
 
@@ -544,13 +476,13 @@ public class UnityConnect extends Fragment {
         return sharedTextureId;
     }
 
-    public String getCaptured(){
+    public String getCaptured() {
         return htmlCash;
     }
 
-    public void captureElementById(String id){ loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)"); }
+    public void captureElementById(String id) { loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)"); }
 
-    public void capturePage(){ loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)"); }
+    public void capturePage() { loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)"); }
 
     public void setUserAgent(final String ua, final boolean reload) {
         // https://developer.mozilla.org/ja/docs/Web/HTTP/Headers/User-Agent/Firefox
@@ -558,11 +490,11 @@ public class UnityConnect extends Fragment {
             if(mWebView == null) return;
 
             try {
-                //String androidString = mWebView.getSettings().getUserAgentString().substring(userAgent.indexOf("("), userAgent.indexOf(")") + 1);
-                //userAgent = mWebView.getSettings().getUserAgentString().replace(androidString,"X11; Ubuntu; Linux x86_64");
                 mWebView.getSettings().setUserAgentString(ua);
 
-                if(reload) mWebView.reload();
+                if(reload) {
+                    mWebView.reload();
+                }
 
             }catch (Exception e){
                 e.printStackTrace();
@@ -572,9 +504,11 @@ public class UnityConnect extends Fragment {
         userAgent = ua;
     }
 
-    public void captureUserAgent(){
+    public void captureUserAgent() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) return;
+            if(mWebView == null) {
+                return;
+            }
             userAgent = mWebView.getSettings().getUserAgentString();
         });
     }
@@ -586,51 +520,60 @@ public class UnityConnect extends Fragment {
     public void loadUrl(String url) {
         loadUrl = url;
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
 
-            if (mCustomHeaders != null && !mCustomHeaders.isEmpty())
+            if (mCustomHeaders != null && !mCustomHeaders.isEmpty()){
                 mWebView.loadUrl(loadUrl, mCustomHeaders);
-            else
+            }
+            else{
                 mWebView.loadUrl(loadUrl);
+            }
         });
-        //Log.i("tlabwebview", "url loaded: " + url.toString());
     }
 
-    public void loadHtml(final String html, final String baseURL){
+    public void loadHtml(final String html, final String baseURL) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             mWebView.loadDataWithBaseURL(baseURL, html, "text/html", "UTF8", null);
         });
-        //Log.i("tlabwebview", "html loaded: " + baseURL.toString());
     }
 
-    public void zoomIn(){
+    public void zoomIn() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             mWebView.zoomIn();
         });
-        //Log.i("tlabwebview", "zoom in");
     }
 
-    public void zoomOut(){
+    public void zoomOut() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             mWebView.zoomOut();
         });
-        //Log.i("tlabwebview", "zoom out");
     }
 
-    public void evaluateJS(String js){
+    public void evaluateJS(String js) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             mWebView.loadUrl("javascript:" + js);
         });
-        //Log.i("tlabwebview", "evaluate javascript: " + js);
     }
 
     public void touchEvent(int x, int y, int eventNum) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
 
             // Obtain MotionEvent object
             // https://banbara-studio.hatenablog.com/entry/2018/04/02/130902
@@ -653,80 +596,88 @@ public class UnityConnect extends Fragment {
             // Dispatch touch event to view
             mWebView.dispatchTouchEvent(event);
         });
-        // Log.i("tlabwebview", "touch event dispatched: " + Integer.valueOf(x).toString() + ", " + Integer.valueOf(y).toString());
     }
 
-    public void keyEvent(char key){
+    public void keyEvent(char key) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             KeyCharacterMap kcm = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
             KeyEvent[] events = kcm.getEvents(new char[]{key});
             for (KeyEvent event : events) mWebView.dispatchKeyEvent(event);
         });
-        //Log.i("tlabwebview", "key event dispatched: " + key);
     }
 
-    public void backSpaceKey(){
+    public void backSpaceKey() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
             mWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
         });
-        //Log.i("tlabwebview", "back space key dispatched");
     }
 
     public void goBack() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null || !canGoBack) return;
+            if (mWebView == null || !canGoBack) {
+                return;
+            }
             mWebView.goBack();
         });
-        //Log.i("tlabwebview", "page backed out");
     }
 
     public void goForward() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null || !canGoForward) return;
+            if (mWebView == null || !canGoForward) {
+                return;
+            }
             mWebView.goForward();
         });
-        //Log.i("tlabwebview", "page forwarded");
     }
 
-    public void clearCash(boolean includeDiskFiles){
+    public void clearCash(boolean includeDiskFiles) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) return;
+            if(mWebView == null) {
+                return;
+            }
             mWebView.clearCache(includeDiskFiles);
         });
-        //Log.i("tlabwebview", "web cache cleared");
     }
 
-    public void clearHistory(){
+    public void clearHistory() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) return;
+            if(mWebView == null) {
+                return;
+            }
             mWebView.clearHistory();
         });
-        //Log.i("tlabwebview", "clear history");
     }
 
-    public void clearCookie(){
+    public void clearCookie() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) return;
+            if(mWebView == null) {
+                return;
+            }
             CookieManager.getInstance().removeAllCookies(null);
             CookieManager.getInstance().flush();
         });
-        //Log.i("tlabwebview", "cookie cleared");
     }
 
     public void setVisible(boolean visible) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
 
             if (visible) {
                 mWebView.setVisibility(View.VISIBLE);
                 mWebView.requestFocus();
-            } else
+            } else{
                 mWebView.setVisibility(View.INVISIBLE);
+            }
         });
-        //Log.i("tlabwebview", "set visibility: " + visibility);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -741,29 +692,41 @@ public class UnityConnect extends Fragment {
                 Gravity.NO_GRAVITY);
         params.setMargins(left, top, right, bottom);
         UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
-            if (mWebView == null) return;
+            if (mWebView == null) {
+                return;
+            }
             mWebView.setLayoutParams(params);
         }});
     }
 
     private void AddCustomHeader(final String headerKey, final String headerValue) {
-        if (mCustomHeaders == null) return;
+        if (mCustomHeaders == null) {
+            return;
+        }
         mCustomHeaders.put(headerKey, headerValue);
     }
 
     private String GetCustomHeaderValue(final String headerKey) {
-        if (mCustomHeaders == null) return null;
-        if (!mCustomHeaders.containsKey(headerKey)) return null;
+        if (mCustomHeaders == null) {
+            return null;
+        }
+        if (!mCustomHeaders.containsKey(headerKey)) {
+            return null;
+        }
         return this.mCustomHeaders.get(headerKey);
     }
 
     private void RemoveCustomHeader(final String headerKey) {
-        if (mCustomHeaders == null) return;
+        if (mCustomHeaders == null) {
+            return;
+        }
         this.mCustomHeaders.remove(headerKey);
     }
 
     private void ClearCustomHeader() {
-        if (mCustomHeaders == null) return;
+        if (mCustomHeaders == null) {
+            return;
+        }
         this.mCustomHeaders.clear();
     }
 

@@ -2,8 +2,6 @@ package com.self.viewtoglrendering;
 
 import android.content.Context;
 import android.hardware.HardwareBuffer;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 
@@ -104,17 +102,11 @@ public class TextureCapture
         if (mGLProgId == 0){
             Log.i(TAG, "load sampler sahder filed");
             return;
-        }else{
-            Log.i(TAG, "load sampler sahder success");
         }
 
         mGLPositionIndex = GLES30.glGetAttribLocation(mGLProgId, "position");
         mGLTextureCoordinateIndex = GLES30.glGetAttribLocation(mGLProgId,"inputTextureCoordinate");
         mGLInputImageTextureIndex = GLES30.glGetUniformLocation(mGLProgId, "inputImageTexture");
-
-        Log.i(TAG, "mGLPositionIndex: " + mGLPositionIndex);
-        Log.i(TAG, "mGLTextureCoordinateIndex: " + mGLTextureCoordinateIndex);
-        Log.i(TAG, "mGLInputImageTextureIndex: " + mGLInputImageTextureIndex);
     }
 
     private String readShaderFromRawResource(Context context, int resourceId) {
@@ -264,7 +256,9 @@ public class TextureCapture
     }
 
     private void initFboTexture(int textureWidth, int textureHeight) {
-        if (mGLFboId != null && (mInputWidth != textureWidth || mInputHeight != textureHeight)) destroyFboTexture();
+        if (mGLFboId != null && (mInputWidth != textureWidth || mInputHeight != textureHeight)) {
+            destroyFboTexture();
+        }
 
         mGLFboId = new int[1];
         mGLFboTexId = new int[1];
@@ -273,7 +267,6 @@ public class TextureCapture
         // EGLContext sharing did not work, so we used the method of binding HardwareBuffer to the texture
         GLES30.glGenTextures(1, mGLFboTexId, 0);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mGLFboTexId[0]);
-        //GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, textureWidth, textureHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
@@ -281,27 +274,14 @@ public class TextureCapture
 
         if(sharedTexture == null && sharedBuffer != null){
             sharedTexture = new SharedTexture(sharedBuffer);
-            Log.i(TAG, "shared texture created in texture capture");
         }
         boolean result = sharedTexture.bindTexture(mGLFboTexId[0]);
-        Log.i(TAG, "shared texture bind result: " + result);
 
         GLES30.glGenFramebuffers(1, mGLFboId, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
         GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-
-        // A technique for updating textures via a Frame Buffer Object, which requires sharing EGLContext,
-        // but has limitations due to operations not allowed on some devices.
-        // I wanted to use this technique with Oculus, but gave up because I could not access the EGLContext
-//        mGLFboTexId[0] = mTexId;
-//        GLES30.glGenFramebuffers(1, mGLFboId, 0);
-//        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mGLFboId[0]);
-//        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mGLFboTexId[0], 0);
-//        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-
-        Log.i(TAG, "mGLFboTexid[0]: " + mGLFboTexId[0] + " . mGLFboId[0]: " + mGLFboId[0]);
 
         // Create PBO
         if (mEglCore.getGlVersion() >= 3 && mUsePBO) {
@@ -359,10 +339,9 @@ public class TextureCapture
     //
 
     public int onDrawFrame(int textureId) {
-        if (!mIsInitialized || mGLFboId == null) return -1;
-
-        //Log.i(TAG, "draw frame start");
-        //Log.d(TAG, "onDrawFrame:" + textureId);
+        if (!mIsInitialized || mGLFboId == null) {
+            return -1;
+        }
 
         GLES30.glGetError();
         GLES30.glUseProgram(mGLProgId);
@@ -412,8 +391,6 @@ public class TextureCapture
         GLES30.glDisableVertexAttribArray(mGLTextureCoordinateIndex);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-
-        //Log.i(TAG, "finish draw frame");
 
         return mGLFboTexId[0];
     }

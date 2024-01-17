@@ -5,7 +5,6 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 
-import android.util.Log;
 import android.util.AttributeSet;
 import android.content.Context;
 import android.opengl.EGL14;
@@ -36,15 +35,11 @@ public class CustomGLSurfaceView extends GLSurfaceView {
 
         @Override
         public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig config) {
-            Log.i(TAG, "create custom surface view's egl context");
             // Here, I wanted to set Unity's EGLContext as a shared context so that Texture2D could be updated with a pointer.
             // This worked well on some devices and not on others.
             // EGL_BAD_MATCH (Oculus quest 2)
 
-            //EGLContext context = egl.eglCreateContext(display, config, mSharedEGLContext, getContextAttributes());
             EGLContext context = egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, getContextAttributes());
-
-            Log.i(TAG, "create custom surface view's egl context done !");
 
             return context;
         }

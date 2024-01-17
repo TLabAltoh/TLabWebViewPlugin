@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.HardwareBuffer;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.opengl.GLES30;
 import android.os.Environment;
 import android.os.Message;
@@ -24,6 +25,7 @@ import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
+import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -304,6 +306,11 @@ public class UnityConnect extends Fragment {
                 public void onLoadResource(WebView view, String url) {
                     canGoBack = mWebView.canGoBack();
                     canGoForward = mWebView.canGoForward();
+                }
+
+                @Override
+                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                    handler.proceed();
                 }
 
                 @Override

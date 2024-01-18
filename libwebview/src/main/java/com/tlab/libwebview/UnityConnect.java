@@ -6,6 +6,7 @@ import android.app.DownloadManager;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.hardware.HardwareBuffer;
 import android.net.Uri;
@@ -36,6 +37,9 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.self.viewtoglrendering.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;

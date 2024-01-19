@@ -460,6 +460,10 @@ public class UnityConnect extends Fragment {
     // javascript interface
     //
 
+    public static void sendMessage(String go, String method, String message) {
+        UnityPlayer.UnitySendMessage(go, method, message);
+    }
+
     public class TLabJavascriptInterface
     {
         @JavascriptInterface

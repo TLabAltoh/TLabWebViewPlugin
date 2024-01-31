@@ -6,8 +6,8 @@ import android.app.DownloadManager;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.hardware.HardwareBuffer;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -37,9 +37,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.self.viewtoglrendering.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;
@@ -225,9 +222,12 @@ public class UnityConnect extends Fragment {
             mViewToGlRenderer = new ViewToGLRenderer();
             mViewToGlRenderer.SetTextureResolution(textureWidth, textureHeight);
             mViewToGlRenderer.SetWebResolution(webWidth, webHeight);
-            //mViewToGlRenderer.saveEGL(mContext, mDisplay, mDSurface, mRSurface);
             HardwareBuffer sharedBuffer = sharedTexture.getHardwareBuffer();
-            Log.i(TAG, "shared buffer is null: " + (sharedBuffer == null));
+
+            if (sharedBuffer == null) {
+                Log.i(TAG, "shared buffer is null");
+            }
+
             mViewToGlRenderer.createTextureCapture(
                     UnityPlayer.currentActivity,
                     R.raw.vertex,
@@ -241,7 +241,7 @@ public class UnityConnect extends Fragment {
             // set view to out of display.
             mLayout.setX(screenWidth);
             mLayout.setY(screenHeight);
-            mLayout.setBackgroundColor(0x00000000);
+            mLayout.setBackgroundColor(0xFFFFFFFF);
 
             // mGLSurfaceView settings
             mGLSurfaceView = new CustomGLSurfaceView(UnityPlayer.currentActivity);
@@ -260,7 +260,7 @@ public class UnityConnect extends Fragment {
             mGlLayout.setOrientation(GLLinearLayout.VERTICAL);
             mGlLayout.setGravity(Gravity.START);
             mGlLayout.setViewToGLRenderer(mViewToGlRenderer);
-            mGlLayout.setBackgroundColor(0x00000000);
+            mGlLayout.setBackgroundColor(Color.WHITE);
 
             if (mWebView == null) {
                 mWebView = new BitmapWebView(UnityPlayer.currentActivity);
@@ -372,12 +372,10 @@ public class UnityConnect extends Fragment {
                     Toast.makeText(context, filename + "　download is completed..", Toast.LENGTH_LONG).show();
                 }
             });
-            //mWebView.getSettings().setJavaScriptEnabled(true);
             mWebView.setInitialScale(100);
             mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
             // --------- drawing cache setting
             mWebView.clearCache(true);
-            //mWebView.setDrawingCacheEnabled(true);
             // ---------
             mWebView.setLongClickable(false);
             mWebView.setVisibility(View.VISIBLE);

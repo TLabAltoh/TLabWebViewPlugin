@@ -19,6 +19,11 @@ android {
         versionName "1.0"
         consumerProguardFiles "consumer-rules.pro"
 
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+
         externalNativeBuild {
             cmake {
                 cppFlags '-std=c++11'

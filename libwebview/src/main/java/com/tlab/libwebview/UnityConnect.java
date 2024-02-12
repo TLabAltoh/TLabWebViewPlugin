@@ -1,5 +1,6 @@
 package com.tlab.libwebview;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
@@ -172,7 +173,7 @@ public class UnityConnect extends Fragment {
         queue.add(new SharedTexturePair(textures[0], sharedTexture));
     }
 
-    private boolean bindUnityTexture(){
+    private boolean bindUnityTexture() {
         String key = createTableKey(textureWidth, textureHeight);
         ArrayDeque<SharedTexturePair> queue;
         if(texturePairQueueDic.containsKey(key)){
@@ -194,6 +195,7 @@ public class UnityConnect extends Fragment {
     // Initialize webview
     //
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void initWebView() {
         final UnityConnect self = this;
 
@@ -381,7 +383,7 @@ public class UnityConnect extends Fragment {
             mWebView.setVisibility(View.VISIBLE);
             mWebView.setVerticalScrollBarEnabled(true);
             mWebView.setBackgroundColor(0x00000000);
-            mWebView.addJavascriptInterface(new TLabJavascriptInterface(), "TLabWebViewActivity");
+            mWebView.addJavascriptInterface(new TLabWebViewJSInterface(), "TLabWebViewActivity");
             WebSettings webSettings = mWebView.getSettings();
             webSettings.setLoadWithOverviewMode(true);
             // --------- enable cache
@@ -458,15 +460,16 @@ public class UnityConnect extends Fragment {
     // javascript interface
     //
 
-    public static void sendMessage(String go, String method, String message) {
-        UnityPlayer.UnitySendMessage(go, method, message);
-    }
-
-    public class TLabJavascriptInterface
+    public class TLabWebViewJSInterface
     {
         @JavascriptInterface
         public void viewSource(final String src) {
             htmlCash = src;
+        }
+
+        @JavascriptInterface
+        public void unitySendMessage(String go, String method, String message) {
+            UnityPlayer.UnitySendMessage(go, method, message);
         }
     }
 

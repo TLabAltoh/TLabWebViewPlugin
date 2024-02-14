@@ -23,6 +23,7 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
@@ -339,6 +340,31 @@ public class UnityConnect extends Fragment {
                 @Override
                 public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message resultMsg) {
                     return false;
+                }
+
+                /**
+                 * https://qiita.com/NaokiHaba/items/eb0ad99ac56af4748227
+                 * https://www.wired-cat.com/entry/2023/02/17/205235#google_vignette
+                 * @param view is the View object to be shown.
+                 * @param callback invoke this callback to request the page to exit
+                 * full screen mode.
+                 */
+                @Override
+                public void onShowCustomView(View view, CustomViewCallback callback) {
+                    super.onShowCustomView(view, callback);
+                    mWebView.addView(
+                            view,
+                            new ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+                    );
+                }
+
+                @Override
+                public void onHideCustomView() {
+                    super.onHideCustomView();
+                    mWebView.removeAllViews();
                 }
             });
             mWebView.setDownloadListener(new DownloadListener() {

@@ -28,6 +28,7 @@ import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
@@ -365,6 +366,19 @@ public class UnityConnect extends Fragment {
                 public void onHideCustomView() {
                     super.onHideCustomView();
                     mWebView.removeAllViews();
+                }
+
+                @Override
+                public void onPermissionRequest(final PermissionRequest request) {
+                    final String[] requestedResources = request.getResources();
+                    for (String r : requestedResources) {
+                        if ((r.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+                                || (r.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                                || r.equals(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
+                            request.grant(requestedResources);
+                            break;
+                        }
+                    }
                 }
             });
             mWebView.setDownloadListener(new DownloadListener() {

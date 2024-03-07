@@ -89,6 +89,7 @@ public class UnityConnect extends Fragment {
     private int screenWidth;
     private int screenHeight;
     private int dlOption;
+    private String onPageFinish;
     private String subDir;
     private String loadUrl;
     private String actualUrl;
@@ -115,7 +116,7 @@ public class UnityConnect extends Fragment {
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
-                           String url, int dlOption, String subDir)
+                           String url, int dlOption, String subDir, String onPageFinish)
     {
         if(webWidth <= 0 || webHeight <= 0) {
             return;
@@ -131,6 +132,7 @@ public class UnityConnect extends Fragment {
         this.loadUrl = url;
         this.subDir = subDir;
         this.dlOption = dlOption;
+        this.onPageFinish = onPageFinish;
 
         initWebView();
     }
@@ -308,6 +310,10 @@ public class UnityConnect extends Fragment {
                     canGoBack = mWebView.canGoBack();
                     canGoForward = mWebView.canGoForward();
                     actualUrl = url;
+
+                    if (mWebView.getSettings().getJavaScriptEnabled() && onPageFinish != null && !onPageFinish.equals("")) {
+                        evaluateJS(onPageFinish);
+                    }
                 }
 
                 @Override
@@ -614,6 +620,10 @@ public class UnityConnect extends Fragment {
             }
             mWebView.zoomOut();
         });
+    }
+
+    public void registerOnPageFinishCallback(String onPageFinish) {
+        this.onPageFinish = onPageFinish;
     }
 
     public void evaluateJS(String js) {

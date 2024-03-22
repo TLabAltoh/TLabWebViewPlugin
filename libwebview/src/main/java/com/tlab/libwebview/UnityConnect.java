@@ -98,6 +98,9 @@ public class UnityConnect extends Fragment {
     private String onPageFinish;
     private String onDownloadStart;
     private String onDownloadFinish;
+    private String dl_url_name;
+    private String dl_uri_name;
+    private String dl_id_name;
     private String subDir;
     private String loadUrl;
     private String actualUrl;
@@ -126,8 +129,7 @@ public class UnityConnect extends Fragment {
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
-                           String url, int dlOption, String subDir,
-                           String onPageFinish, String onDownloadStart, String onDownloadFinish)
+                           String url)
     {
         if(webWidth <= 0 || webHeight <= 0) {
             return;
@@ -139,15 +141,7 @@ public class UnityConnect extends Fragment {
         this.textureHeight = textureHeight;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
-
         this.loadUrl = url;
-        this.subDir = subDir;
-        this.dlOption = dlOption;
-
-        this.onPageFinish = onPageFinish;
-
-        this.onDownloadStart = onDownloadStart;
-        this.onDownloadFinish = onDownloadFinish;
 
         initWebView();
     }
@@ -437,7 +431,7 @@ public class UnityConnect extends Fragment {
 
                     if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
                         // NOTE: This is not good practice, I need to avoid variable definition conflicts.
-                        String argument = "var unity_webview_dl_url = '" + url + "'; " + "var unity_webview_dl_id = " + id + "; ";
+                        String argument = "var " + dl_url_name + " = '" + url + "'; " + "var " + dl_id_name + " = " + id + "; ";
                         evaluateJS(argument + onDownloadStart);
                     }
                 }
@@ -452,7 +446,7 @@ public class UnityConnect extends Fragment {
                     Uri uri = dm.getUriForDownloadedFile(downloadedID);
 
                     if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadFinish != null && !onDownloadFinish.isEmpty()) {
-                        String argument = "var unity_webview_dl_uri = '" + uri + "'; " + "var unity_webview_dl_id = " + downloadedID + "; ";
+                        String argument = "var " + dl_uri_name + " = '" + uri + "'; " + "var " + dl_id_name + " = " + downloadedID + "; ";
                         evaluateJS(argument + onDownloadFinish);
                     }
                 }
@@ -789,6 +783,20 @@ public class UnityConnect extends Fragment {
                 mWebView.setVisibility(View.INVISIBLE);
             }
         });
+    }
+
+    public void setDownloadEventVariableName(String dl_url_name, String dl_uri_name, String dl_id_name) {
+        this.dl_url_name = dl_url_name;
+        this.dl_uri_name = dl_uri_name;
+        this.dl_id_name = dl_id_name;
+    }
+
+    public void setSubDir(String subDir) {
+        this.subDir = subDir;
+    }
+
+    public void setDlOption(int dlOption) {
+        this.dlOption = dlOption;
     }
 
     public void setOnPageFinish(String onPageFinish) {

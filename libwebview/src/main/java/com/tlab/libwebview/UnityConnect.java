@@ -436,6 +436,7 @@ public class UnityConnect extends Fragment {
                     long id = dm.enqueue(request);
 
                     if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
+                        // NOTE: This is not good practice, I need to avoid variable definition conflicts.
                         String argument = "var unity_webview_dl_url = '" + url + "'; " + "var unity_webview_dl_id = " + id + "; ";
                         evaluateJS(argument + onDownloadStart);
                     }

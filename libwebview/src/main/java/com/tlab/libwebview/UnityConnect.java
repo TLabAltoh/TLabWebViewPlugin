@@ -448,11 +448,11 @@ public class UnityConnect extends Fragment {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     long downloadedID = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-                    DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-                    Uri uri = manager.getUriForDownloadedFile(downloadedID);
+                    DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                    Uri uri = dm.getUriForDownloadedFile(downloadedID);
 
                     if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadFinish != null && !onDownloadFinish.isEmpty()) {
-                        String argument = "var unity_webview_dl_url = '" + uri + "'; " + "var unity_webview_dl_id = " + downloadedID + "; ";
+                        String argument = "var unity_webview_dl_uri = '" + uri + "'; " + "var unity_webview_dl_id = " + downloadedID + "; ";
                         evaluateJS(argument + onDownloadFinish);
                     }
                 }

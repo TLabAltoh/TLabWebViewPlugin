@@ -5,8 +5,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.Fragment;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.hardware.HardwareBuffer;
@@ -39,7 +42,6 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.self.viewtoglrendering.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;
@@ -50,6 +52,7 @@ import com.self.viewtoglrendering.GLLinearLayout;
 
 import java.util.ArrayDeque;
 import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class UnityConnect extends Fragment {
 
@@ -89,7 +92,12 @@ public class UnityConnect extends Fragment {
     private int screenWidth;
     private int screenHeight;
     private int dlOption;
+
+    private float downloadProgress = 0.0f;
+
     private String onPageFinish;
+    private String onDownloadStart;
+    private String onDownloadFinish;
     private String subDir;
     private String loadUrl;
     private String actualUrl;
@@ -107,6 +115,8 @@ public class UnityConnect extends Fragment {
     private String userAgent;
     private Hashtable<String, String> mCustomHeaders;
 
+    private BroadcastReceiver onDownloadComplete;
+
     private final static String TAG = "libwebview";
 
     // ---------------------------------------------------------------------------------------------------------
@@ -116,7 +126,8 @@ public class UnityConnect extends Fragment {
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
-                           String url, int dlOption, String subDir, String onPageFinish)
+                           String url, int dlOption, String subDir,
+                           String onPageFinish, String onDownloadStart, String onDownloadFinish)
     {
         if(webWidth <= 0 || webHeight <= 0) {
             return;
@@ -132,7 +143,11 @@ public class UnityConnect extends Fragment {
         this.loadUrl = url;
         this.subDir = subDir;
         this.dlOption = dlOption;
+
         this.onPageFinish = onPageFinish;
+
+        this.onDownloadStart = onDownloadStart;
+        this.onDownloadFinish = onDownloadFinish;
 
         initWebView();
     }
@@ -146,8 +161,7 @@ public class UnityConnect extends Fragment {
     //
 
     private static String createTableKey(Integer a, Integer b) {
-        String key = a.toString() + "x" + b.toString();
-        return key;
+        return a.toString() + "x" + b.toString();
     }
 
     public static void generateSharedTexture(int textureWidth, int textureHeight) {
@@ -187,8 +201,10 @@ public class UnityConnect extends Fragment {
             return false;
         }
 
+        assert queue != null;
         SharedTexturePair sharedTexturePair = queue.poll();
 
+        assert sharedTexturePair != null;
         sharedTextureId = sharedTexturePair.id;
         sharedTexture = sharedTexturePair.texture;
 
@@ -311,7 +327,7 @@ public class UnityConnect extends Fragment {
                     canGoForward = mWebView.canGoForward();
                     actualUrl = url;
 
-                    if (mWebView.getSettings().getJavaScriptEnabled() && onPageFinish != null && !onPageFinish.equals("")) {
+                    if (mWebView.getSettings().getJavaScriptEnabled() && onPageFinish != null && !onPageFinish.isEmpty()) {
                         evaluateJS(onPageFinish);
                     }
                 }
@@ -322,6 +338,7 @@ public class UnityConnect extends Fragment {
                     canGoForward = mWebView.canGoForward();
                 }
 
+                @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
                     handler.proceed();
@@ -350,11 +367,12 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 * https://qiita.com/NaokiHaba/items/eb0ad99ac56af4748227
-                 * https://www.wired-cat.com/entry/2023/02/17/205235#google_vignette
-                 * @param view is the View object to be shown.
+                 * <a href="https://qiita.com/NaokiHaba/items/eb0ad99ac56af4748227">...</a>
+                 * <a href="https://www.wired-cat.com/entry/2023/02/17/205235#google_vignette">...</a>
+                 *
+                 * @param view     is the View object to be shown.
                  * @param callback invoke this callback to request the page to exit
-                 * full screen mode.
+                 *                 full screen mode.
                  */
                 @Override
                 public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -415,11 +433,33 @@ public class UnityConnect extends Fragment {
                     }
 
                     DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
-                    dm.enqueue(request);
+                    long id = dm.enqueue(request);
 
-                    Toast.makeText(context, filename + "　download is completed..", Toast.LENGTH_LONG).show();
+                    if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
+                        String argument = "var unity_webview_dl_url = '" + url + "'; " + "var unity_webview_dl_id = " + id + "; ";
+                        evaluateJS(argument + onDownloadStart);
+                    }
                 }
             });
+
+            // create download complete event receiver.
+            onDownloadComplete = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    long downloadedID = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                    DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                    Uri uri = manager.getUriForDownloadedFile(downloadedID);
+
+                    if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadFinish != null && !onDownloadFinish.isEmpty()) {
+                        String argument = "var unity_webview_dl_url = '" + uri + "'; " + "var unity_webview_dl_id = " + downloadedID + "; ";
+                        evaluateJS(argument + onDownloadFinish);
+                    }
+                }
+            };
+            UnityPlayer.currentActivity.registerReceiver(
+                    onDownloadComplete,
+                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+
             mWebView.setInitialScale(100);
             mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
             // --------- drawing cache setting
@@ -444,7 +484,7 @@ public class UnityConnect extends Fragment {
             webSettings.setJavaScriptEnabled(true);
             webSettings.setAllowUniversalAccessFromFileURLs(true);
             webSettings.setMediaPlaybackRequiresUserGesture(false);
-            if (userAgent != null && userAgent.length() > 0){
+            if (userAgent != null && !userAgent.isEmpty()){
                 webSettings.setUserAgentString(userAgent);
             }
             webSettings.setDefaultTextEncodingName("utf-8");
@@ -490,6 +530,7 @@ public class UnityConnect extends Fragment {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
             if (mWebView == null) return;
+
             mWebView.stopLoading();
             mGlLayout.removeView(mWebView);
             mWebView.destroy();
@@ -499,6 +540,9 @@ public class UnityConnect extends Fragment {
                 sharedTexture.release();
                 sharedTexture = null;
             }
+
+            UnityPlayer.currentActivity.unregisterReceiver(
+                    onDownloadComplete);
         });
     }
 
@@ -746,6 +790,37 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    public void setOnPageFinish(String onPageFinish) {
+        this.onPageFinish = onPageFinish;
+    }
+
+    public void setOnDownloadStart(String onDownloadStart) {
+        this.onDownloadStart = onDownloadStart;
+    }
+
+    public void setOnDownloadFinish(String onDownloadFinish) {
+        this.onDownloadFinish = onDownloadFinish;
+    }
+
+    public void requestCaptureDownloadProgress() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
+            Cursor cursor = dm.query(new DownloadManager.Query());
+
+            if (cursor.moveToFirst()) {
+                @SuppressLint("Range") int totalBytes = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+
+                @SuppressLint("Range") int bytesDownloadedSoFar = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+
+                downloadProgress = (float) bytesDownloadedSoFar / totalBytes;
+            }
+        });
+    }
+
+    public float getDownloadProgress() {
+        return this.downloadProgress;
+    }
+
     // ---------------------------------------------------------------------------------------------------------
     //
     //
@@ -757,12 +832,12 @@ public class UnityConnect extends Fragment {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 Gravity.NO_GRAVITY);
         params.setMargins(left, top, right, bottom);
-        UnityPlayer.currentActivity.runOnUiThread(new Runnable() {public void run() {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
                 return;
             }
             mWebView.setLayoutParams(params);
-        }});
+        });
     }
 
     private void AddCustomHeader(final String headerKey, final String headerValue) {

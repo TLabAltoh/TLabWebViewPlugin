@@ -19,6 +19,7 @@ import android.opengl.GLES30;
 import android.os.Environment;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.InputDevice;
@@ -50,9 +51,15 @@ import com.robot9.shared.SharedTexture;
 import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
+import java.util.Date;
 import java.util.Hashtable;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Objects;
 
 public class UnityConnect extends Fragment {
 
@@ -126,6 +133,16 @@ public class UnityConnect extends Fragment {
     // Initialize this class
     //
 
+    /**
+     *
+     * @param webWidth
+     * @param webHeight
+     * @param textureWidth
+     * @param textureHeight
+     * @param screenWidth
+     * @param screenHeight
+     * @param url
+     */
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
@@ -146,6 +163,10 @@ public class UnityConnect extends Fragment {
         initWebView();
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean IsInitialized() {
         return initialized;
     }
@@ -154,10 +175,21 @@ public class UnityConnect extends Fragment {
     // Shared Texture Utility
     //
 
+    /**
+     *
+     * @param a
+     * @param b
+     * @return
+     */
     private static String createTableKey(Integer a, Integer b) {
         return a.toString() + "x" + b.toString();
     }
 
+    /**
+     *
+     * @param textureWidth
+     * @param textureHeight
+     */
     public static void generateSharedTexture(int textureWidth, int textureHeight) {
         String key = createTableKey(textureWidth, textureHeight);
 
@@ -185,6 +217,10 @@ public class UnityConnect extends Fragment {
         queue.add(new SharedTexturePair(textures[0], sharedTexture));
     }
 
+    /**
+     *
+     * @return
+     */
     private boolean bindUnityTexture() {
         String key = createTableKey(textureWidth, textureHeight);
         ArrayDeque<SharedTexturePair> queue;
@@ -209,6 +245,9 @@ public class UnityConnect extends Fragment {
     // Initialize webview
     //
 
+    /**
+     *
+     */
     @SuppressLint("SetJavaScriptEnabled")
     private void initWebView() {
         final UnityConnect self = this;
@@ -309,12 +348,24 @@ public class UnityConnect extends Fragment {
                     }
                 }
 
+                /**
+                 *
+                 * @param view The WebView that is initiating the callback.
+                 * @param url The url to be loaded.
+                 * @param favicon The favicon for this page if it already exists in the
+                 *            database.
+                 */
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
                     canGoBack = mWebView.canGoBack();
                     canGoForward = mWebView.canGoForward();
                 }
 
+                /**
+                 *
+                 * @param view The WebView that is initiating the callback.
+                 * @param url The url of the page.
+                 */
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     canGoBack = mWebView.canGoBack();
@@ -326,18 +377,36 @@ public class UnityConnect extends Fragment {
                     }
                 }
 
+                /**
+                 *
+                 * @param view The WebView that is initiating the callback.
+                 * @param url The url of the resource the WebView will load.
+                 */
                 @Override
                 public void onLoadResource(WebView view, String url) {
                     canGoBack = mWebView.canGoBack();
                     canGoForward = mWebView.canGoForward();
                 }
 
+                /**
+                 *
+                 * @param view The WebView that is initiating the callback.
+                 * @param handler An {@link SslErrorHandler} that will handle the user's
+                 *            response.
+                 * @param error The SSL error object.
+                 */
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
                     handler.proceed();
                 }
 
+                /**
+                 *
+                 * @param view The WebView that is initiating the callback.
+                 * @param url The URL to be loaded.
+                 * @return
+                 */
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
                     canGoBack = mWebView.canGoBack();
@@ -380,12 +449,19 @@ public class UnityConnect extends Fragment {
                     );
                 }
 
+                /**
+                 *
+                 */
                 @Override
                 public void onHideCustomView() {
                     super.onHideCustomView();
                     mWebView.removeAllViews();
                 }
 
+                /**
+                 *
+                 * @param request the PermissionRequest from current web content.
+                 */
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
                     final String[] requestedResources = request.getResources();
@@ -400,45 +476,154 @@ public class UnityConnect extends Fragment {
                 }
             });
             mWebView.setDownloadListener(new DownloadListener() {
-                // https://gist.github.com/miktam/107a414ec43de181b481
-                // https://teratail.com/questions/115988
+                /**
+                 * <a href="https://gist.github.com/miktam/107a414ec43de181b481">...</a>
+                 * <a href="https://teratail.com/questions/115988">...</a>
+                 * <a href="https://www.baeldung.com/java-mime-type-file-extension">...</a>
+                 *
+                 * @param url                The full url to the content that should be downloaded
+                 * @param userAgent          the user agent to be used for the download.
+                 * @param contentDisposition Content-disposition http header, if
+                 *                           present.
+                 * @param mimetype           The mimetype of the content reported by the server
+                 * @param contentLength      The file size reported by the server
+                 */
                 public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                     Context context = UnityPlayer.currentActivity.getApplicationContext();
 
                     String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
-                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
 
-                    request.setMimeType(mimetype);
-                    //------------------------COOKIE!!------------------------
-                    String cookies = CookieManager.getInstance().getCookie(url);
-                    request.addRequestHeader("cookie", cookies);
-                    //------------------------COOKIE!!------------------------
-                    request.addRequestHeader("User-Agent", userAgent);
-                    request.setDescription("Downloading file...");
-                    request.setTitle(filename);
-                    request.allowScanningByMediaScanner();
-                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    String extension = MimeTypes.getDefaultExt(mimetype);
 
-                    if(dlOption == DlOption.applicationFolder.ordinal()) {
-                        request.setDestinationInExternalFilesDir(context, subDir, filename);
-                    }else if(dlOption == DlOption.downloadFolder.ordinal()) {
-                        String downloadDir = Environment.DIRECTORY_DOWNLOADS;
-                        request.setDestinationInExternalPublicDir(downloadDir, filename);
+                    long id = -1;
+
+                    boolean data = false;
+
+                    boolean downloaded = false;
+
+                    if (url.startsWith("https://") || url.startsWith("http://")) {
+                        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+
+                        request.setMimeType(mimetype);
+                        //------------------------COOKIE!!------------------------
+                        String cookies = CookieManager.getInstance().getCookie(url);
+                        request.addRequestHeader("cookie", cookies);
+                        //------------------------COOKIE!!------------------------
+                        request.addRequestHeader("User-Agent", userAgent);
+                        request.setDescription("Downloading file...");
+                        request.setTitle(filename);
+                        request.allowScanningByMediaScanner();
+                        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+
+                        if(dlOption == DlOption.applicationFolder.ordinal()) {
+                            request.setDestinationInExternalFilesDir(context, subDir, filename);
+                        }
+                        else if(dlOption == DlOption.downloadFolder.ordinal()) {
+                            if (!subDir.isEmpty()) {
+                                filename = subDir + "/" + filename;
+                            }
+                            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
+                        }
+
+                        DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
+                        id = dm.enqueue(request);
+
+                        downloaded = true;
+                    }
+                    else if (url.startsWith("data:")) { // data url scheme
+                        data = true;
+
+                        String[] splits = url.split("/");
+                        String base64 = null;
+
+                        base64 = url.replaceFirst("^data:.+;base64,", "");
+
+                        byte[] blobBytes = Base64.decode(base64, 0);
+
+                        @SuppressLint("SimpleDateFormat") DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+                        String fileName = dateFormat.format(new Date()) + "." + extension;
+
+                        String downloadDir = "";
+
+                        if(dlOption == DlOption.applicationFolder.ordinal()) {
+                            downloadDir = Objects.requireNonNull(context.getExternalFilesDir(null)).getPath();
+                        }
+                        else if(dlOption == DlOption.downloadFolder.ordinal()) {
+                            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
+                        }
+
+                        if (!subDir.isEmpty()) {
+                            downloadDir = downloadDir + "/" + subDir;
+                        }
+
+                        File file = new File(downloadDir, fileName);
+
+                        boolean fileExists = file.exists();
+
+                        if (!fileExists) {
+                            File directory = file.getParentFile();
+
+                            assert directory != null;
+                            fileExists = directory.exists();
+
+                            if (!fileExists) {
+                                fileExists = directory.mkdirs();
+                            }
+
+                            if (fileExists) {
+                                fileExists = file.exists();
+
+                                if (!fileExists) {
+                                    try {
+                                        fileExists = file.createNewFile();
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (fileExists) {
+                            try {
+                                FileOutputStream fos = new FileOutputStream(file, false);
+                                fos.write(blobBytes);
+                                fos.flush();
+                                fos.close();
+
+                                downloaded = true;
+                            } catch (IOException e) {
+                                Log.e(TAG, Objects.requireNonNull(e.getMessage()));
+                            }
+                        }
+                    }
+                    else if (url.startsWith("blob:")) { // blob url scheme
+                        // feature implement
                     }
 
-                    DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
-                    long id = dm.enqueue(request);
+                    if (downloaded) {
+                        if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
+                            // NOTE: This is not good practice, I need to avoid variable definition conflicts.
+                            String argument = "var " + dl_url_name + " = '" + url + "'; " + "var " + dl_id_name + " = " + id + "; ";
+                            evaluateJS(argument + onDownloadStart);
+                        }
 
-                    if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
-                        // NOTE: This is not good practice, I need to avoid variable definition conflicts.
-                        String argument = "var " + dl_url_name + " = '" + url + "'; " + "var " + dl_id_name + " = " + id + "; ";
-                        evaluateJS(argument + onDownloadStart);
+                        if (data) {
+                            if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadFinish != null && !onDownloadFinish.isEmpty()) {
+                                String argument = "var " + dl_uri_name + " = '" + "none" + "'; " + "var " + dl_id_name + " = " + id + "; ";
+                                evaluateJS(argument + onDownloadFinish);
+                            }
+                        }
                     }
                 }
             });
 
             // create download complete event receiver.
             onDownloadComplete = new BroadcastReceiver() {
+                /**
+                 *
+                 * @param context The Context in which the receiver is running.
+                 * @param intent The Intent being received.
+                 */
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     long downloadedID = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
@@ -521,6 +706,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void Destroy() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
@@ -547,11 +735,21 @@ public class UnityConnect extends Fragment {
 
     public class TLabWebViewJSInterface
     {
+        /**
+         *
+         * @param src
+         */
         @JavascriptInterface
         public void viewSource(final String src) {
             htmlCash = src;
         }
 
+        /**
+         *
+         * @param go
+         * @param method
+         * @param message
+         */
         @JavascriptInterface
         public void unitySendMessage(String go, String method, String message) {
             UnityPlayer.UnitySendMessage(go, method, message);
@@ -562,29 +760,56 @@ public class UnityConnect extends Fragment {
     // java's unity interface.
     //
 
+    /**
+     *
+     */
     public void updateSurface() {
         mGlLayout.postInvalidate();
     }
 
+    /**
+     *
+     * @return
+     */
     public byte[] getPixel() {
         byte[] data = mViewToGlRenderer.getTexturePixels();
         updateSurface();
         return data;
     }
 
+    /**
+     *
+     * @return
+     */
     public int getTexturePtr() {
         updateSurface();
         return sharedTextureId;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getCaptured() {
         return htmlCash;
     }
 
+    /**
+     *
+     * @param id
+     */
     public void captureElementById(String id) { loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)"); }
 
+    /**
+     *
+     */
     public void capturePage() { loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)"); }
 
+    /**
+     *
+     * @param ua
+     * @param reload
+     */
     public void setUserAgent(final String ua, final boolean reload) {
         // https://developer.mozilla.org/ja/docs/Web/HTTP/Headers/User-Agent/Firefox
         UnityPlayer.currentActivity.runOnUiThread(() -> {
@@ -605,6 +830,9 @@ public class UnityConnect extends Fragment {
         userAgent = ua;
     }
 
+    /**
+     *
+     */
     public void captureUserAgent() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if(mWebView == null) {
@@ -614,10 +842,22 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @return
+     */
     public String getUserAgent() { return userAgent; }
 
+    /**
+     *
+     * @return
+     */
     public String getCurrentUrl() { return actualUrl; }
 
+    /**
+     *
+     * @param url
+     */
     public void loadUrl(String url) {
         loadUrl = url;
         UnityPlayer.currentActivity.runOnUiThread(() -> {
@@ -634,6 +874,11 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param html
+     * @param baseURL
+     */
     public void loadHtml(final String html, final String baseURL) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -643,6 +888,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void zoomIn() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -652,6 +900,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void zoomOut() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -661,10 +912,18 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param onPageFinish
+     */
     public void registerOnPageFinishCallback(String onPageFinish) {
         this.onPageFinish = onPageFinish;
     }
 
+    /**
+     *
+     * @param js
+     */
     public void evaluateJS(String js) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -674,6 +933,12 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param x
+     * @param y
+     * @param eventNum
+     */
     public void touchEvent(int x, int y, int eventNum) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -703,6 +968,10 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param key
+     */
     public void keyEvent(char key) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -714,6 +983,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void backSpaceKey() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -724,6 +996,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void goBack() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null || !canGoBack) {
@@ -733,6 +1008,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void goForward() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null || !canGoForward) {
@@ -742,6 +1020,10 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param includeDiskFiles
+     */
     public void clearCash(boolean includeDiskFiles) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if(mWebView == null) {
@@ -751,6 +1033,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void clearHistory() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if(mWebView == null) {
@@ -760,6 +1045,9 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     */
     public void clearCookie() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if(mWebView == null) {
@@ -770,6 +1058,10 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param visible
+     */
     public void setVisible(boolean visible) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -785,32 +1077,61 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param dl_url_name
+     * @param dl_uri_name
+     * @param dl_id_name
+     */
     public void setDownloadEventVariableName(String dl_url_name, String dl_uri_name, String dl_id_name) {
         this.dl_url_name = dl_url_name;
         this.dl_uri_name = dl_uri_name;
         this.dl_id_name = dl_id_name;
     }
 
+    /**
+     *
+     * @param subDir
+     */
     public void setSubDir(String subDir) {
         this.subDir = subDir;
     }
 
+    /**
+     *
+     * @param dlOption
+     */
     public void setDlOption(int dlOption) {
         this.dlOption = dlOption;
     }
 
+    /**
+     *
+     * @param onPageFinish
+     */
     public void setOnPageFinish(String onPageFinish) {
         this.onPageFinish = onPageFinish;
     }
 
+    /**
+     *
+     * @param onDownloadStart
+     */
     public void setOnDownloadStart(String onDownloadStart) {
         this.onDownloadStart = onDownloadStart;
     }
 
+    /**
+     *
+     * @param onDownloadFinish
+     */
     public void setOnDownloadFinish(String onDownloadFinish) {
         this.onDownloadFinish = onDownloadFinish;
     }
 
+    /**
+     *
+     */
     public void requestCaptureDownloadProgress() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
@@ -826,6 +1147,10 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @return
+     */
     public float getDownloadProgress() {
         return this.downloadProgress;
     }
@@ -834,6 +1159,13 @@ public class UnityConnect extends Fragment {
     //
     //
 
+    /**
+     *
+     * @param left
+     * @param top
+     * @param right
+     * @param bottom
+     */
     private void SetMargins(int left, int top, int right, int bottom) {
         final FrameLayout.LayoutParams params
                 = new FrameLayout.LayoutParams(
@@ -849,6 +1181,11 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param headerKey
+     * @param headerValue
+     */
     private void AddCustomHeader(final String headerKey, final String headerValue) {
         if (mCustomHeaders == null) {
             return;
@@ -856,6 +1193,11 @@ public class UnityConnect extends Fragment {
         mCustomHeaders.put(headerKey, headerValue);
     }
 
+    /**
+     *
+     * @param headerKey
+     * @return
+     */
     private String GetCustomHeaderValue(final String headerKey) {
         if (mCustomHeaders == null) {
             return null;
@@ -866,6 +1208,10 @@ public class UnityConnect extends Fragment {
         return this.mCustomHeaders.get(headerKey);
     }
 
+    /**
+     *
+     * @param headerKey
+     */
     private void RemoveCustomHeader(final String headerKey) {
         if (mCustomHeaders == null) {
             return;
@@ -873,6 +1219,9 @@ public class UnityConnect extends Fragment {
         this.mCustomHeaders.remove(headerKey);
     }
 
+    /**
+     *
+     */
     private void ClearCustomHeader() {
         if (mCustomHeaders == null) {
             return;
@@ -880,6 +1229,15 @@ public class UnityConnect extends Fragment {
         this.mCustomHeaders.clear();
     }
 
+    /**
+     *
+     * @param handler
+     * @param host
+     * @param realm
+     * @param title
+     * @param name
+     * @param password
+     */
     private void showHttpAuthDialog(final HttpAuthHandler handler, final String host,
                                     final String realm, final String title,
                                     final String name, final String password)

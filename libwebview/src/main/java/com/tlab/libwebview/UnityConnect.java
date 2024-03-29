@@ -17,6 +17,8 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.opengl.GLES30;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.util.Base64;
@@ -239,6 +241,93 @@ public class UnityConnect extends Fragment {
         sharedTexture = sharedTexturePair.texture;
 
         return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // File download
+    //
+
+    public void getBase64FromBlobData(String url, String mimetype) {
+
+        Context context = UnityPlayer.currentActivity.getApplicationContext();
+
+        String extension = MimeTypes.getDefaultExt(mimetype);
+
+        String base64 = url.replaceFirst("^data:.+;base64,", "");
+
+        byte[] data = Base64.decode(base64, 0);
+
+        boolean downloaded = false;
+
+        @SuppressLint("SimpleDateFormat") DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        String filename = dateFormat.format(new Date()) + "." + extension;
+
+        String downloadDir = "";
+
+        if(dlOption == DlOption.applicationFolder.ordinal()) {
+            downloadDir = Objects.requireNonNull(context.getExternalFilesDir(null)).getPath();
+        }
+        else if(dlOption == DlOption.downloadFolder.ordinal()) {
+            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
+        }
+
+        if (!subDir.isEmpty()) {
+            downloadDir = downloadDir + "/" + subDir;
+        }
+
+        File file = new File(downloadDir, filename);
+
+        boolean fileExists = file.exists();
+
+        if (!fileExists) {
+            File directory = file.getParentFile();
+
+            assert directory != null;
+            fileExists = directory.exists();
+
+            if (!fileExists) {
+                fileExists = directory.mkdirs();
+            }
+
+            if (fileExists) {
+                fileExists = file.exists();
+
+                if (!fileExists) {
+                    try {
+                        fileExists = file.createNewFile();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+
+        if (fileExists) {
+            try {
+                FileOutputStream fos = new FileOutputStream(file, false);
+                fos.write(data);
+                fos.flush();
+                fos.close();
+
+                downloaded = true;
+            } catch (IOException e) {
+                Log.e(TAG, Objects.requireNonNull(e.getMessage()));
+            }
+        }
+
+        if (downloaded) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
+                    String argument = "var " + dl_url_name + " = '" + url + "'; " + "var " + dl_id_name + " = " + -1 + "; ";
+                    evaluateJS(argument + onDownloadStart);
+                }
+
+                if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadFinish != null && !onDownloadFinish.isEmpty()) {
+                    String argument = "var " + dl_uri_name + " = '" + "none" + "'; " + "var " + dl_id_name + " = " + -1 + "; ";
+                    evaluateJS(argument + onDownloadFinish);
+                }
+            }, 500);
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -489,19 +578,13 @@ public class UnityConnect extends Fragment {
                  * @param contentLength      The file size reported by the server
                  */
                 public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                    Context context = UnityPlayer.currentActivity.getApplicationContext();
-
-                    String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
-
-                    String extension = MimeTypes.getDefaultExt(mimetype);
-
-                    long id = -1;
-
-                    boolean data = false;
-
-                    boolean downloaded = false;
-
                     if (url.startsWith("https://") || url.startsWith("http://")) {
+                        Context context = UnityPlayer.currentActivity.getApplicationContext();
+
+                        String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
+
+                        long id = -1;
+
                         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
 
                         request.setMimeType(mimetype);
@@ -528,91 +611,35 @@ public class UnityConnect extends Fragment {
                         DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
                         id = dm.enqueue(request);
 
-                        downloaded = true;
-                    }
-                    else if (url.startsWith("data:")) { // data url scheme
-                        data = true;
-
-                        String[] splits = url.split("/");
-                        String base64 = null;
-
-                        base64 = url.replaceFirst("^data:.+;base64,", "");
-
-                        byte[] blobBytes = Base64.decode(base64, 0);
-
-                        @SuppressLint("SimpleDateFormat") DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-                        String fileName = dateFormat.format(new Date()) + "." + extension;
-
-                        String downloadDir = "";
-
-                        if(dlOption == DlOption.applicationFolder.ordinal()) {
-                            downloadDir = Objects.requireNonNull(context.getExternalFilesDir(null)).getPath();
-                        }
-                        else if(dlOption == DlOption.downloadFolder.ordinal()) {
-                            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
-                        }
-
-                        if (!subDir.isEmpty()) {
-                            downloadDir = downloadDir + "/" + subDir;
-                        }
-
-                        File file = new File(downloadDir, fileName);
-
-                        boolean fileExists = file.exists();
-
-                        if (!fileExists) {
-                            File directory = file.getParentFile();
-
-                            assert directory != null;
-                            fileExists = directory.exists();
-
-                            if (!fileExists) {
-                                fileExists = directory.mkdirs();
-                            }
-
-                            if (fileExists) {
-                                fileExists = file.exists();
-
-                                if (!fileExists) {
-                                    try {
-                                        fileExists = file.createNewFile();
-                                    } catch (IOException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (fileExists) {
-                            try {
-                                FileOutputStream fos = new FileOutputStream(file, false);
-                                fos.write(blobBytes);
-                                fos.flush();
-                                fos.close();
-
-                                downloaded = true;
-                            } catch (IOException e) {
-                                Log.e(TAG, Objects.requireNonNull(e.getMessage()));
-                            }
-                        }
-                    }
-                    else if (url.startsWith("blob:")) { // blob url scheme
-                        // feature implement
-                    }
-
-                    if (downloaded) {
                         if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadStart != null && !onDownloadStart.isEmpty()) {
-                            // NOTE: This is not good practice, I need to avoid variable definition conflicts.
                             String argument = "var " + dl_url_name + " = '" + url + "'; " + "var " + dl_id_name + " = " + id + "; ";
                             evaluateJS(argument + onDownloadStart);
                         }
+                    }
+                    else if (url.startsWith("data:")) { // data url scheme
+                        // write base64 data to file stream
+                        getBase64FromBlobData(url, mimetype);
+                    }
+                    else if (url.startsWith("blob:")) { // blob url scheme
+                        // get base64 from blob url and write to file stream
+                        String js = "var xhr = new XMLHttpRequest();" +
+                                "xhr.open('GET', '"+ url +"', true);" +
+                                "xhr.setRequestHeader('Content-type','" + mimetype +";charset=UTF-8');" +
+                                "xhr.responseType = 'blob';" +
+                                "xhr.onload = function(e) {" +
+                                "    if (this.status == 200) {" +
+                                "        var blobFile = this.response;" +
+                                "        var reader = new FileReader();" +
+                                "        reader.readAsDataURL(blobFile);" +
+                                "        reader.onloadend = function() {" +
+                                "            base64data = reader.result;" +
+                                "            window.TLabWebViewActivity.getBase64StringFromBlobUrl(base64data, '"+ mimetype +"');" +
+                                "        }" +
+                                "    }" +
+                                "};" +
+                                "xhr.send();";
 
-                        if (data) {
-                            if (mWebView.getSettings().getJavaScriptEnabled() && onDownloadFinish != null && !onDownloadFinish.isEmpty()) {
-                                String argument = "var " + dl_uri_name + " = '" + "none" + "'; " + "var " + dl_id_name + " = " + id + "; ";
-                                evaluateJS(argument + onDownloadFinish);
-                            }
-                        }
+                        evaluateJS(js);
                     }
                 }
             });
@@ -753,6 +780,16 @@ public class UnityConnect extends Fragment {
         @JavascriptInterface
         public void unitySendMessage(String go, String method, String message) {
             UnityPlayer.UnitySendMessage(go, method, message);
+        }
+
+        /**
+         *
+         * @param url
+         * @param mimetype
+         */
+        @JavascriptInterface
+        public void getBase64StringFromBlobUrl(String url, String mimetype) {
+            getBase64FromBlobData(url, mimetype);
         }
     }
 

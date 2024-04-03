@@ -54,8 +54,11 @@ import com.self.viewtoglrendering.ViewToGLRenderer;
 import com.self.viewtoglrendering.GLLinearLayout;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
@@ -101,6 +104,9 @@ public class UnityConnect extends Fragment {
     private int screenWidth;
     private int screenHeight;
     private int dlOption;
+
+    private int scrollX;
+    private int scrollY;
 
     private float downloadProgress = 0.0f;
 
@@ -643,6 +649,21 @@ public class UnityConnect extends Fragment {
                     }
                 }
             });
+            mWebView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                /**
+                 *
+                 * @param v The view whose scroll position has changed.
+                 * @param x Current horizontal scroll origin.
+                 * @param y Current vertical scroll origin.
+                 * @param oldX Previous horizontal scroll origin.
+                 * @param oldY Previous vertical scroll origin.
+                 */
+                @Override
+                public void onScrollChange(View v, int x, int y, int oldX, int oldY) {
+                    scrollX = x;
+                    scrollY = y;
+                }
+            });
 
             // create download complete event receiver.
             onDownloadComplete = new BroadcastReceiver() {
@@ -951,10 +972,33 @@ public class UnityConnect extends Fragment {
 
     /**
      *
-     * @param onPageFinish
+     * @return
      */
-    public void registerOnPageFinishCallback(String onPageFinish) {
-        this.onPageFinish = onPageFinish;
+    public int getScrollX() {
+        return scrollX;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int getScrollY() {
+        return scrollY;
+    }
+
+    /**
+     *
+     * @param x
+     * @param y
+     */
+    public void setScroll(int x, int y) {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if (mWebView == null) {
+                return;
+            }
+
+            mWebView.scrollTo(x, y);
+        });
     }
 
     /**

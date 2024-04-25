@@ -16,11 +16,13 @@ import android.hardware.HardwareBuffer;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.opengl.GLES30;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
@@ -45,6 +47,8 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+
+import androidx.annotation.RequiresApi;
 
 import com.tlab.viewtohardwarebuffer.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;
@@ -148,6 +152,7 @@ public class UnityConnect extends Fragment {
      * @param screenHeight
      * @param url
      */
+    @RequiresApi(api = Build.VERSION_CODES.R)
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
@@ -669,7 +674,12 @@ public class UnityConnect extends Fragment {
             webSettings.setBuiltInZoomControls(false);
             webSettings.setDisplayZoomControls(true);
             webSettings.setJavaScriptEnabled(true);
+            // --------- // fix file access
+            webSettings.setAllowContentAccess(true);
+            webSettings.setAllowFileAccess(true);
+            webSettings.setAllowFileAccessFromFileURLs(true);
             webSettings.setAllowUniversalAccessFromFileURLs(true);
+            // ---------
             webSettings.setMediaPlaybackRequiresUserGesture(false);
             if (mUserAgent != null && !mUserAgent.isEmpty()){
                 webSettings.setUserAgentString(mUserAgent);

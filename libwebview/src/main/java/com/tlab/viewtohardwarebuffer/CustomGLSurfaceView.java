@@ -1,4 +1,4 @@
-package com.self.viewtoglrendering;
+package com.tlab.viewtohardwarebuffer;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -18,21 +18,38 @@ public class CustomGLSurfaceView extends GLSurfaceView {
 
     private static final String TAG = "libwebview";
 
+    /**
+     *
+     * @return
+     */
     private int[] getContextAttributes() {
         // https://developer.android.com/reference/android/opengl/EGL14#EGL_CONTEXT_CLIENT_VERSION
         return new int[] {
-            EGL14.EGL_CONTEXT_CLIENT_VERSION /* 0x3098 */, 3 ,
-            EGL15.EGL_CONTEXT_MAJOR_VERSION, 3,
-            EGL15.EGL_CONTEXT_MINOR_VERSION, 2,
-            EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR, 3,
-            EGLExt.EGL_CONTEXT_MINOR_VERSION_KHR, 2,
-            EGL10.EGL_NONE};
+                EGL14.EGL_CONTEXT_CLIENT_VERSION /* 0x3098 */, 3 ,
+                EGL15.EGL_CONTEXT_MAJOR_VERSION, 3,
+                EGL15.EGL_CONTEXT_MINOR_VERSION, 2,
+                EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR, 3,
+                EGLExt.EGL_CONTEXT_MINOR_VERSION_KHR, 2,
+                EGL10.EGL_NONE};
     }
 
     private EGLContextFactory mEGLContextFactory = new EGLContextFactory() {
+        /**
+         *
+         * @param egl
+         * @param display
+         * @param context
+         */
         @Override
         public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) { }
 
+        /**
+         *
+         * @param egl
+         * @param display
+         * @param config
+         * @return
+         */
         @Override
         public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig config) {
             // Here, I wanted to set Unity's EGLContext as a shared context so that Texture2D could be updated with a pointer.
@@ -45,13 +62,26 @@ public class CustomGLSurfaceView extends GLSurfaceView {
         }
     };
 
+    /**
+     *
+     * @param renderer the renderer to use to perform OpenGL drawing.
+     */
     @Override
     public void setRenderer(Renderer renderer) {
         setEGLContextFactory(mEGLContextFactory);
         super.setRenderer(renderer);
     }
 
+    /**
+     *
+     * @param context
+     */
     public CustomGLSurfaceView(Context context) { super(context); }
 
+    /**
+     *
+     * @param context
+     * @param attrs
+     */
     public CustomGLSurfaceView(Context context, AttributeSet attrs) { super(context, attrs); }
 }

@@ -1,4 +1,4 @@
-package com.self.viewtoglrendering;
+package com.tlab.viewtohardwarebuffer;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -7,43 +7,67 @@ import android.widget.LinearLayout;
 
 public class GLLinearLayout extends LinearLayout implements GLRenderable {
 
-    private ViewToGLRenderer mViewToGLRenderer;
+    private ViewToHWBRenderer mViewToHWBRenderer;
 
     public float mRatioWidth = 1;
     public float mRatioHeight = 1;
 
-    // default constructors
-
+    /**
+     *
+     * @param context
+     * @param ratioWidth
+     * @param ratioHeight
+     */
     public GLLinearLayout(Context context, float ratioWidth, float ratioHeight) {
         super(context);
         mRatioWidth = ratioWidth;
         mRatioHeight = ratioHeight;
     }
 
+    /**
+     *
+     * @param context
+     * @param attrs
+     */
     public GLLinearLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
+    /**
+     *
+     * @param context
+     * @param attrs
+     * @param defStyle
+     */
     public GLLinearLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
-    // drawing magic
+    /**
+     *
+     * @param canvas The Canvas to which the View is rendered.
+     */
     @Override
     public void draw(Canvas canvas) {
-        if (mViewToGLRenderer == null) return;
+        if (mViewToHWBRenderer == null) {
+            return;
+        }
 
-        Canvas glAttachedCanvas = mViewToGLRenderer.onDrawViewBegin();
+        Canvas glAttachedCanvas = mViewToHWBRenderer.onDrawViewBegin();
+
         if (glAttachedCanvas != null) {
-            // prescale canvas to make sure content fits
-            //glAttachedCanvas.scale(1, 1);
-            // draw the view to provided canvas
             super.draw(glAttachedCanvas);
         }
 
-        // notify the canvas is updated
-        mViewToGLRenderer.onDrawViewEnd();
+        mViewToHWBRenderer.onDrawViewEnd();
     }
 
-    public void setViewToGLRenderer(ViewToGLRenderer viewToGLRenderer) { mViewToGLRenderer = viewToGLRenderer; }
+    /**
+     *
+     * @param viewToHWBRenderer
+     */
+    @Override
+    public void setViewToGLRenderer(ViewToHWBRenderer viewToHWBRenderer) {
+        mViewToHWBRenderer = viewToHWBRenderer;
+    }
 }

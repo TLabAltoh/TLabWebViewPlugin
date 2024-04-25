@@ -2,6 +2,7 @@
 Source code of java plugin used in TLabWebView
 
 ## Operating Environment
+```
 Android Studio Version:
  Android Studio Giraffe | 2022.3.1 Patch 2
  Build #AI-223.8836.35.2231.10811636, built on September 15, 2023
@@ -19,14 +20,11 @@ Non-Bundled Plugins:
 com.google.idea.bazel.aswb (2023.10.10-aswb.0.1-api-version-223)
 
 OS: Windows 10  
-
-## Getting Started
-### Build
-Build and use with .aar
+```
 
 ## Current Issue
 ### Did not find frame
-- The following error occurs when using lockhardwarecanvas
+- The following error occurs when using lockhardwarecanvas in unity 2021
 ```
 2023/11/13 15:40:53.051 13492 13511 Error FrameEvents updateAcquireFence: Did not find frame.
 ```

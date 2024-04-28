@@ -972,6 +972,34 @@ public class UnityConnect extends Fragment {
 
     /**
      *
+     * @param top
+     */
+    public void pageUp(boolean top) {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if (mWebView == null) {
+                return;
+            }
+
+            mWebView.pageUp(top);
+        });
+    }
+
+    /**
+     *
+     * @param bottom
+     */
+    public void pageDown(boolean bottom) {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if (mWebView == null) {
+                return;
+            }
+
+            mWebView.pageDown(bottom);
+        });
+    }
+
+    /**
+     *
      * @param js
      */
     public void evaluateJS(String js) {
@@ -1002,11 +1030,46 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    /**
+     *
+     * @param webWidth
+     * @param webHeight
+     */
     public void resizeWeb(int webWidth, int webHeight) {
         mWebWidth = webWidth;
         mWebHeight = webHeight;
 
         UnityPlayer.currentActivity.runOnUiThread(() -> {
+            mGlLayout.mRatioWidth = (float) mTexWidth / mWebWidth;
+            mGlLayout.mRatioHeight = (float) mTexHeight / mWebHeight;
+
+            ViewGroup.LayoutParams lp = mLayout.getLayoutParams();
+            lp.width = mWebWidth;
+            lp.height = mWebHeight;
+
+            mLayout.setLayoutParams(lp);
+        });
+    }
+
+    /**
+     *
+     * @param textureWidth
+     * @param textureHeight
+     * @param webWidth
+     * @param webHeight
+     */
+    public void resize(int textureWidth, int textureHeight, int webWidth, int webHeight) {
+        mTexWidth = textureWidth;
+        mTexHeight = textureHeight;
+        mWebWidth = webWidth;
+        mWebHeight = webHeight;
+
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if (mViewToHWBRenderer == null) {
+                return;
+            }
+            mViewToHWBRenderer.SetTextureResolution(mTexWidth, mTexHeight);
+
             mGlLayout.mRatioWidth = (float) mTexWidth / mWebWidth;
             mGlLayout.mRatioHeight = (float) mTexHeight / mWebHeight;
 

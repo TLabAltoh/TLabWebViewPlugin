@@ -960,13 +960,28 @@ public class UnityConnect extends Fragment {
      * @param x
      * @param y
      */
-    public void setScroll(int x, int y) {
+    public void scrollTo(int x, int y) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
                 return;
             }
 
             mWebView.scrollTo(x, y);
+        });
+    }
+
+    /**
+     * 
+     * @param x
+     * @param y
+     */
+    public void scrollBy(int x, int y) {
+        UnityPlayer.currentActivity.runOnUiThread(() -> {
+            if (mWebView == null) {
+                return;
+            }
+
+            mWebView.scrollBy(x, y);
         });
     }
 
@@ -1210,19 +1225,25 @@ public class UnityConnect extends Fragment {
 
     /**
      *
-     * @param visible
+     * @param visibility
      */
-    public void setVisible(boolean visible) {
+    public void setVisible(int visibility) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
                 return;
             }
 
-            if (visible) {
-                mWebView.setVisibility(View.VISIBLE);
-                mWebView.requestFocus();
-            } else{
-                mWebView.setVisibility(View.INVISIBLE);
+            switch (visibility) {
+                case 0:
+                    mWebView.setVisibility(View.VISIBLE);
+                    mWebView.requestFocus();
+                    break;
+                case 1:
+                    mWebView.setVisibility(View.INVISIBLE);
+                    break;
+                case 2:
+                    mWebView.setVisibility(View.GONE);
+                    break;
             }
         });
     }

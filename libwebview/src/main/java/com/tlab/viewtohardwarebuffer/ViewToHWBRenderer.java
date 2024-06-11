@@ -158,18 +158,12 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         mHWBFboID = new int[1];
         mHWBFboTexID = new int[1];
 
-        GLES30.glGenTextures(1, mHWBFboTexID, 0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mHWBFboTexID[0]);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
-
-        mSharedTexture = new SharedTexture(mTextureWidth, mTextureHeight);
+        mSharedTexture = new SharedTexture(mTextureWidth, mTextureHeight, false);
         mSharedBuffer = mSharedTexture.getHardwareBuffer();
 
+        // Plugin returns long variable, but in OpenGL, texture id can be used by int, so cast here.
         assert mSharedTexture != null;
-        boolean result = mSharedTexture.bindTexture(mHWBFboTexID[0]);
+        mHWBFboTexID[0] = (int)mSharedTexture.getBindedPlatformTexture();
 
         GLES30.glGenFramebuffers(1, mHWBFboID, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mHWBFboID[0]);
@@ -264,6 +258,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     private void init() {
+        //Log.i(TAG, "[webview-vulkan-test] [init] pass 0 (start)");
         EGLContext context = EGL14.eglGetCurrentContext();
 
         mEglCore = new EglCore(context, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
@@ -275,6 +270,8 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         GLES30.glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
         mInitialized = true;
+
+        //Log.i(TAG, "[webview-vulkan-test] [init] pass 0 (end)");
     }
 
     /**
@@ -340,6 +337,8 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         GLES30.glDisableVertexAttribArray(mGLSamplerTexCoordID);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+
+        //Log.i(TAG, "[webview-vulkan-test] [CopySurfaceTextureToHWB]");
     }
 
     /**

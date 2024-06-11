@@ -54,7 +54,7 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
         }
 
         Canvas glAttachedCanvas = mViewToHWBRenderer.onDrawViewBegin();
-
+        
         if (glAttachedCanvas != null) {
             super.draw(glAttachedCanvas);
         }

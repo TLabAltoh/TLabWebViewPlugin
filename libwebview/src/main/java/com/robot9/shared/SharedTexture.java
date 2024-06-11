@@ -12,6 +12,7 @@ public class SharedTexture {
     private static boolean available = false;
 
     static {
+        //Log.i(TAG, "[webview-vulkan-test] load shared texture plugin");
         System.loadLibrary("shared-texture");
     }
 
@@ -28,18 +29,21 @@ public class SharedTexture {
         }
     }
 
-    private long nativeContext = 0;
-    private HardwareBuffer buffer = null;
+    private boolean mIsVulkan = false;
+    private long mNativeContext = 0;
+    private HardwareBuffer mBuffer = null;
 
-    public SharedTexture(HardwareBuffer buff) {
+    public SharedTexture(HardwareBuffer buffer, boolean isVulkan) {
         Log.d(TAG, "create SharedTexture from buffer");
-        nativeContext = createFromBuffer(buff);
-        buffer = buff;
+        mNativeContext = createFromBuffer(buffer, isVulkan);
+        mBuffer = buffer;
+        mIsVulkan = isVulkan;
     }
 
-    public SharedTexture(int width, int height) {
+    public SharedTexture(int width, int height, boolean isVulkan) {
         Log.d(TAG, "create new SharedTexture:(" + width + "," + height + ")");
-        nativeContext = create(width, height);
+        mNativeContext = create(width, height, isVulkan);
+        mIsVulkan = isVulkan;
     }
 
     public static boolean isAvailable() {
@@ -47,77 +51,93 @@ public class SharedTexture {
     }
 
     public HardwareBuffer getHardwareBuffer() {
-        if (nativeContext != 0) {
-            if (buffer != null) {
+        if (mNativeContext != 0) {
+            if (mBuffer != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    buffer.close();
+                    mBuffer.close();
                 }
-                buffer = null;
+                mBuffer = null;
             }
-            buffer = getBuffer(nativeContext);
-            return buffer;
+            mBuffer = getBuffer(mNativeContext);
+            return mBuffer;
         }
         return null;
     }
 
-    public boolean bindTexture(int texId) {
-        if (nativeContext != 0) {
-            return bindTexture(nativeContext, texId);
+    public void downloadBuffer() {
+        if (mNativeContext != 0) {
+            downloadBuffer(mNativeContext);
         }
-        return false;
     }
 
     public int getBufferWidth() {
-        if (nativeContext != 0) {
-            return getWidth(nativeContext);
+        if (mNativeContext != 0) {
+            return getWidth(mNativeContext);
         }
         return 0;
     }
 
     public int getBufferHeight() {
-        if (nativeContext != 0) {
-            return getHeight(nativeContext);
+        if (mNativeContext != 0) {
+            return getHeight(mNativeContext);
         }
         return 0;
     }
 
-    public int getBindTexture() {
-        if (nativeContext != 0) {
-            return getBindTexture(nativeContext);
+    public long getBindedPlatformTexture() {
+        if (mNativeContext != 0) {
+            return getBindedPlatformTexture(mNativeContext);
         }
         return 0;
     }
 
-    public ParcelFileDescriptor createFence() {
-        int fd = createEGLFence();
-        if (fd != EGL_NO_NATIVE_FENCE_FD_ANDROID) {
-            return ParcelFileDescriptor.adoptFd(fd);
+    public void setUnityTexture(long unityTexID) {
+        if (mNativeContext != 0) {
+            setUnityTexture(mNativeContext, unityTexID);
         }
-        return null;
     }
 
-    public boolean waitFence(ParcelFileDescriptor pfd) {
-        if (pfd != null) {
-            int fd = pfd.detachFd();
-            if (fd != EGL_NO_NATIVE_FENCE_FD_ANDROID) {
-                return waitEGLFence(fd);
-            }
+    public void updateUnityTexture() {
+        if (mNativeContext != 0) {
+            updateUnityTexture(mNativeContext);
         }
-
-        return false;
     }
+
+    public boolean isVulkan() {
+        return mIsVulkan;
+    }
+
+    //@TODO:
+//    public ParcelFileDescriptor createFence() {
+//        int fd = createEGLFence();
+//        if (fd != EGL_NO_NATIVE_FENCE_FD_ANDROID) {
+//            return ParcelFileDescriptor.adoptFd(fd);
+//        }
+//        return null;
+//    }
+//
+//    public boolean waitFence(ParcelFileDescriptor pfd) {
+//        if (pfd != null) {
+//            int fd = pfd.detachFd();
+//            if (fd != EGL_NO_NATIVE_FENCE_FD_ANDROID) {
+//                return waitEGLFence(fd);
+//            }
+//        }
+//
+//        return false;
+//    }
 
     public void release() {
-        if (nativeContext != 0) {
+        if (mNativeContext != 0) {
             Log.d(TAG, "destroy");
-            if (buffer != null) {
+            if (mBuffer != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    buffer.close();
+                    mBuffer.close();
                 }
-                buffer = null;
+                mBuffer = null;
             }
-            destroy(nativeContext);
-            nativeContext = 0;
+            destroy(mNativeContext);
+            mNativeContext = 0;
         }
     }
 
@@ -129,23 +149,27 @@ public class SharedTexture {
 
     private static native boolean available();
 
-    private static native int createEGLFence();
+//    private static native int createEGLFence();
+//
+//    private static native boolean waitEGLFence(int fenceFd);
 
-    private static native boolean waitEGLFence(int fenceFd);
+    private native long create(int width, int height, boolean isVulkan);
 
-    private native long create(int width, int height);
-
-    private native long createFromBuffer(HardwareBuffer buffer);
+    private native long createFromBuffer(HardwareBuffer buffer, boolean isVulkan);
 
     private native HardwareBuffer getBuffer(long ctx);
 
-    private native boolean bindTexture(long ctx, int texId);
+    private native void downloadBuffer(long ctx);
 
     private native int getWidth(long ctx);
 
     private native int getHeight(long ctx);
 
-    private native int getBindTexture(long ctx);
+    private native long getBindedPlatformTexture(long ctx);
+
+    private native void setUnityTexture(long ctx, long unityTexID);
+
+    private native void updateUnityTexture(long ctx);
 
     private native void destroy(long ctx);
 }

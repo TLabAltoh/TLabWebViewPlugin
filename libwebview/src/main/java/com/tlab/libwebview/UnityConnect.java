@@ -125,11 +125,12 @@ public class UnityConnect extends Fragment {
     private boolean mCanGoForward;
     private boolean mInitialized = false;
 
+    private boolean mSharedBufferUpdated = false;
     private SharedTexture mSharedTexture;
     private HardwareBuffer mSharedBuffer;
 
-    private int[] mHWBFboTexID;
-    private int[] mHWBFboID;
+    private long[] mHWBTexID;
+    private boolean mIsVulkan;
 
     private String mUserAgent;
     private Hashtable<String, String> mCustomHeaders;
@@ -156,7 +157,7 @@ public class UnityConnect extends Fragment {
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
-                           String url)
+                           String url, boolean isVulkan)
     {
         if(webWidth <= 0 || webHeight <= 0) {
             return;
@@ -169,6 +170,7 @@ public class UnityConnect extends Fragment {
         mScreenWidth = screenWidth;
         mScreenHeight = screenHeight;
         mLoadUrl = url;
+        mIsVulkan = isVulkan;
 
         initWebView();
     }
@@ -186,51 +188,53 @@ public class UnityConnect extends Fragment {
     //
 
     public void releaseSharedTexture() {
-        if (mHWBFboTexID != null) {
-            GLES30.glDeleteTextures(mHWBFboTexID.length, mHWBFboTexID, 0);
-            mHWBFboTexID = null;
-        }
-
-        if (mHWBFboID != null) {
-            GLES30.glDeleteTextures(mHWBFboID.length, mHWBFboID, 0);
-            mHWBFboID = null;
-        }
-
+        //Log.i(TAG, "[webview-vulkan-test] release shared texture pass 0 (start)");
+        mHWBTexID = null;
         if(mSharedTexture != null){
             mSharedTexture.release();
             mSharedTexture = null;
         }
+        //Log.i(TAG, "[webview-vulkan-test] release shared texture pass 1 (end)");
     }
 
     /**
      *
      *
      */
-    public void updateSharedTexture() {
+    public void updateSurface() {
+        mGlLayout.postInvalidate();
 
         HardwareBuffer sharedBuffer = mViewToHWBRenderer.getHardwareBuffer();
 
-        if (sharedBuffer == null || mSharedBuffer == sharedBuffer) {
+        if (sharedBuffer == null) {
             return;
         }
 
+        if (mSharedBuffer == sharedBuffer) {
+            mSharedTexture.updateUnityTexture();
+
+            return;
+        }
+
+        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 0 (start)");
+
+        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 1");
+
         releaseSharedTexture();
 
-        mHWBFboTexID = new int[1];
-        mHWBFboID = new int[1];
-        GLES30.glGenTextures(mHWBFboTexID.length, mHWBFboTexID, 0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mHWBFboTexID[0]);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
-        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 2 (release shared texture)");
 
-        SharedTexture sharedTexture = new SharedTexture(sharedBuffer);
+        SharedTexture sharedTexture = new SharedTexture(sharedBuffer, mIsVulkan);
 
-        sharedTexture.bindTexture(mHWBFboTexID[0]);
+        mHWBTexID = new long[1];
+        mHWBTexID[0] = sharedTexture.getBindedPlatformTexture();
 
         mSharedTexture = sharedTexture;
         mSharedBuffer = sharedBuffer;
+
+        mSharedBufferUpdated = true;
+
+        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 3 (end)");
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -793,24 +797,21 @@ public class UnityConnect extends Fragment {
 
     /**
      *
-     *
-     */
-    public void updateSurface() {
-        mGlLayout.postInvalidate();
-    }
-
-    /**
-     *
      * @return
      */
-    public int getTexturePtr() {
-        updateSurface();
-
-        if (mHWBFboTexID == null) {
+    public long getBindedPlatformTextureID() {
+        if (mHWBTexID == null) {
             return 0;
         }
 
-        return mHWBFboTexID[0];
+        return mHWBTexID[0];
+    }
+
+
+    public void setUnityTextureID(long unityTexID) {
+        if (mSharedTexture != null) {
+            mSharedTexture.setUnityTexture(unityTexID);
+        }
     }
 
     /**
@@ -971,7 +972,7 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     * 
+     *
      * @param x
      * @param y
      */

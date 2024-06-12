@@ -15,14 +15,12 @@ import android.graphics.Color;
 import android.hardware.HardwareBuffer;
 import android.net.Uri;
 import android.net.http.SslError;
-import android.opengl.GLES30;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
-import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
@@ -50,6 +48,8 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.RequiresApi;
 
+import com.tlab.eventcallback.CatchDownloadUrlCallback;
+import com.tlab.eventcallback.DownloadEventCallback;
 import com.tlab.viewtohardwarebuffer.CustomGLSurfaceView;
 import com.unity3d.player.UnityPlayer;
 
@@ -111,12 +111,12 @@ public class UnityConnect extends Fragment {
     private float mDownloadProgress = 0.0f;
 
     private String mOnPageFinish;
-    private String mOnDownloadStart;
-    private String mOnDownloadFinish;
-    private String mDlUrlName;
-    private String mDlUriName;
-    private String mDlIdName;
-    private String mSubDir;
+
+    private DownloadEventCallback mDlEventCallback = new DownloadEventCallback();
+
+    private CatchDownloadUrlCallback mCatchDlUrlCallback = new CatchDownloadUrlCallback();
+
+    private String mDlSubDir;
     private String mLoadUrl;
     private String mActualUrl;
     private String mHtmlCash;
@@ -265,8 +265,8 @@ public class UnityConnect extends Fragment {
             downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
         }
 
-        if (!mSubDir.isEmpty()) {
-            downloadDir = downloadDir + "/" + mSubDir;
+        if (!mDlSubDir.isEmpty()) {
+            downloadDir = downloadDir + "/" + mDlSubDir;
         }
 
         File file = new File(downloadDir, filename);
@@ -311,14 +311,18 @@ public class UnityConnect extends Fragment {
 
         if (downloaded) {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (mWebView.getSettings().getJavaScriptEnabled() && mOnDownloadStart != null && !mOnDownloadStart.isEmpty()) {
-                    String argument = "var " + mDlUrlName + " = '" + url + "'; " + "var " + mDlIdName + " = " + -1 + "; ";
-                    evaluateJS(argument + mOnDownloadStart);
+                if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnStartEmpty()) {
+                    String argument =
+                            "var " + mDlEventCallback.varDlUrlName + " = '" + url + "'; " +
+                            "var " + mDlEventCallback.varDlIdName + " = -1; ";
+                    evaluateJS(argument + mDlEventCallback.onStart);
                 }
 
-                if (mWebView.getSettings().getJavaScriptEnabled() && mOnDownloadFinish != null && !mOnDownloadFinish.isEmpty()) {
-                    String argument = "var " + mDlUriName + " = '" + "none" + "'; " + "var " + mDlIdName + " = " + -1 + "; ";
-                    evaluateJS(argument + mOnDownloadFinish);
+                if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnFinishEmpty()) {
+                    String argument =
+                            "var " + mDlEventCallback.varDlUriName + " = 'none'; " +
+                            "var " + mDlEventCallback.varDlIdName + " = -1; ";
+                    evaluateJS(argument + mDlEventCallback.onFinish);
                 }
             }, 500);
         }
@@ -552,69 +556,14 @@ public class UnityConnect extends Fragment {
                  * @param contentLength      The file size reported by the server
                  */
                 public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                    if (url.startsWith("https://") || url.startsWith("http://")) {
-                        Context context = UnityPlayer.currentActivity.getApplicationContext();
+                    if (!mCatchDlUrlCallback.isEmpty()) {
+                        UnityPlayer.UnitySendMessage(mCatchDlUrlCallback.go, mCatchDlUrlCallback.func,
+                                url + "\n" + userAgent + "\n" + contentDisposition + "\n" + mimetype);
 
-                        String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
-
-                        long id = -1;
-
-                        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-
-                        request.setMimeType(mimetype);
-                        //------------------------COOKIE!!------------------------
-                        String cookies = CookieManager.getInstance().getCookie(url);
-                        request.addRequestHeader("cookie", cookies);
-                        //------------------------COOKIE!!------------------------
-                        request.addRequestHeader("User-Agent", userAgent);
-                        request.setDescription("Downloading file...");
-                        request.setTitle(filename);
-                        request.allowScanningByMediaScanner();
-                        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-
-                        if(mDlOption == DlOption.applicationFolder.ordinal()) {
-                            request.setDestinationInExternalFilesDir(context, mSubDir, filename);
-                        }
-                        else if(mDlOption == DlOption.downloadFolder.ordinal()) {
-                            if (!mSubDir.isEmpty()) {
-                                filename = mSubDir + "/" + filename;
-                            }
-                            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
-                        }
-
-                        DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
-                        id = dm.enqueue(request);
-
-                        if (mWebView.getSettings().getJavaScriptEnabled() && mOnDownloadStart != null && !mOnDownloadStart.isEmpty()) {
-                            String argument = "var " + mDlUrlName + " = '" + url + "'; " + "var " + mDlIdName + " = " + id + "; ";
-                            evaluateJS(argument + mOnDownloadStart);
-                        }
+                        return;
                     }
-                    else if (url.startsWith("data:")) { // data url scheme
-                        // write base64 data to file stream
-                        getBase64FromBlobData(url, mimetype);
-                    }
-                    else if (url.startsWith("blob:")) { // blob url scheme
-                        // get base64 from blob url and write to file stream
-                        String js = "var xhr = new XMLHttpRequest();" +
-                                "xhr.open('GET', '"+ url +"', true);" +
-                                "xhr.setRequestHeader('Content-type','" + mimetype +";charset=UTF-8');" +
-                                "xhr.responseType = 'blob';" +
-                                "xhr.onload = function(e) {" +
-                                "    if (this.status == 200) {" +
-                                "        var blobFile = this.response;" +
-                                "        var reader = new FileReader();" +
-                                "        reader.readAsDataURL(blobFile);" +
-                                "        reader.onloadend = function() {" +
-                                "            base64data = reader.result;" +
-                                "            window.TLabWebViewActivity.getBase64StringFromBlobUrl(base64data, '"+ mimetype +"');" +
-                                "        }" +
-                                "    }" +
-                                "};" +
-                                "xhr.send();";
 
-                        evaluateJS(js);
-                    }
+                    downloadFromUrl(url, userAgent, contentDisposition, mimetype);
                 }
             });
             mWebView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
@@ -646,9 +595,11 @@ public class UnityConnect extends Fragment {
                     DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
                     Uri uri = dm.getUriForDownloadedFile(downloadedID);
 
-                    if (mWebView.getSettings().getJavaScriptEnabled() && mOnDownloadFinish != null && !mOnDownloadFinish.isEmpty()) {
-                        String argument = "var " + mDlUriName + " = '" + uri + "'; " + "var " + mDlIdName + " = " + downloadedID + "; ";
-                        evaluateJS(argument + mOnDownloadFinish);
+                    if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnFinishEmpty()) {
+                        String argument =
+                                "var " + mDlEventCallback.varDlUriName + " = '" + uri + "'; " +
+                                "var " + mDlEventCallback.varDlIdName + " = " + downloadedID + "; ";
+                        evaluateJS(argument + mDlEventCallback.onFinish);
                     }
                 }
             };
@@ -808,9 +759,98 @@ public class UnityConnect extends Fragment {
     }
 
 
+    /**
+     *
+     * @param unityTexID
+     */
     public void setUnityTextureID(long unityTexID) {
         if (mSharedTexture != null) {
             mSharedTexture.setUnityTexture(unityTexID);
+        }
+    }
+
+    /**
+     *
+     * @param go
+     * @param func
+     */
+    public void setOnCatchDownloadUrl(String go, String func) {
+        mCatchDlUrlCallback.go = go;
+        mCatchDlUrlCallback.func = func;
+    }
+
+    /**
+     *
+     * @param url
+     * @param userAgent
+     * @param contentDisposition
+     * @param mimetype
+     */
+    public void downloadFromUrl(String url, String userAgent, String contentDisposition, String mimetype) {
+        if (url.startsWith("https://") || url.startsWith("http://")) {
+            Context context = UnityPlayer.currentActivity.getApplicationContext();
+
+            String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
+
+            long id = -1;
+
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+
+            request.setMimeType(mimetype);
+            //------------------------COOKIE!!------------------------
+            String cookies = CookieManager.getInstance().getCookie(url);
+            request.addRequestHeader("cookie", cookies);
+            //------------------------COOKIE!!------------------------
+            request.addRequestHeader("User-Agent", userAgent);
+            request.setDescription("Downloading file...");
+            request.setTitle(filename);
+            request.allowScanningByMediaScanner();
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+
+            if(mDlOption == DlOption.applicationFolder.ordinal()) {
+                request.setDestinationInExternalFilesDir(context, mDlSubDir, filename);
+            }
+            else if(mDlOption == DlOption.downloadFolder.ordinal()) {
+                if (!mDlSubDir.isEmpty()) {
+                    filename = mDlSubDir + "/" + filename;
+                }
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
+            }
+
+            DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
+            id = dm.enqueue(request);
+
+            if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnStartEmpty()) {
+                String argument =
+                        "var " + mDlEventCallback.varDlUrlName + " = '" + url + "'; " +
+                        "var " + mDlEventCallback.varDlIdName + " = " + id + "; ";
+                evaluateJS(argument + mDlEventCallback.onStart);
+            }
+        }
+        else if (url.startsWith("data:")) { // data url scheme
+            // write base64 data to file stream
+            getBase64FromBlobData(url, mimetype);
+        }
+        else if (url.startsWith("blob:")) { // blob url scheme
+            // get base64 from blob url and write to file stream
+            String js = "var xhr = new XMLHttpRequest();" +
+                    "xhr.open('GET', '"+ url +"', true);" +
+                    "xhr.setRequestHeader('Content-type','" + mimetype +";charset=UTF-8');" +
+                    "xhr.responseType = 'blob';" +
+                    "xhr.onload = function(e) {" +
+                    "    if (this.status == 200) {" +
+                    "        var blobFile = this.response;" +
+                    "        var reader = new FileReader();" +
+                    "        reader.readAsDataURL(blobFile);" +
+                    "        reader.onloadend = function() {" +
+                    "            base64data = reader.result;" +
+                    "            window.TLabWebViewActivity.getBase64StringFromBlobUrl(base64data, '"+ mimetype +"');" +
+                    "        }" +
+                    "    }" +
+                    "};" +
+                    "xhr.send();";
+
+            evaluateJS(js);
         }
     }
 
@@ -1251,23 +1291,23 @@ public class UnityConnect extends Fragment {
 
     /**
      *
-     * @param dl_url_name
-     * @param dl_uri_name
-     * @param dl_id_name
+     * @param varDlUrlName
+     * @param varDlUriName
+     * @param varDlIdName
      */
     public void setDownloadEventVariableName(
-            String dl_url_name, String dl_uri_name, String dl_id_name) {
-        mDlUrlName = dl_url_name;
-        mDlUriName = dl_uri_name;
-        mDlIdName = dl_id_name;
+            String varDlUrlName, String varDlUriName, String varDlIdName) {
+        mDlEventCallback.varDlUrlName = varDlUrlName;
+        mDlEventCallback.varDlUriName = varDlUriName;
+        mDlEventCallback.varDlIdName = varDlIdName;
     }
 
     /**
      *
-     * @param subDir
+     * @param dlSubDir
      */
-    public void setSubDir(String subDir) {
-        mSubDir = subDir;
+    public void setDownloadSubDir(String dlSubDir) {
+        mDlSubDir = dlSubDir;
     }
 
     /**
@@ -1291,7 +1331,7 @@ public class UnityConnect extends Fragment {
      * @param onDownloadStart
      */
     public void setOnDownloadStart(String onDownloadStart) {
-        mOnDownloadStart = onDownloadStart;
+        mDlEventCallback.onStart = onDownloadStart;
     }
 
     /**
@@ -1299,7 +1339,7 @@ public class UnityConnect extends Fragment {
      * @param onDownloadFinish
      */
     public void setOnDownloadFinish(String onDownloadFinish) {
-        mOnDownloadFinish = onDownloadFinish;
+        mDlEventCallback.onFinish = onDownloadFinish;
     }
 
     /**

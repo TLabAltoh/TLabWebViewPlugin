@@ -92,6 +92,8 @@ namespace tlab {
         UnityVulkanInstance m_Instance;
         std::map<intptr_t, VulkanHWBImage> m_VulkanImageMap;
         std::mutex m_mutex;
+
+        void GarbageCollect(bool force);
     };
 }
 

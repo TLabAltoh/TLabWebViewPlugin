@@ -72,6 +72,8 @@ namespace tlab  {
         UnityGfxRenderer m_APIType;
         std::map<unsigned long long, GLESHWBImage> m_GLESImageMap;
         std::mutex m_mutex;
+
+        void GarbageCollect(bool force);
     };
 }
 

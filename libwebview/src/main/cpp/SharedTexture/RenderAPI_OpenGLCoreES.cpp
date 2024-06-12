@@ -59,7 +59,9 @@ namespace tlab {
         }
         else if (type == kUnityGfxDeviceEventShutdown)
         {
+            GarbageCollect(true);
 
+            DEVLOGD("[webview-vulkan-test] shutdown render api");
         }
     }
 
@@ -89,6 +91,8 @@ namespace tlab {
             GLESHWBImage image = m_GLESImageMap[platformTexID];
             ImmediateDestroyGLESHWBImage(image);
             m_GLESImageMap.erase(platformTexID);
+
+            DEVLOGD("[webview-vulkan-test] delete current platform texture");
         }
 
         m_mutex.unlock();
@@ -173,7 +177,8 @@ namespace tlab {
         return true;
     }
 
-    bool RenderAPI_OpenGLCoreES::CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
+    bool
+    RenderAPI_OpenGLCoreES::CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
                                                                   AHardwareBuffer *hwBuffer, GLESHWBImage *hwbImage) {
 
         if (!AVAILABLE) {
@@ -217,7 +222,8 @@ namespace tlab {
         return true;
     }
 
-    void RenderAPI_OpenGLCoreES::ImmediateDestroyGLESHWBImage(GLESHWBImage &hwbImage) {
+    void
+    RenderAPI_OpenGLCoreES::ImmediateDestroyGLESHWBImage(GLESHWBImage &hwbImage) {
         if (hwbImage.image != 0) {
             GLuint HWBTexID[1];
             HWBTexID[0] = hwbImage.image;
@@ -232,6 +238,18 @@ namespace tlab {
         if (hwbImage.eglImage != EGL_NO_IMAGE_KHR) {
             glext::eglDestroyImageKHR(display, hwbImage.eglImage);
             hwbImage.eglImage = EGL_NO_IMAGE_KHR;
+        }
+    }
+
+    void
+    RenderAPI_OpenGLCoreES::GarbageCollect(bool force /*= false*/)
+    {
+        std::map<unsigned long long, GLESHWBImage>::iterator it = m_GLESImageMap.begin();
+
+        while (it != m_GLESImageMap.end())
+        {
+            ImmediateDestroyGLESHWBImage(it->second);
+            m_GLESImageMap.erase(it++);
         }
     }
 

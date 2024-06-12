@@ -129,8 +129,15 @@ namespace tlab {
                 break;
             case kUnityGfxDeviceEventShutdown:
 
+                if (m_Instance.device != VK_NULL_HANDLE)
+                {
+                    GarbageCollect(true);
+                }
+
                 m_UnityVulkan = NULL;
                 m_Instance = UnityVulkanInstance();
+
+                DEVLOGD("[webview-vulkan-test] shutdown render api");
 
                 break;
         }
@@ -321,6 +328,24 @@ namespace tlab {
 
         if (hwbImage.hwBuffer != VK_NULL_HANDLE) {
             hwbImage.hwBuffer = NULL;
+        }
+    }
+
+    void
+    RenderAPI_Vulkan::GarbageCollect(bool force /* false */) {
+        UnityVulkanRecordingState recordingState;
+        if (force)
+            recordingState.safeFrameNumber = ~0ull;
+        else
+        if (!m_UnityVulkan->CommandRecordingState(&recordingState, kUnityVulkanGraphicsQueueAccess_DontCare))
+            return;
+
+        std::map<intptr_t , VulkanHWBImage>::iterator it = m_VulkanImageMap.begin();
+
+        while (it != m_VulkanImageMap.end())
+        {
+            ImmediateDestroyVulkanHWBImage(it->second);
+            m_VulkanImageMap.erase(it++);
         }
     }
 

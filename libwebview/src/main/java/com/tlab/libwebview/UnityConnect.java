@@ -71,6 +71,7 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 public class UnityConnect extends Fragment {
 
@@ -123,6 +124,7 @@ public class UnityConnect extends Fragment {
     private final CatchDownloadUrlCallback mCatchDlUrlCallback = new CatchDownloadUrlCallback();
 
     private final Map<String, ByteBuffer> mWebBuffer = new Hashtable<>();
+    private final Map<String, ByteBuffer> mBlobDlBuffer = new Hashtable<>();
 
     private String mDlSubDir;
     private String mLoadUrl;
@@ -249,7 +251,7 @@ public class UnityConnect extends Fragment {
     // File download
     //
 
-    public void getBase64FromBlobData(String url, String mimetype) {
+    public void writeDataUrlToStorage(String url, String mimetype) {
 
         Context context = UnityPlayer.currentActivity.getApplicationContext();
 
@@ -322,14 +324,14 @@ public class UnityConnect extends Fragment {
                 if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnStartEmpty()) {
                     String argument =
                             "var " + mDlEventCallback.varDlUrlName + " = '" + url + "'; " +
-                            "var " + mDlEventCallback.varDlIdName + " = -1; ";
+                                    "var " + mDlEventCallback.varDlIdName + " = -1; ";
                     evaluateJS(argument + mDlEventCallback.onStart);
                 }
 
                 if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnFinishEmpty()) {
                     String argument =
                             "var " + mDlEventCallback.varDlUriName + " = 'none'; " +
-                            "var " + mDlEventCallback.varDlIdName + " = -1; ";
+                                    "var " + mDlEventCallback.varDlIdName + " = -1; ";
                     evaluateJS(argument + mDlEventCallback.onFinish);
                 }
             }, 500);
@@ -449,7 +451,7 @@ public class UnityConnect extends Fragment {
 
                     if (mWebView.getSettings().getJavaScriptEnabled()) {
                         if (mOnPageFinish != null && !mOnPageFinish.isEmpty()) {
-                                evaluateJS(mOnPageFinish);
+                            evaluateJS(mOnPageFinish);
                         }
                     }
                 }
@@ -608,7 +610,7 @@ public class UnityConnect extends Fragment {
                     if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnFinishEmpty()) {
                         String argument =
                                 "var " + mDlEventCallback.varDlUriName + " = '" + uri + "'; " +
-                                "var " + mDlEventCallback.varDlIdName + " = " + downloadedID + "; ";
+                                        "var " + mDlEventCallback.varDlIdName + " = " + downloadedID + "; ";
                         evaluateJS(argument + mDlEventCallback.onFinish);
                     }
                 }
@@ -747,8 +749,13 @@ public class UnityConnect extends Fragment {
          * @param mimetype
          */
         @JavascriptInterface
-        public void getBase64StringFromBlobUrl(String url, String mimetype) {
-            getBase64FromBlobData(url, mimetype);
+        public void onBlobMapBufferFinish(String url, String mimetype) {
+            if (mBlobDlBuffer.containsKey(url)) {
+                ByteBuffer buf = mBlobDlBuffer.get(url);
+                assert buf != null;
+                writeDataUrlToStorage(new String(buf.array()), mimetype);
+                mBlobDlBuffer.remove(url);
+            }
         }
 
         @JavascriptInterface
@@ -772,6 +779,33 @@ public class UnityConnect extends Fragment {
         public void write(String key, byte[] bytes) {
             if (mWebBuffer.containsKey(key)) {
                 ByteBuffer buf = mWebBuffer.get(key);
+                assert buf != null;
+                buf.put(bytes, 0, bytes.length);
+                //Log.i(TAG, "[write] ok: " + buf.position());
+            }
+        }
+
+        @JavascriptInterface
+        public boolean mallocForBlobDlEvent(String url, int bufferSize) {
+            if (!mBlobDlBuffer.containsKey(url)) {
+                ByteBuffer buf = ByteBuffer.allocate(bufferSize);
+                mBlobDlBuffer.put(url, buf);
+                //Log.i(TAG, "[malloc] ok: " + bufferSize);
+                return true;
+            }
+            return false;
+        }
+
+        @JavascriptInterface
+        public void freeForBlobDlEvent(String key) {
+            mBlobDlBuffer.remove(key);
+            //Log.i(TAG, "[free] ok");
+        }
+
+        @JavascriptInterface
+        public void writeForBlobDlEvent(String key, byte[] bytes) {
+            if (mBlobDlBuffer.containsKey(key)) {
+                ByteBuffer buf = mBlobDlBuffer.get(key);
                 assert buf != null;
                 buf.put(bytes, 0, bytes.length);
                 //Log.i(TAG, "[write] ok: " + buf.position());
@@ -870,32 +904,50 @@ public class UnityConnect extends Fragment {
             if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnStartEmpty()) {
                 String argument =
                         "var " + mDlEventCallback.varDlUrlName + " = '" + url + "'; " +
-                        "var " + mDlEventCallback.varDlIdName + " = " + id + "; ";
+                                "var " + mDlEventCallback.varDlIdName + " = " + id + "; ";
                 evaluateJS(argument + mDlEventCallback.onStart);
             }
         }
         else if (url.startsWith("data:")) { // data url scheme
             // write base64 data to file stream
-            getBase64FromBlobData(url, mimetype);
+            writeDataUrlToStorage(url, mimetype);
         }
         else if (url.startsWith("blob:")) { // blob url scheme
             // get base64 from blob url and write to file stream
-            String js = "var xhr = new XMLHttpRequest();" +
-                    "xhr.open('GET', '"+ url +"', true);" +
-                    "xhr.setRequestHeader('Content-type','" + mimetype +";charset=UTF-8');" +
-                    "xhr.responseType = 'blob';" +
-                    "xhr.onload = function(e) {" +
-                    "    if (this.status == 200) {" +
-                    "        var blobFile = this.response;" +
-                    "        var reader = new FileReader();" +
-                    "        reader.readAsDataURL(blobFile);" +
-                    "        reader.onloadend = function() {" +
-                    "            base64data = reader.result;" +
-                    "            window.TLabWebViewActivity.getBase64StringFromBlobUrl(base64data, '"+ mimetype +"');" +
-                    "        }" +
-                    "    }" +
-                    "};" +
-                    "xhr.send();";
+            String js =
+                    "function writeBuffer(buffer, bufferName, segmentSize, offset)" +
+                            "{" +
+                            "    if (segmentSize === 0) return;" +
+                            "" +
+                            "    var i = offset;" +
+                            "    while(i + segmentSize <= buffer.length)" +
+                            "    {" +
+                            "       window.TLabWebViewActivity.writeForBlobDlEvent(bufferName, buffer.slice(i, i + segmentSize));" +
+                            "       i += segmentSize" +
+                            "    }" +
+                            "" +
+                            "    writeBuffer(buffer, bufferName, parseInt(segmentSize / 2), i);" +
+                            "}" +
+                            "var xhr = new XMLHttpRequest();" +
+                            "xhr.open('GET', '" + url + "', true);" +
+                            "xhr.setRequestHeader('Content-type','" + mimetype + ";charset=UTF-8');" +
+                            "xhr.responseType = 'blob';" +
+                            "xhr.onload = function(e) {" +
+                            "    if (this.status == 200) {" +
+                            "        var blobFile = this.response;" +
+                            "        var reader = new FileReader();" +
+                            "        reader.readAsDataURL(blobFile);" +
+                            "        reader.onloadend = function() {" +
+                            "            base64data = reader.result;" +
+                            "            bufferName = '" + url + "';" +
+                            "            buffer = new TextEncoder().encode(base64data);" +
+                            "            window.TLabWebViewActivity.mallocForBlobDlEvent(bufferName, buffer.length);" +
+                            "            writeBuffer(buffer, bufferName, 500000, 0);" +
+                            "            window.TLabWebViewActivity.onBlobMapBufferFinish('" + url + "','" + mimetype + "');" +
+                            "        }" +
+                            "    }" +
+                            "};" +
+                            "xhr.send();";;
 
             evaluateJS(js);
         }

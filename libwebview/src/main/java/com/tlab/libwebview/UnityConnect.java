@@ -38,6 +38,8 @@ import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -60,10 +62,14 @@ import com.tlab.viewtohardwarebuffer.GLLinearLayout;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Objects;
 
 public class UnityConnect extends Fragment {
@@ -112,9 +118,11 @@ public class UnityConnect extends Fragment {
 
     private String mOnPageFinish;
 
-    private DownloadEventCallback mDlEventCallback = new DownloadEventCallback();
+    private final DownloadEventCallback mDlEventCallback = new DownloadEventCallback();
 
-    private CatchDownloadUrlCallback mCatchDlUrlCallback = new CatchDownloadUrlCallback();
+    private final CatchDownloadUrlCallback mCatchDlUrlCallback = new CatchDownloadUrlCallback();
+
+    private final Map<String, ByteBuffer> mWebBuffer = new Hashtable<>();
 
     private String mDlSubDir;
     private String mLoadUrl;
@@ -439,8 +447,10 @@ public class UnityConnect extends Fragment {
                     mCanGoForward = mWebView.canGoForward();
                     mActualUrl = url;
 
-                    if (mWebView.getSettings().getJavaScriptEnabled() && mOnPageFinish != null && !mOnPageFinish.isEmpty()) {
-                        evaluateJS(mOnPageFinish);
+                    if (mWebView.getSettings().getJavaScriptEnabled()) {
+                        if (mOnPageFinish != null && !mOnPageFinish.isEmpty()) {
+                                evaluateJS(mOnPageFinish);
+                        }
                     }
                 }
 
@@ -740,11 +750,48 @@ public class UnityConnect extends Fragment {
         public void getBase64StringFromBlobUrl(String url, String mimetype) {
             getBase64FromBlobData(url, mimetype);
         }
+
+        @JavascriptInterface
+        public boolean malloc(String key, int bufferSize) {
+            if (!mWebBuffer.containsKey(key)) {
+                ByteBuffer buf = ByteBuffer.allocate(bufferSize);
+                mWebBuffer.put(key, buf);
+                //Log.i(TAG, "[malloc] ok: " + bufferSize);
+                return true;
+            }
+            return false;
+        }
+
+        @JavascriptInterface
+        public void free(String key) {
+            mWebBuffer.remove(key);
+            //Log.i(TAG, "[free] ok");
+        }
+
+        @JavascriptInterface
+        public void write(String key, byte[] bytes, int num) {
+            if (mWebBuffer.containsKey(key)) {
+                ByteBuffer buf = mWebBuffer.get(key);
+                assert buf != null;
+                buf.put(bytes, 0, bytes.length);
+                //Log.i(TAG, "[write] ok: " + num);
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------
     // java's unity interface.
     //
+
+    public byte[] getWebBuffer(String key) {
+        if (mWebBuffer.containsKey(key)) {
+            ByteBuffer buf = mWebBuffer.get(key);
+            assert buf != null;
+            return buf.array();
+        }
+
+        return null;
+    }
 
     /**
      *

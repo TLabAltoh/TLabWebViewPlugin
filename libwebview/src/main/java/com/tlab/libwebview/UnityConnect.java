@@ -769,12 +769,12 @@ public class UnityConnect extends Fragment {
         }
 
         @JavascriptInterface
-        public void write(String key, byte[] bytes, int num) {
+        public void write(String key, byte[] bytes) {
             if (mWebBuffer.containsKey(key)) {
                 ByteBuffer buf = mWebBuffer.get(key);
                 assert buf != null;
                 buf.put(bytes, 0, bytes.length);
-                //Log.i(TAG, "[write] ok: " + num);
+                //Log.i(TAG, "[write] ok: " + buf.position());
             }
         }
     }

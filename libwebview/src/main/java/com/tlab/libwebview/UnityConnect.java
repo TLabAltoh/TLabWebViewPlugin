@@ -617,7 +617,7 @@ public class UnityConnect extends Fragment {
             };
             UnityPlayer.currentActivity.registerReceiver(
                     mOnDownloadComplete,
-                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
 
             mWebView.setInitialScale(100);
             mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
@@ -633,7 +633,7 @@ public class UnityConnect extends Fragment {
             webSettings.setLoadWithOverviewMode(true);
             // --------- enable cache
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-            webSettings.setAppCacheEnabled(true); // deprecated in API level 33.
+            //webSettings.setAppCacheEnabled(true); // deprecated in API level 33.
             // ---------
             webSettings.setUseWideViewPort(true);
             webSettings.setSupportZoom(true);

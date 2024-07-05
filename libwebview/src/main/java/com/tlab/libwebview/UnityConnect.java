@@ -72,6 +72,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UnityConnect extends Fragment {
 
@@ -130,6 +132,8 @@ public class UnityConnect extends Fragment {
     private String mLoadUrl;
     private String mActualUrl;
     private String mHtmlCash;
+
+    private String[] mIntentFilters;
 
     private boolean mCanGoBack;
     private boolean mCanGoForward;
@@ -483,13 +487,29 @@ public class UnityConnect extends Fragment {
                 /**
                  *
                  * @param view The WebView that is initiating the callback.
-                 * @param url The URL to be loaded.
+                 * @param request Object containing the details of the request.
                  * @return
                  */
                 @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                public boolean shouldOverrideUrlLoading (WebView view, WebResourceRequest request) {
+                    Uri uri = request.getUrl();
+                    String url = uri.toString();
+
                     mCanGoBack = mWebView.canGoBack();
                     mCanGoForward = mWebView.canGoForward();
+
+                    if (mIntentFilters != null) {
+                        for (String intentFilter : mIntentFilters) {
+                            Pattern pattern = Pattern.compile(intentFilter);
+                            Matcher matcher = pattern.matcher(url);
+                            if (matcher.matches()) {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                                view.getContext().startActivity(intent);
+                                return true;
+                            }
+                        }
+                    }
+
                     if (url.startsWith("http://") || url.startsWith("https://") ||  url.startsWith("file://") || url.startsWith("javascript:")) {
                         // Let webview handle the URL
                         return false;
@@ -497,6 +517,8 @@ public class UnityConnect extends Fragment {
                         String message = url.substring(6);
                         return true;
                     }
+
+                    // deeplink ?
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                     view.getContext().startActivity(intent);
                     return true;
@@ -1017,6 +1039,14 @@ public class UnityConnect extends Fragment {
 
     /**
      *
+     * @param filters
+     */
+    public void setIntentFilters(String[] filters) {
+        mIntentFilters = filters;
+    }
+
+    /**
+     *
      * @return
      */
     public String getCurrentUrl() { return mActualUrl; }
@@ -1030,6 +1060,18 @@ public class UnityConnect extends Fragment {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             if (mWebView == null) {
                 return;
+            }
+
+            if (mIntentFilters != null) {
+                for (String intentFilter : mIntentFilters) {
+                    Pattern pattern = Pattern.compile(intentFilter);
+                    Matcher matcher = pattern.matcher(url);
+                    if (matcher.matches()) {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        mWebView.getContext().startActivity(intent);
+                        return;
+                    }
+                }
             }
 
             if (mCustomHeaders != null && !mCustomHeaders.isEmpty()){

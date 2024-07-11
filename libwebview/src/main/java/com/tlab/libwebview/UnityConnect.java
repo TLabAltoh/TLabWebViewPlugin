@@ -718,6 +718,9 @@ public class UnityConnect extends Fragment {
      *
      */
     public void Destroy() {
+
+        releaseSharedTexture();
+
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
             if (mWebView == null) {
@@ -728,11 +731,6 @@ public class UnityConnect extends Fragment {
             mGlLayout.removeView(mWebView);
             mWebView.destroy();
             mWebView = null;
-
-            if(mSharedTexture != null){
-                mSharedTexture.release();
-                mSharedTexture = null;
-            }
 
             UnityPlayer.currentActivity.unregisterReceiver(
                     mOnDownloadComplete);

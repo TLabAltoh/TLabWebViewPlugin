@@ -715,7 +715,9 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
+     * I need to call this function on unity's render thread because
+     * releaseSharedTexture() call GLES or Vulkan function and it
+     * needs to be called on render thread.
      */
     public void Destroy() {
 

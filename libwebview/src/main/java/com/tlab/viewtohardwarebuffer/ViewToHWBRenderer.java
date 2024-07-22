@@ -213,7 +213,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glGenTextures(1, mSurfaceTextureID, 0);
 
-        Log.i(TAG, "[VHWBR] texture surface id: " + mSurfaceTextureID[0]);
+        //Log.i(TAG, "[VHWBR] texture surface id: " + mSurfaceTextureID[0]);
 
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mSurfaceTextureID[0]);
 

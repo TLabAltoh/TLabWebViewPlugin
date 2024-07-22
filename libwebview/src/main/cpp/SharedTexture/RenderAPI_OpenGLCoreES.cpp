@@ -47,21 +47,28 @@ namespace tlab {
 
     RenderAPI_OpenGLCoreES::RenderAPI_OpenGLCoreES(UnityGfxRenderer apiType)
             : m_APIType(apiType) {
-        DEVLOGD("[webview-vulkan-test] [RenderAPI_OpenGLCoreES]");
+        DEVLOGD("[sharedtex-jni] [RenderAPI_OpenGLCoreES]");
     }
 
     void
     RenderAPI_OpenGLCoreES::ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces* interfaces)
     {
-        if (type == kUnityGfxDeviceEventInitialize)
+        switch (type)
         {
+            case kUnityGfxDeviceEventInitialize:
 
-        }
-        else if (type == kUnityGfxDeviceEventShutdown)
-        {
-            GarbageCollect(true);
+                break;
+            case kUnityGfxDeviceEventShutdown:
 
-            DEVLOGD("[webview-vulkan-test] shutdown render api");
+                GarbageCollect(true);
+
+                DEVLOGD("[sharedtex-jni] shutdown render api");
+
+                break;
+            case kUnityGfxDeviceEventBeforeReset:
+                break;
+            case kUnityGfxDeviceEventAfterReset:
+                break;
         }
     }
 
@@ -74,32 +81,34 @@ namespace tlab {
 
         CreateHWBufferConnectedGLESImage(width, height, hwBuffer, &hwbImage);
 
-        long texturePtr = (long)(hwbImage.image);
+        long platformTexID = (long)(hwbImage.image);
 
-        m_GLESImageMap.insert(std::make_pair(texturePtr, hwbImage));
+        m_GLESImageMap.insert(std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()), hwbImage));
+
+        DEVLOGD("[sharedtex-jni] regist platform texture %ld", platformTexID);
 
         m_mutex.unlock();
 
-        return texturePtr;
+        return platformTexID;
     }
 
     void
     RenderAPI_OpenGLCoreES::UnRegistHWBufferConnectedTexture(long platformTexID) {
         m_mutex.lock();
 
-        if (m_GLESImageMap.find(platformTexID) != m_GLESImageMap.end()) {
-            GLESHWBImage image = m_GLESImageMap[platformTexID];
+        if (m_GLESImageMap.find(std::make_pair(platformTexID, std::this_thread::get_id())) != m_GLESImageMap.end()) {
+            GLESHWBImage image = m_GLESImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
             ImmediateDestroyGLESHWBImage(image);
-            m_GLESImageMap.erase(platformTexID);
+            m_GLESImageMap.erase(std::make_pair(platformTexID, std::this_thread::get_id()));
 
-            DEVLOGD("[webview-vulkan-test] delete current platform texture");
+            DEVLOGD("[sharedtex-jni] delete current platform texture");
         }
 
         m_mutex.unlock();
     }
 
     bool
-            RenderAPI_OpenGLCoreES::AVAILABLE = initGLExtProc();
+    RenderAPI_OpenGLCoreES::AVAILABLE = initGLExtProc();
 
     const char*
     RenderAPI_OpenGLCoreES::getEGLError() {
@@ -179,7 +188,7 @@ namespace tlab {
 
     bool
     RenderAPI_OpenGLCoreES::CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
-                                                                  AHardwareBuffer *hwBuffer, GLESHWBImage *hwbImage) {
+                                                             AHardwareBuffer *hwBuffer, GLESHWBImage *hwbImage) {
 
         if (!AVAILABLE) {
             LOGE("CreateHWBufferConnectedGLESImage null: not AVAILABLE");
@@ -217,6 +226,9 @@ namespace tlab {
         }
 
         glBindTexture(GL_TEXTURE_2D, HWBTexID[0]);
+
+        DEVLOGD("[sharedtex-jni] texture create %d, thread %d", HWBTexID[0], std::this_thread::get_id());
+
         glext::glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES)hwbImage->eglImage);
 
         return true;
@@ -228,6 +240,8 @@ namespace tlab {
             GLuint HWBTexID[1];
             HWBTexID[0] = hwbImage.image;
             glDeleteTextures(1, HWBTexID);
+
+            DEVLOGD("[sharedtex-jni] texture delete %d, thread %d", HWBTexID[0], std::this_thread::get_id());
         }
 
         if (hwbImage.hwBuffer != nullptr) {
@@ -244,7 +258,7 @@ namespace tlab {
     void
     RenderAPI_OpenGLCoreES::GarbageCollect(bool force /*= false*/)
     {
-        std::map<unsigned long long, GLESHWBImage>::iterator it = m_GLESImageMap.begin();
+        auto it = m_GLESImageMap.begin();
 
         while (it != m_GLESImageMap.end())
         {
@@ -265,7 +279,8 @@ namespace tlab {
 
     }
 
-    long RenderAPI_OpenGLCoreES::GetPlatformNativeTexture(long unityTexID) {
+    long
+    RenderAPI_OpenGLCoreES::GetPlatformNativeTexture(long unityTexID) {
         return unityTexID;
     }
 }

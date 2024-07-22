@@ -62,15 +62,15 @@ namespace tlab  {
     private:
         static bool AVAILABLE;
         static const char* getEGLError();
-        int CreateEGLFence();
-        bool WaitEGLFence(int fenceFd);
-        bool CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
-                                              AHardwareBuffer* hwBuffer, GLESHWBImage* hwbImage);
-        void ImmediateDestroyGLESHWBImage(GLESHWBImage &hwbImage);
+        static int CreateEGLFence();
+        static bool WaitEGLFence(int fenceFd);
+        static bool CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
+                                                     AHardwareBuffer* hwBuffer, GLESHWBImage* hwbImage);
+        static void ImmediateDestroyGLESHWBImage(GLESHWBImage &hwbImage);
 
     private:
         UnityGfxRenderer m_APIType;
-        std::map<unsigned long long, GLESHWBImage> m_GLESImageMap;
+        std::map<std::pair<unsigned long long, std::__thread_id>, GLESHWBImage> m_GLESImageMap;
         std::mutex m_mutex;
 
         void GarbageCollect(bool force);

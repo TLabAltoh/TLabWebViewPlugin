@@ -6,18 +6,20 @@
 #include <pthread.h>
 
 namespace {
-    static jclass g_class_unity_connect = NULL;
+    jclass g_class_unity_connect = nullptr;
 
-    static jmethodID g_func_update_surface = NULL;
+    jmethodID g_func_update_surface = nullptr;
 
-    static jmethodID g_func_get_binded_platform_texture_id = NULL;
+    jmethodID g_func_get_binded_platform_texture_id = nullptr;
 
-    static jmethodID g_func_set_unity_texture_id = NULL;
+    jmethodID g_func_set_unity_texture_id = nullptr;
 
-    static jfieldID g_field_is_shared_buffer_updated = NULL;
+    jmethodID g_func_release_shared_texture = nullptr;
+
+    jfieldID g_field_is_shared_buffer_updated = nullptr;
 
     // https://stackoverflow.com/questions/7096350/can-you-cache-jnienv
-    static JNIEnv* g_main_thread_env = NULL;
+    JNIEnv* g_main_thread_env = nullptr;
 
-    static pthread_key_t g_jni_ptr;
+    pthread_key_t g_jni_ptr;
 }

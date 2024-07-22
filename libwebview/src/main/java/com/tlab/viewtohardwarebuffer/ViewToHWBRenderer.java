@@ -36,11 +36,15 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     private int mTextureWidth = DEFAULT_TEXTURE_WIDTH;
     private int mTextureHeight = DEFAULT_TEXTURE_HEIGHT;
 
-    private boolean mForceResize = false;
+    private int mWebWidth = DEFAULT_TEXTURE_WIDTH;
+    private int mWebHeight = DEFAULT_TEXTURE_HEIGHT;
+
+    private boolean mForceResizeTex = false;
+    private boolean mForceResizeWeb = false;
 
     private SurfaceTexture mSurfaceTexture;
 
-    private final int[] mSurfaceTextureID = new int[1];
+    private int[] mSurfaceTextureID;
 
     private Surface mSurface;
 
@@ -153,8 +157,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
      *
      */
     private void initHWBFboTexture() {
-        destroyHWBFboTexture();
-
         mHWBFboID = new int[1];
         mHWBFboTexID = new int[1];
 
@@ -180,11 +182,23 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         if(mSurface != null) {
             mSurface.release();
             mSurface = null;
+
+            //Log.i(TAG, "[VHWBR] release surface");
         }
 
         if(mSurfaceTexture != null) {
             mSurfaceTexture.release();
             mSurfaceTexture = null;
+
+            //Log.i(TAG, "[VHWBR] release surface texture");
+        }
+
+        if (mSurfaceTextureID != null) {
+            GLES30.glDeleteTextures(mSurfaceTextureID.length, mSurfaceTextureID, 0);
+
+            //Log.i(TAG, "[VHWBR] release surface texture id: " + mSurfaceTextureID[0]);
+
+            mSurfaceTextureID = null;
         }
     }
 
@@ -194,10 +208,12 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
      * @param height view's resolution y
      */
     public void createSurfaceAndSurfaceTexture(int width, int height) {
-        releaseSurfaceAndSurfaceTexture();
+        mSurfaceTextureID = new int[1];
 
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glGenTextures(1, mSurfaceTextureID, 0);
+
+        Log.i(TAG, "[VHWBR] texture surface id: " + mSurfaceTextureID[0]);
 
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mSurfaceTextureID[0]);
 
@@ -258,7 +274,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     private void init() {
-        //Log.i(TAG, "[webview-vulkan-test] [init] pass 0 (start)");
+        //Log.i(TAG, "[VHWBR] [init] pass 0 (start)");
         EGLContext context = EGL14.eglGetCurrentContext();
 
         mEglCore = new EglCore(context, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
@@ -271,7 +287,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
         mInitialized = true;
 
-        //Log.i(TAG, "[webview-vulkan-test] [init] pass 0 (end)");
+        //Log.i(TAG, "[VHWBR] [init] pass 0 (end)");
     }
 
     /**
@@ -291,6 +307,8 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         init();
     }
 
+
+
     /**
      *
      * @param gl the GL interface. Use <code>instanceof</code> to
@@ -300,7 +318,17 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
      */
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        createSurfaceAndSurfaceTexture(width, height);
+        mWebWidth = width;
+        mWebHeight = height;
+
+        // I need to destroy both the surface and the FBO at once before
+        // creating them. (At first I call destroy fbo after create
+        // surface, but then both oes and fbo are not released propary).
+
+        releaseSurfaceAndSurfaceTexture();
+        destroyHWBFboTexture();
+
+        createSurfaceAndSurfaceTexture(mWebWidth, mWebHeight);
         initHWBFboTexture();
     }
 
@@ -338,7 +366,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 
-        //Log.i(TAG, "[webview-vulkan-test] [CopySurfaceTextureToHWB]");
+        //Log.i(TAG, "[VHWBR] [CopySurfaceTextureToHWB]");
     }
 
     /**
@@ -349,10 +377,12 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         synchronized (this) {
-            if (mForceResize) {
+
+            if (mForceResizeTex) {
+                destroyHWBFboTexture();
                 initHWBFboTexture();
 
-                mForceResize = false;
+                mForceResizeTex = false;
             }
 
             mSurfaceTexture.updateTexImage();
@@ -408,9 +438,11 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         mTextureHeight = textureHeight;
     }
 
-    public void requestResize() {
-        mForceResize = true;
+    public void requestResizeTex() {
+        mForceResizeTex = true;
     }
+
+    public void requestResizeWeb() { mForceResizeWeb = true; }
 
     /**
      *

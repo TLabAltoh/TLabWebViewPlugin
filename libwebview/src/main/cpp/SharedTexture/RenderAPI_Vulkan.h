@@ -83,17 +83,19 @@ namespace tlab {
     private:
         bool CreateHWBufferConnectedVulkanImage(uint32_t width, uint32_t height,
                                                 VkFormat format, VkImageTiling tiling,
-                                                AHardwareBuffer* hwBuffer, VulkanHWBImage* hwbImage, VkImageUsageFlags usage);
+                                                AHardwareBuffer* hwBuffer, VulkanHWBImage* hwbImage, VkImageUsageFlags usage) const;
 
-        void ImmediateDestroyVulkanHWBImage(VulkanHWBImage &hwbImage);
+        void ImmediateDestroyVulkanHWBImage(VulkanHWBImage &hwbImage) const;
 
     private:
         IUnityGraphicsVulkan* m_UnityVulkan;
         UnityVulkanInstance m_Instance;
-        std::map<intptr_t, VulkanHWBImage> m_VulkanImageMap;
+        std::map<std::pair<intptr_t, std::__thread_id>, VulkanHWBImage> m_VulkanImageMap;
         std::mutex m_mutex;
 
         void GarbageCollect(bool force);
+
+        void DeviceEventInitialize(IUnityInterfaces *interfaces);
     };
 }
 

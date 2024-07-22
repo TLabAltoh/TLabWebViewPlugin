@@ -95,7 +95,7 @@ namespace robot9 {
     }
 
     std::shared_ptr<SharedTexture> SharedTexture::MakeAdopted(AHardwareBuffer *buffer, bool isVulkan) {
-        DEVLOGD("[webview-vulkan-test] [MakeAdopted] pass 0 (start)");
+        DEVLOGD("[sharedtex-jni] [MakeAdopted] pass 0 (start)");
         if (!AVAILABLE) {
             LOGE("MakeAdopted failed: not AVAILABLE");
             return nullptr;
@@ -107,7 +107,7 @@ namespace robot9 {
         AHardwareBuffer_Desc desc;
         HWDriver::AHardwareBuffer_describe(buffer, &desc);
         HWDriver::AHardwareBuffer_acquire(buffer);
-        DEVLOGD("[webview-vulkan-test] [MakeAdopted] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [MakeAdopted] pass 1 (end)");
         return std::shared_ptr<SharedTexture>(new SharedTexture(buffer, static_cast<int>(desc.width), static_cast<int>(desc.height), isVulkan));
     }
 
@@ -128,7 +128,7 @@ namespace robot9 {
             : m_buffer(buffer), m_width(width), m_height(height), m_isVulkan(isVulkan) {
         LOGD("SharedTexture(%d, %d)", width, height);
 
-        DEVLOGD("[webview-vulkan-test] [SharedTexture] pass 0 (start)");
+        DEVLOGD("[sharedtex-jni] [SharedTexture] pass 0 (start)");
 
         if (!AVAILABLE) {
             LOGE("constructor failed: not AVAILABLE");
@@ -143,11 +143,11 @@ namespace robot9 {
         m_renderAPI = m_isVulkan ? m_vulkanAPI : m_glesAPI;
 
         if (m_isVulkan) {
-            DEVLOGD("[webview-vulkan-test] [SharedTexture] render api is vulkan");
+            DEVLOGD("[sharedtex-jni] [SharedTexture] render api is vulkan");
         }
 
         if (!m_renderAPI) {
-            DEVLOGE("[webview-vulkan-test] [SharedTexture] render api is null");
+            DEVLOGE("[sharedtex-jni] [SharedTexture] render api is null");
         }
 
         m_bindedPlatformTexID = m_renderAPI->RegistHWBufferConnectedTexture(m_width, m_height, m_buffer);
@@ -157,7 +157,7 @@ namespace robot9 {
             return;
         }
 
-        DEVLOGD("[webview-vulkan-test] [SharedTexture] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [SharedTexture] pass 1 (end)");
     }
 
     SharedTexture::~SharedTexture() {

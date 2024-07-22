@@ -12,7 +12,7 @@ public class SharedTexture {
     private static boolean available = false;
 
     static {
-        //Log.i(TAG, "[webview-vulkan-test] load shared texture plugin");
+        //Log.i(TAG, "[sharedtex-jni] load shared texture plugin");
         System.loadLibrary("shared-texture");
     }
 

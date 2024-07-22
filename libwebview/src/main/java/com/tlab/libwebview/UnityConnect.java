@@ -202,13 +202,13 @@ public class UnityConnect extends Fragment {
     //
 
     public void releaseSharedTexture() {
-        //Log.i(TAG, "[webview-vulkan-test] release shared texture pass 0 (start)");
+        Log.i(TAG, "[sharedtex] release shared texture pass 0 (start)");
         mHWBTexID = null;
         if(mSharedTexture != null){
             mSharedTexture.release();
             mSharedTexture = null;
         }
-        //Log.i(TAG, "[webview-vulkan-test] release shared texture pass 1 (end)");
+        Log.i(TAG, "[sharedtex] release shared texture pass 1 (end)");
     }
 
     /**
@@ -230,13 +230,13 @@ public class UnityConnect extends Fragment {
             return;
         }
 
-        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 0 (start)");
+        //Log.i(TAG, "[sharedtex] [updateSharedTexture] pass 0 (start)");
 
-        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 1");
+        //Log.i(TAG, "[sharedtex] [updateSharedTexture] pass 1");
 
         releaseSharedTexture();
 
-        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 2 (release shared texture)");
+        //Log.i(TAG, "[sharedtex] [updateSharedTexture] pass 2 (release shared texture)");
 
         SharedTexture sharedTexture = new SharedTexture(sharedBuffer, mIsVulkan);
 
@@ -248,7 +248,7 @@ public class UnityConnect extends Fragment {
 
         mSharedBufferUpdated = true;
 
-        //Log.i(TAG, "[webview-vulkan-test] [updateSharedTexture] pass 3 (end)");
+        //Log.i(TAG, "[sharedtex] [updateSharedTexture] pass 3 (end)");
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -1223,7 +1223,7 @@ public class UnityConnect extends Fragment {
                 return;
             }
             mViewToHWBRenderer.SetTextureResolution(mTexWidth, mTexHeight);
-            mViewToHWBRenderer.requestResize();
+            mViewToHWBRenderer.requestResizeTex();
         });
     }
 

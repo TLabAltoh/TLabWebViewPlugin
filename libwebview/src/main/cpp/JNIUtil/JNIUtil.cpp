@@ -12,6 +12,8 @@ long GetBindedPlatformTextureID(int);
 
 void SetUnityTextureID(int, long);
 
+void ReleaseSharedTexture(int);
+
 bool GetSharedBufferUpdateFlag(int);
 
 void SetHardwareBufferUpdateFlag(int, bool);
@@ -67,6 +69,12 @@ jint JNI_OnLoad(JavaVM *vm, void* reserved) {
 
     if (g_func_get_binded_platform_texture_id == NULL) {
         LOGE("JNI Function 'GetBindedPlatformTextureID' not found");
+    }
+
+    g_func_release_shared_texture = g_main_thread_env->GetMethodID(g_class_unity_connect, "releaseSharedTexture", "()V");
+
+    if (g_func_release_shared_texture == NULL) {
+        LOGE("JNI Function 'setUnityTextureID' not found");
     }
 
     g_func_set_unity_texture_id = g_main_thread_env->GetMethodID(g_class_unity_connect, "setUnityTextureID", "(J)V");
@@ -129,6 +137,12 @@ void SetUnityTextureID(int instance_ptr, long unity_texture_id) {
     jobject instance = (jobject)((long)instance_ptr);
 
     return g_main_thread_env->CallVoidMethod(instance, g_func_set_unity_texture_id, (jlong)unity_texture_id);
+}
+
+void ReleaseSharedTexture(int instance_ptr){
+    jobject instance = (jobject)((long)instance_ptr);
+
+    g_main_thread_env->CallVoidMethod(instance, g_func_release_shared_texture);
 }
 
 bool GetSharedBufferUpdateFlag(int instance_ptr) {

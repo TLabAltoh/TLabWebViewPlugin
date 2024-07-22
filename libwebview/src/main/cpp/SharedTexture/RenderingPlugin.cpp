@@ -29,27 +29,27 @@ void DummyRenderEvent(int instance_ptr) {
 
 extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
-    DEVLOGD("[webview-vulkan-test] [UnityPluginLoad] pass 0 (start)");
+    DEVLOGD("[sharedtex-jni] [UnityPluginLoad] pass 0 (start)");
 
     s_UnityInterfaces = unityInterfaces;
     s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
     s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 #if SUPPORT_VULKAN
-    DEVLOGD("[webview-vulkan-test] [UnityPluginLoad] current renderer %d", s_Graphics->GetRenderer());
+    DEVLOGD("[sharedtex-jni] [UnityPluginLoad] current renderer %d", s_Graphics->GetRenderer());
     if (s_Graphics->GetRenderer() == kUnityGfxRendererNull)
     {
-        DEVLOGD("[webview-vulkan-test] [UnityPluginLoad] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (star)");
+        DEVLOGD("[sharedtex-jni] [UnityPluginLoad] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (star)");
         extern void RenderAPI_Vulkan_OnPluginLoad(IUnityInterfaces*);
         RenderAPI_Vulkan_OnPluginLoad(unityInterfaces);
-        DEVLOGD("[webview-vulkan-test] [UnityPluginLoad] [RenderAPI_Vulkan_OnPluginLoad] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [UnityPluginLoad] [RenderAPI_Vulkan_OnPluginLoad] pass 1 (end)");
     }
 #endif // SUPPORT_VULKAN
 
     // Run OnGraphicsDeviceEvent(initialize) manually on plugin load
     OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
 
-    DEVLOGD("[webview-vulkan-test] [UnityPluginLoad] pass 1 (end)");
+    DEVLOGD("[sharedtex-jni] [UnityPluginLoad] pass 1 (end)");
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
@@ -61,11 +61,11 @@ static RenderAPI* s_CurrentAPI = NULL;
 static UnityGfxRenderer s_DeviceType = kUnityGfxRendererNull;
 
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType) {
-    DEVLOGD("[webview-vulkan-test] [OnGraphicsDeviceEvent] pass 0 (start)");
+    DEVLOGD("[sharedtex-jni] [OnGraphicsDeviceEvent] pass 0 (start)");
 
     // Create graphics API implementation upon initialization
     if (eventType == kUnityGfxDeviceEventInitialize) {
-        DEVLOGD("[webview-vulkan-test] [OnGraphicsDeviceEvent] kUnityGfxDeviceEventInitialize");
+        DEVLOGD("[sharedtex-jni] [OnGraphicsDeviceEvent] kUnityGfxDeviceEventInitialize");
         assert(s_CurrentAPI == NULL);
         s_DeviceType = s_Graphics->GetRenderer();
         s_CurrentAPI = CreateRenderAPI(s_DeviceType);
@@ -87,5 +87,5 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
         s_DeviceType = kUnityGfxRendererNull;
     }
 
-    DEVLOGD("[webview-vulkan-test] [OnGraphicsDeviceEvent] pass 1 (end)");
+    DEVLOGD("[sharedtex-jni] [OnGraphicsDeviceEvent] pass 1 (end)");
 }

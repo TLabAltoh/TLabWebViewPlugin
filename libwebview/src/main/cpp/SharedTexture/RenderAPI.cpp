@@ -5,7 +5,7 @@ namespace tlab {
 
     RenderAPI* CreateRenderAPI(UnityGfxRenderer apiType)
     {
-        DEVLOGD("[webview-vulkan-test] [CreateRenderAPI] pass 0 (start)");
+        DEVLOGD("[sharedtex-jni] [CreateRenderAPI] pass 0 (start)");
 
 #	if SUPPORT_OPENGL_UNIFIED
         extern RenderAPI* CreateRenderAPI_OpenGLCoreES(UnityGfxRenderer apiType);
@@ -20,7 +20,7 @@ namespace tlab {
         }
 #	endif // if SUPPORT_VULKAN
 
-        DEVLOGD("[webview-vulkan-test] [CreateRenderAPI] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [CreateRenderAPI] pass 1 (end)");
 
         // Unknown or unsupported graphics API
         return NULL;

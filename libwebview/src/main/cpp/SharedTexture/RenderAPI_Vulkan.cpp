@@ -7,38 +7,38 @@ namespace tlab {
 
     static void
     LoadVulkanAPI(PFN_vkGetInstanceProcAddr getInstanceProcAddr, VkInstance instance) {
-        DEVLOGD("[webview-vulkan-test] [LoadVulkanAPI] pass 0 (start)");
+        DEVLOGD("[sharedtex-jni] [LoadVulkanAPI] pass 0 (start)");
         if (!vkGetInstanceProcAddr && getInstanceProcAddr) {
             vkGetInstanceProcAddr = getInstanceProcAddr;
-            DEVLOGD("[webview-vulkan-test] [LoadVulkanAPI] vkGetInstanceProcAddr");
+            DEVLOGD("[sharedtex-jni] [LoadVulkanAPI] vkGetInstanceProcAddr");
         }
 
         if (!vkCreateInstance) {
             vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance");
-            DEVLOGD("[webview-vulkan-test] [LoadVulkanAPI] vkCreateInstance");
+            DEVLOGD("[sharedtex-jni] [LoadVulkanAPI] vkCreateInstance");
         }
 
 #define LOAD_VULKAN_FUNC(fn) \
-        if (!fn) DEVLOGD("[webview-vulkan-test] befor load function is null %s", #fn); \
-        if (fn) DEVLOGD("[webview-vulkan-test] befor load function is not null %s", #fn); \
+        if (!fn) DEVLOGD("[sharedtex-jni] befor load function is null %s", #fn); \
+        if (fn) DEVLOGD("[sharedtex-jni] befor load function is not null %s", #fn); \
         if (!fn) fn = (PFN_##fn)vkGetInstanceProcAddr(instance, #fn); \
-        if (!fn) DEVLOGD("[webview-vulkan-test] after load function is null %s", #fn); \
-        if (fn) DEVLOGD("[webview-vulkan-test] after load function is not null %s", #fn);
+        if (!fn) DEVLOGD("[sharedtex-jni] after load function is null %s", #fn); \
+        if (fn) DEVLOGD("[sharedtex-jni] after load function is not null %s", #fn);
 
         UNITY_USED_VULKAN_API_FUNCTIONS(LOAD_VULKAN_FUNC);
 #undef LOAD_VULKAN_FUNC
-        DEVLOGD("[webview-vulkan-test] [LoadVulkanAPI] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [LoadVulkanAPI] pass 1 (end)");
     }
 
     static VKAPI_ATTR VkResult VKAPI_CALL
     Hook_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
-        DEVLOGD("[webview-vulkan-test] [Hook_vkCreateInstance] pass 0 (start)");
+        DEVLOGD("[sharedtex-jni] [Hook_vkCreateInstance] pass 0 (start)");
         vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance");
         VkResult result = vkCreateInstance(pCreateInfo, pAllocator, pInstance);
         if (result == VK_SUCCESS) {
             LoadVulkanAPI(vkGetInstanceProcAddr, *pInstance);
         }
-        DEVLOGD("[webview-vulkan-test] [Hook_vkCreateInstance] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [Hook_vkCreateInstance] pass 1 (end)");
 
         return result;
     }
@@ -64,7 +64,7 @@ namespace tlab {
     static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
     Hook_vkGetInstanceProcAddr(VkInstance device, const char* funcName) {
         if (!funcName) {
-            DEVLOGE("[webview-vulkan-test] [Hook_vkGetInstanceProcAddr] function name is null");
+            DEVLOGE("[sharedtex-jni] [Hook_vkGetInstanceProcAddr] function name is null");
             return NULL;
         }
 
@@ -77,26 +77,26 @@ namespace tlab {
 
     static PFN_vkGetInstanceProcAddr UNITY_INTERFACE_API
     InterceptVulkanInitialization(PFN_vkGetInstanceProcAddr getInstanceProcAddr, void*) {
-        DEVLOGD("[webview-vulkan-test] [InterceptVulkanInitialization] pass 0 (start)");
+        DEVLOGD("[sharedtex-jni] [InterceptVulkanInitialization] pass 0 (start)");
         vkGetInstanceProcAddr = getInstanceProcAddr;
-        DEVLOGD("[webview-vulkan-test] [InterceptVulkanInitialization] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [InterceptVulkanInitialization] pass 1 (end)");
         return Hook_vkGetInstanceProcAddr;
     }
 
     extern "C" void RenderAPI_Vulkan_OnPluginLoad(IUnityInterfaces* interfaces) {
-        DEVLOGD("[webview-vulkan-test] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (start)");
-        if (IUnityGraphicsVulkanV2* vulkanInterfaceV2 = interfaces->Get<IUnityGraphicsVulkanV2>()) {
-            DEVLOGD("[webview-vulkan-test] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (v2)");
+        DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (start)");
+        if (auto* vulkanInterfaceV2 = interfaces->Get<IUnityGraphicsVulkanV2>()) {
+            DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (v2)");
             if (!vulkanInterfaceV2->AddInterceptInitialization(InterceptVulkanInitialization, NULL, 0)) {
-                DEVLOGE("[webview-vulkan-test] [RenderAPI_Vulkan_OnPluginLoad] filed to intercept initialization v2");
+                DEVLOGE("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] filed to intercept initialization v2");
             }
-        } else if (IUnityGraphicsVulkan* vulkanInterface = interfaces->Get<IUnityGraphicsVulkan>()) {
-            DEVLOGD("[webview-vulkan-test] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (v1)");
+        } else if (auto* vulkanInterface = interfaces->Get<IUnityGraphicsVulkan>()) {
+            DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (v1)");
             if (!vulkanInterface->InterceptInitialization(InterceptVulkanInitialization, NULL)) {
-                DEVLOGE("[webview-vulkan-test] [RenderAPI_Vulkan_OnPluginLoad] filed to intercept initialization v1");
+                DEVLOGE("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] filed to intercept initialization v1");
             }
         }
-        DEVLOGD("[webview-vulkan-test] [RenderAPI_Vulkan_OnPluginLoad] pass 1 (end)");
+        DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 1 (end)");
     }
 
     RenderAPI*
@@ -106,7 +106,22 @@ namespace tlab {
 
     RenderAPI_Vulkan::RenderAPI_Vulkan()
             : m_UnityVulkan(NULL) {
-        DEVLOGD("[webview-vulkan-test] [RenderAPI_Vulkan]");
+        DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan]");
+    }
+
+    void
+    RenderAPI_Vulkan::DeviceEventInitialize(IUnityInterfaces* interfaces) {
+        m_UnityVulkan = interfaces->Get<IUnityGraphicsVulkan>();
+        m_Instance = m_UnityVulkan->Instance();
+
+        // Make sure Vulkan API functions are loaded
+        LoadVulkanAPI(m_Instance.getInstanceProcAddr, m_Instance.instance);
+
+        UnityVulkanPluginEventConfig config_1{};
+        config_1.graphicsQueueAccess = kUnityVulkanGraphicsQueueAccess_DontCare;
+        config_1.renderPassPrecondition = kUnityVulkanRenderPass_EnsureInside;
+        config_1.flags = kUnityVulkanEventConfigFlag_EnsurePreviousFrameSubmission | kUnityVulkanEventConfigFlag_ModifiesCommandBuffersState;
+        m_UnityVulkan->ConfigureEvent(1, &config_1);
     }
 
     void
@@ -114,17 +129,7 @@ namespace tlab {
         switch (type)
         {
             case kUnityGfxDeviceEventInitialize:
-                m_UnityVulkan = interfaces->Get<IUnityGraphicsVulkan>();
-                m_Instance = m_UnityVulkan->Instance();
-
-                // Make sure Vulkan API functions are loaded
-                LoadVulkanAPI(m_Instance.getInstanceProcAddr, m_Instance.instance);
-
-                UnityVulkanPluginEventConfig config_1;
-                config_1.graphicsQueueAccess = kUnityVulkanGraphicsQueueAccess_DontCare;
-                config_1.renderPassPrecondition = kUnityVulkanRenderPass_EnsureInside;
-                config_1.flags = kUnityVulkanEventConfigFlag_EnsurePreviousFrameSubmission | kUnityVulkanEventConfigFlag_ModifiesCommandBuffersState;
-                m_UnityVulkan->ConfigureEvent(1, &config_1);
+                DeviceEventInitialize(interfaces);
 
                 break;
             case kUnityGfxDeviceEventShutdown:
@@ -137,8 +142,12 @@ namespace tlab {
                 m_UnityVulkan = NULL;
                 m_Instance = UnityVulkanInstance();
 
-                DEVLOGD("[webview-vulkan-test] shutdown render api");
+                DEVLOGD("[sharedtex-jni] shutdown render api");
 
+                break;
+            case kUnityGfxDeviceEventBeforeReset:
+                break;
+            case kUnityGfxDeviceEventAfterReset:
                 break;
         }
     }
@@ -147,7 +156,7 @@ namespace tlab {
     RenderAPI_Vulkan::RegistHWBufferConnectedTexture(uint32_t width, uint32_t height, AHardwareBuffer* hwBuffer) {
         m_mutex.lock();
 
-        VulkanHWBImage* hwbImage = new VulkanHWBImage();
+        auto* hwbImage = new VulkanHWBImage();
         CreateHWBufferConnectedVulkanImage(width, height, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, hwBuffer, hwbImage,
                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
@@ -168,9 +177,9 @@ namespace tlab {
 
         long platformTexID = (long)(hwbImage->unityVulkanImage.image);
 
-        m_VulkanImageMap.insert(std::make_pair(platformTexID, *hwbImage));
+        m_VulkanImageMap.insert(std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()), *hwbImage));
 
-        DEVLOGD("[webview-vulkan-test] create new platform texture %ld", platformTexID);
+        DEVLOGD("[sharedtex-jni] regist platform texture %ld", platformTexID);
 
         m_mutex.unlock();
 
@@ -181,12 +190,12 @@ namespace tlab {
     RenderAPI_Vulkan::UnRegistHWBufferConnectedTexture(long platformTexID) {
         m_mutex.lock();
 
-        if (m_VulkanImageMap.find(platformTexID) != m_VulkanImageMap.end()) {
-            VulkanHWBImage image = m_VulkanImageMap[platformTexID];
+        if (m_VulkanImageMap.find(std::make_pair(platformTexID, std::this_thread::get_id())) != m_VulkanImageMap.end()) {
+            VulkanHWBImage image = m_VulkanImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
             ImmediateDestroyVulkanHWBImage(image);
-            m_VulkanImageMap.erase(platformTexID);
+            m_VulkanImageMap.erase(std::make_pair(platformTexID, std::this_thread::get_id()));
 
-            DEVLOGD("[webview-vulkan-test] delete current platform texture");
+            DEVLOGD("[sharedtex-jni] delete current platform texture");
         }
 
         m_mutex.unlock();
@@ -194,7 +203,7 @@ namespace tlab {
 
     bool
     RenderAPI_Vulkan::CreateHWBufferConnectedVulkanImage(uint32_t width, uint32_t height,
-                                                         VkFormat format, VkImageTiling tiling, AHardwareBuffer* hwBuffer, VulkanHWBImage* hwbImage, VkImageUsageFlags usage) {
+                                                         VkFormat format, VkImageTiling tiling, AHardwareBuffer* hwBuffer, VulkanHWBImage* hwbImage, VkImageUsageFlags usage) const {
 
         // Create an image to bind to our AHardwareBuffer
         // https://android.googlesource.com/platform/cts/+/master/tests/tests/graphics/jni/VulkanTestHelpers.cpp
@@ -238,7 +247,7 @@ namespace tlab {
             throw std::runtime_error("failed to allocate hardware buffer to device memory!");
         }
 
-        DEVLOGD("[webview-vulkan-test] [CreateHWBufferConnectedVulkanImage] vkGetMemoryAndroidHardwareBufferANDROID success");
+        DEVLOGD("[sharedtex-jni] [CreateHWBufferConnectedVulkanImage] vkGetMemoryAndroidHardwareBufferANDROID success");
 
         // There is no problem in binding hardware buffers to
         // Vulkan memory and map/unmap memory. So maybe the
@@ -275,7 +284,9 @@ namespace tlab {
             throw std::runtime_error("failed to create image!");
         }
 
-        DEVLOGD("[webview-vulkan-test] [CreateHWBufferConnectedVulkanImage] vkCreateImage success");
+        DEVLOGD("[sharedtex-jni] texture create %ld, thread %d", (long)(hwbImage->unityVulkanImage.image), std::this_thread::get_id());
+
+        DEVLOGD("[sharedtex-jni] [CreateHWBufferConnectedVulkanImage] vkCreateImage success");
 
         uint memoryOffset = 0;
 
@@ -291,7 +302,7 @@ namespace tlab {
         // problem in UpdateExternalTexture, but VkImage created in the
         // native plugin cause a crash. (why??)
 
-        DEVLOGD("[webview-vulkan-test] [CreateHWBufferConnectedVulkanImage] vkBindImageMemory success");
+        DEVLOGD("[sharedtex-jni] [CreateHWBufferConnectedVulkanImage] vkBindImageMemory success");
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(m_Instance.device, hwbImage->unityVulkanImage.image, &memRequirements);
@@ -314,7 +325,7 @@ namespace tlab {
     }
 
     void
-    RenderAPI_Vulkan::ImmediateDestroyVulkanHWBImage(VulkanHWBImage &hwbImage) {
+    RenderAPI_Vulkan::ImmediateDestroyVulkanHWBImage(VulkanHWBImage &hwbImage) const {
         if (hwbImage.unityVulkanImage.memory.memory != VK_NULL_HANDLE)
         {
             vkFreeMemory(m_Instance.device, hwbImage.unityVulkanImage.memory.memory, NULL);
@@ -323,6 +334,9 @@ namespace tlab {
 
         if (hwbImage.unityVulkanImage.image != VK_NULL_HANDLE) {
             vkDestroyImage(m_Instance.device, hwbImage.unityVulkanImage.image, NULL);
+
+            DEVLOGD("[sharedtex-jni] texture delete %ld, thread %d", (long)(hwbImage.unityVulkanImage.image), std::this_thread::get_id());
+
             hwbImage.unityVulkanImage.image = VK_NULL_HANDLE;
         }
 
@@ -333,14 +347,14 @@ namespace tlab {
 
     void
     RenderAPI_Vulkan::GarbageCollect(bool force /* false */) {
-        UnityVulkanRecordingState recordingState;
+        UnityVulkanRecordingState recordingState{};
         if (force)
             recordingState.safeFrameNumber = ~0ull;
         else
         if (!m_UnityVulkan->CommandRecordingState(&recordingState, kUnityVulkanGraphicsQueueAccess_DontCare))
             return;
 
-        std::map<intptr_t , VulkanHWBImage>::iterator it = m_VulkanImageMap.begin();
+        auto it = m_VulkanImageMap.begin();
 
         while (it != m_VulkanImageMap.end())
         {
@@ -351,12 +365,12 @@ namespace tlab {
 
     void
     RenderAPI_Vulkan::DownloadHardwareBuffer(long platformTexID) {
-        VulkanHWBImage hwbImage = m_VulkanImageMap[platformTexID];
+        VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
 
         uint8_t *pData;
         vkMapMemory(m_Instance.device, hwbImage.unityVulkanImage.memory.memory, hwbImage.unityVulkanImage.memory.offset, hwbImage.unityVulkanImage.memory.size, 0, (void**)&pData);
 
-        DEVLOGD("[webview-vulkan-test] memory mapping success %d", pData[(512 * 128 + 128) * 4]);
+        DEVLOGD("[sharedtex-jni] memory mapping success %d", pData[(512 * 128 + 128) * 4]);
 
         // Why do I need to use vkUnmapMemory ?
         // https://www.reddit.com/r/vulkan/comments/6l2f0d/why_do_i_need_to_use_vkunmapmemory/
@@ -366,13 +380,13 @@ namespace tlab {
     void
     RenderAPI_Vulkan::UpdateUnityTexture(long unityPlatformTexID, long platformTexID) {
 
-        UnityVulkanRecordingState recordingState;
+        UnityVulkanRecordingState recordingState{};
         if (!m_UnityVulkan->CommandRecordingState(&recordingState, kUnityVulkanGraphicsQueueAccess_DontCare))
         {
             return;
         }
 
-        VulkanHWBImage hwbImage = m_VulkanImageMap[platformTexID];
+        VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
 
         VkImageCopy copyRegion {};
         copyRegion.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
@@ -390,9 +404,10 @@ namespace tlab {
                 &copyRegion);
     }
 
-    long RenderAPI_Vulkan::GetPlatformNativeTexture(long unityTexID) {
+    long
+    RenderAPI_Vulkan::GetPlatformNativeTexture(long unityTexID) {
         VkImageSubresource subResource { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
-        UnityVulkanImage dstUnityImage;
+        UnityVulkanImage dstUnityImage {};
         if (!m_UnityVulkan->AccessTexture(
                 (void*)unityTexID,
                 &subResource,
@@ -401,14 +416,14 @@ namespace tlab {
                 VK_ACCESS_TRANSFER_READ_BIT,
                 kUnityVulkanResourceAccess_PipelineBarrier,
                 &dstUnityImage)) {
-            DEVLOGD("[webview-vulkan-test] filed to access texture");
+            DEVLOGD("[sharedtex-jni] filed to access texture");
             return 0;
         }
 
-        DEVLOGD("[webview-vulkan-test] success to access texture");
+        DEVLOGD("[sharedtex-jni] success to access texture");
 
         return (long)dstUnityImage.image;
     }
 }
 
-#endif // #if SUPPORT_VULKAN
+#endif // #if SUPPORT_VULKANa

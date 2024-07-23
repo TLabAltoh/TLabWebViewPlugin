@@ -77,13 +77,13 @@ namespace tlab {
                                                            AHardwareBuffer *hwBuffer) {
         m_mutex.lock();
 
-        GLESHWBImage hwbImage;
+        auto* hwbImage = new GLESHWBImage();
 
-        CreateHWBufferConnectedGLESImage(width, height, hwBuffer, &hwbImage);
+        CreateHWBufferConnectedGLESImage(width, height, hwBuffer, hwbImage);
 
-        long platformTexID = (long)(hwbImage.image);
+        long platformTexID = (long)(hwbImage->image);
 
-        m_GLESImageMap.insert(std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()), hwbImage));
+        m_GLESImageMap.insert(std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()), *hwbImage));
 
         DEVLOGD("[sharedtex-jni] regist platform texture %ld", platformTexID);
 
@@ -194,8 +194,6 @@ namespace tlab {
             LOGE("CreateHWBufferConnectedGLESImage null: not AVAILABLE");
             return false;
         }
-
-        *hwbImage = GLESHWBImage();
 
         hwbImage->hwBuffer = hwBuffer;
 

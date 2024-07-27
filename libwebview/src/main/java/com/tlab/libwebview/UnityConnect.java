@@ -7,6 +7,7 @@ import android.app.DownloadManager;
 import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -481,7 +482,33 @@ public class UnityConnect extends Fragment {
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                    handler.proceed();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(UnityPlayer.currentActivity);
+                    builder.setMessage("Page with invalid ssl certificate, can I open it?");
+                    builder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            handler.proceed();
+                        }
+                    });
+                    builder.setNegativeButton("no", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            handler.cancel();
+                        }
+                    });
+                    builder.setOnKeyListener(new DialogInterface.OnKeyListener() {
+                        @Override
+                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                            if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
+                                handler.cancel();
+                                dialog.dismiss();
+                                return true;
+                            }
+                            return false;
+                        }
+                    });
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
                 }
 
                 /**

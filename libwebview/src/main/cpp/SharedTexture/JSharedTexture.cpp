@@ -127,7 +127,7 @@ Java_com_robot9_shared_SharedTexture_getBindedPlatformTexture(JNIEnv *env, jobje
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_robot9_shared_SharedTexture_setUnityTexture(JNIEnv* env, jobject /* this */,
+Java_com_robot9_shared_SharedTexture_setUnityTexture(JNIEnv *env, jobject /* this */,
                                                      jlong ctx, jlong unityTexID) {
     if (ctx == 0) {
         return;
@@ -143,7 +143,7 @@ Java_com_robot9_shared_SharedTexture_setUnityTexture(JNIEnv* env, jobject /* thi
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_robot9_shared_SharedTexture_updateUnityTexture(JNIEnv* env, jobject /* this */,
+Java_com_robot9_shared_SharedTexture_updateUnityTexture(JNIEnv *env, jobject /* this */,
                                                         jlong ctx) {
     if (ctx == 0) {
         return;

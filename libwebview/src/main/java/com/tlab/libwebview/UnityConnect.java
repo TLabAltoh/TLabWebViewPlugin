@@ -2,12 +2,10 @@ package com.tlab.libwebview;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -16,7 +14,6 @@ import android.graphics.Color;
 import android.hardware.HardwareBuffer;
 import android.net.Uri;
 import android.net.http.SslError;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -40,7 +37,6 @@ import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -49,8 +45,8 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import androidx.annotation.RequiresApi;
-
+import com.tlab.dialog.AlertDialog;
+import com.tlab.dialog.DialogInterface;
 import com.tlab.eventcallback.CatchDownloadUrlCallback;
 import com.tlab.eventcallback.DownloadEventCallback;
 import com.tlab.viewtohardwarebuffer.CustomGLSurfaceView;
@@ -63,8 +59,6 @@ import com.tlab.viewtohardwarebuffer.GLLinearLayout;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -72,7 +66,6 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -102,7 +95,7 @@ public class UnityConnect extends Fragment {
     // Web variables.
     //
 
-    private enum DlOption{
+    private enum DlOption {
         applicationFolder,
         downloadFolder
     }
@@ -113,31 +106,31 @@ public class UnityConnect extends Fragment {
     private int mTexHeight;
     private int mScreenWidth;
     private int mScreenHeight;
-    private int mDlOption;
 
     private int mScrollX;
     private int mScrollY;
 
+    private int mDlOption;
     private float mDownloadProgress = 0.0f;
-
+    private String mDlSubDir;
     private String mOnPageFinish;
-
+    private BroadcastReceiver mOnDownloadComplete;
+    private final Map<String, ByteBuffer> mBlobDlBuffer = new Hashtable<>();
     private final DownloadEventCallback mDlEventCallback = new DownloadEventCallback();
-
     private final CatchDownloadUrlCallback mCatchDlUrlCallback = new CatchDownloadUrlCallback();
 
     private final Map<String, ByteBuffer> mWebBuffer = new Hashtable<>();
-    private final Map<String, ByteBuffer> mBlobDlBuffer = new Hashtable<>();
 
-    private String mDlSubDir;
     private String mLoadUrl;
     private String mActualUrl;
+
     private String mHtmlCash;
 
     private String[] mIntentFilters;
 
     private boolean mCanGoBack;
     private boolean mCanGoForward;
+
     private boolean mInitialized = false;
 
     private boolean mSharedBufferUpdated = false;
@@ -150,8 +143,6 @@ public class UnityConnect extends Fragment {
     private String mUserAgent;
     private Hashtable<String, String> mCustomHeaders;
 
-    private BroadcastReceiver mOnDownloadComplete;
-
     private final static String TAG = "libwebview";
 
     // ---------------------------------------------------------------------------------------------------------
@@ -159,7 +150,6 @@ public class UnityConnect extends Fragment {
     //
 
     /**
-     *
      * @param webWidth
      * @param webHeight
      * @param textureWidth
@@ -167,14 +157,13 @@ public class UnityConnect extends Fragment {
      * @param screenWidth
      * @param screenHeight
      * @param url
+     * @param isVulkan
      */
-    @RequiresApi(api = Build.VERSION_CODES.R)
     public void initialize(int webWidth, int webHeight,
                            int textureWidth, int textureHeight,
                            int screenWidth, int screenHeight,
-                           String url, boolean isVulkan)
-    {
-        if(webWidth <= 0 || webHeight <= 0) {
+                           String url, boolean isVulkan) {
+        if (webWidth <= 0 || webHeight <= 0) {
             return;
         }
 
@@ -191,7 +180,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
     public boolean IsInitialized() {
@@ -205,7 +193,7 @@ public class UnityConnect extends Fragment {
     public void releaseSharedTexture() {
         Log.i(TAG, "[sharedtex] release shared texture pass 0 (start)");
         mHWBTexID = null;
-        if(mSharedTexture != null){
+        if (mSharedTexture != null) {
             mSharedTexture.release();
             mSharedTexture = null;
         }
@@ -213,7 +201,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      *
      */
     public void updateSurface() {
@@ -273,10 +260,9 @@ public class UnityConnect extends Fragment {
 
         String downloadDir = "";
 
-        if(mDlOption == DlOption.applicationFolder.ordinal()) {
+        if (mDlOption == DlOption.applicationFolder.ordinal()) {
             downloadDir = Objects.requireNonNull(context.getExternalFilesDir(null)).getPath();
-        }
-        else if(mDlOption == DlOption.downloadFolder.ordinal()) {
+        } else if (mDlOption == DlOption.downloadFolder.ordinal()) {
             downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
         }
 
@@ -348,7 +334,6 @@ public class UnityConnect extends Fragment {
     //
 
     /**
-     *
      *
      */
     @SuppressLint("SetJavaScriptEnabled")
@@ -482,33 +467,23 @@ public class UnityConnect extends Fragment {
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(UnityPlayer.currentActivity);
-                    builder.setMessage("Page with invalid ssl certificate, can I open it?");
-                    builder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+                    AlertDialog alertDialog = new AlertDialog(UnityPlayer.currentActivity, Math.min(mWebWidth, mWebHeight));
+                    alertDialog.setMessage("ssl error", "your connection is not private");
+                    alertDialog.setOptions("enter", new com.tlab.dialog.DialogInterface.OnSelectOptionListener() {
                         @Override
-                        public void onClick(DialogInterface dialog, int which) {
+                        public void OnSelectOption(String selected) {
                             handler.proceed();
+                            mWebView.removeView(alertDialog);
                         }
                     });
-                    builder.setNegativeButton("no", new DialogInterface.OnClickListener() {
+                    alertDialog.setOptions("back to safety", new DialogInterface.OnSelectOptionListener() {
                         @Override
-                        public void onClick(DialogInterface dialog, int which) {
+                        public void OnSelectOption(String selected) {
                             handler.cancel();
+                            mWebView.removeView(alertDialog);
                         }
                     });
-                    builder.setOnKeyListener(new DialogInterface.OnKeyListener() {
-                        @Override
-                        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                            if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
-                                handler.cancel();
-                                dialog.dismiss();
-                                return true;
-                            }
-                            return false;
-                        }
-                    });
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
+                    mWebView.addView(alertDialog);
                 }
 
                 /**
@@ -518,7 +493,7 @@ public class UnityConnect extends Fragment {
                  * @return
                  */
                 @Override
-                public boolean shouldOverrideUrlLoading (WebView view, WebResourceRequest request) {
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                     Uri uri = request.getUrl();
                     String url = uri.toString();
 
@@ -537,7 +512,7 @@ public class UnityConnect extends Fragment {
                         }
                     }
 
-                    if (url.startsWith("http://") || url.startsWith("https://") ||  url.startsWith("file://") || url.startsWith("javascript:")) {
+                    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("file://") || url.startsWith("javascript:")) {
                         // Let webview handle the URL
                         return false;
                     } else if (url.startsWith("unity:")) {
@@ -697,7 +672,7 @@ public class UnityConnect extends Fragment {
             webSettings.setAllowUniversalAccessFromFileURLs(true);
             // ---------
             webSettings.setMediaPlaybackRequiresUserGesture(false);
-            if (mUserAgent != null && !mUserAgent.isEmpty()){
+            if (mUserAgent != null && !mUserAgent.isEmpty()) {
                 webSettings.setUserAgentString(mUserAgent);
             }
             webSettings.setDefaultTextEncodingName("utf-8");
@@ -770,10 +745,8 @@ public class UnityConnect extends Fragment {
     // javascript interface
     //
 
-    public class TLabWebViewJSInterface
-    {
+    public class TLabWebViewJSInterface {
         /**
-         *
          * @param src
          */
         @JavascriptInterface
@@ -782,7 +755,6 @@ public class UnityConnect extends Fragment {
         }
 
         /**
-         *
          * @param go
          * @param method
          * @param message
@@ -793,7 +765,6 @@ public class UnityConnect extends Fragment {
         }
 
         /**
-         *
          * @param url
          * @param mimetype
          */
@@ -866,6 +837,10 @@ public class UnityConnect extends Fragment {
     // java's unity interface.
     //
 
+    /**
+     * @param key
+     * @return
+     */
     public byte[] getWebBuffer(String key) {
         if (mWebBuffer.containsKey(key)) {
             ByteBuffer buf = mWebBuffer.get(key);
@@ -877,7 +852,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
     public long getBindedPlatformTextureID() {
@@ -890,7 +864,6 @@ public class UnityConnect extends Fragment {
 
 
     /**
-     *
      * @param unityTexID
      */
     public void setUnityTextureID(long unityTexID) {
@@ -900,7 +873,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param go
      * @param func
      */
@@ -910,7 +882,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param url
      * @param userAgent
      * @param contentDisposition
@@ -937,10 +908,9 @@ public class UnityConnect extends Fragment {
             request.allowScanningByMediaScanner();
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
 
-            if(mDlOption == DlOption.applicationFolder.ordinal()) {
+            if (mDlOption == DlOption.applicationFolder.ordinal()) {
                 request.setDestinationInExternalFilesDir(context, mDlSubDir, filename);
-            }
-            else if(mDlOption == DlOption.downloadFolder.ordinal()) {
+            } else if (mDlOption == DlOption.downloadFolder.ordinal()) {
                 if (!mDlSubDir.isEmpty()) {
                     filename = mDlSubDir + "/" + filename;
                 }
@@ -956,12 +926,10 @@ public class UnityConnect extends Fragment {
                                 "var " + mDlEventCallback.varDlIdName + " = " + id + "; ";
                 evaluateJS(argument + mDlEventCallback.onStart);
             }
-        }
-        else if (url.startsWith("data:")) { // data url scheme
+        } else if (url.startsWith("data:")) { // data url scheme
             // write base64 data to file stream
             writeDataUrlToStorage(url, mimetype);
-        }
-        else if (url.startsWith("blob:")) { // blob url scheme
+        } else if (url.startsWith("blob:")) { // blob url scheme
             // get base64 from blob url and write to file stream
             String js =
                     "function writeBuffer(buffer, bufferName, segmentSize, offset)" +
@@ -996,14 +964,14 @@ public class UnityConnect extends Fragment {
                             "        }" +
                             "    }" +
                             "};" +
-                            "xhr.send();";;
+                            "xhr.send();";
+            ;
 
             evaluateJS(js);
         }
     }
 
     /**
-     *
      * @return
      */
     public String getCaptured() {
@@ -1011,34 +979,36 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param id
      */
-    public void captureElementById(String id) { loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)"); }
+    public void captureElementById(String id) {
+        loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.getElementById('" + id + "').outerHTML)");
+    }
 
     /**
      *
      */
-    public void capturePage() { loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)"); }
+    public void capturePage() {
+        loadUrl("javascript:window.TLabWebViewActivity.viewSource(document.documentElement.outerHTML)");
+    }
 
     /**
-     *
      * @param ua
      * @param reload
      */
     public void setUserAgent(final String ua, final boolean reload) {
         // https://developer.mozilla.org/ja/docs/Web/HTTP/Headers/User-Agent/Firefox
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) return;
+            if (mWebView == null) return;
 
             try {
                 mWebView.getSettings().setUserAgentString(ua);
 
-                if(reload) {
+                if (reload) {
                     mWebView.reload();
                 }
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });
@@ -1051,7 +1021,7 @@ public class UnityConnect extends Fragment {
      */
     public void captureUserAgent() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) {
+            if (mWebView == null) {
                 return;
             }
             mUserAgent = mWebView.getSettings().getUserAgentString();
@@ -1059,13 +1029,13 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
-    public String getUserAgent() { return mUserAgent; }
+    public String getUserAgent() {
+        return mUserAgent;
+    }
 
     /**
-     *
      * @param filters
      */
     public void setIntentFilters(String[] filters) {
@@ -1073,13 +1043,13 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
-    public String getCurrentUrl() { return mActualUrl; }
+    public String getCurrentUrl() {
+        return mActualUrl;
+    }
 
     /**
-     *
      * @param url
      */
     public void loadUrl(String url) {
@@ -1101,17 +1071,15 @@ public class UnityConnect extends Fragment {
                 }
             }
 
-            if (mCustomHeaders != null && !mCustomHeaders.isEmpty()){
+            if (mCustomHeaders != null && !mCustomHeaders.isEmpty()) {
                 mWebView.loadUrl(mLoadUrl, mCustomHeaders);
-            }
-            else{
+            } else {
                 mWebView.loadUrl(mLoadUrl);
             }
         });
     }
 
     /**
-     *
      * @param html
      * @param baseURL
      */
@@ -1149,7 +1117,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
     public int getScrollX() {
@@ -1157,7 +1124,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
     public int getScrollY() {
@@ -1165,7 +1131,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param x
      * @param y
      */
@@ -1180,7 +1145,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param x
      * @param y
      */
@@ -1195,7 +1159,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param top
      */
     public void pageUp(boolean top) {
@@ -1209,7 +1172,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param bottom
      */
     public void pageDown(boolean bottom) {
@@ -1223,7 +1185,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param js
      */
     public void evaluateJS(String js) {
@@ -1236,8 +1197,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
-     *
      * @param textureWidth
      * @param textureHeight
      */
@@ -1255,7 +1214,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param webWidth
      * @param webHeight
      */
@@ -1276,7 +1234,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param textureWidth
      * @param textureHeight
      * @param webWidth
@@ -1306,7 +1263,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param x
      * @param y
      * @param eventNum
@@ -1341,7 +1297,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param key
      */
     public void keyEvent(char key) {
@@ -1395,12 +1350,11 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param includeDiskFiles
      */
     public void clearCash(boolean includeDiskFiles) {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) {
+            if (mWebView == null) {
                 return;
             }
             mWebView.clearCache(includeDiskFiles);
@@ -1412,7 +1366,7 @@ public class UnityConnect extends Fragment {
      */
     public void clearHistory() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) {
+            if (mWebView == null) {
                 return;
             }
             mWebView.clearHistory();
@@ -1424,7 +1378,7 @@ public class UnityConnect extends Fragment {
      */
     public void clearCookie() {
         UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if(mWebView == null) {
+            if (mWebView == null) {
                 return;
             }
             CookieManager.getInstance().removeAllCookies(null);
@@ -1433,7 +1387,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param visibility
      */
     public void setVisible(int visibility) {
@@ -1458,7 +1411,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param varDlUrlName
      * @param varDlUriName
      * @param varDlIdName
@@ -1471,7 +1423,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param dlSubDir
      */
     public void setDownloadSubDir(String dlSubDir) {
@@ -1479,7 +1430,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param dlOption
      */
     public void setDlOption(int dlOption) {
@@ -1487,15 +1437,13 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param onPageFinish
      */
-    public void setOnPageFinish(String onPageFinish){
+    public void setOnPageFinish(String onPageFinish) {
         mOnPageFinish = onPageFinish;
     }
 
     /**
-     *
      * @param onDownloadStart
      */
     public void setOnDownloadStart(String onDownloadStart) {
@@ -1503,7 +1451,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param onDownloadFinish
      */
     public void setOnDownloadFinish(String onDownloadFinish) {
@@ -1529,7 +1476,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @return
      */
     public float getDownloadProgress() {
@@ -1541,7 +1487,6 @@ public class UnityConnect extends Fragment {
     //
 
     /**
-     *
      * @param left
      * @param top
      * @param right
@@ -1563,7 +1508,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param headerKey
      * @param headerValue
      */
@@ -1575,7 +1519,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param headerKey
      * @return
      */
@@ -1590,7 +1533,6 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param headerKey
      */
     private void RemoveCustomHeader(final String headerKey) {
@@ -1602,7 +1544,6 @@ public class UnityConnect extends Fragment {
 
     /**
      *
-     *
      */
     private void ClearCustomHeader() {
         if (mCustomHeaders == null) {
@@ -1612,16 +1553,14 @@ public class UnityConnect extends Fragment {
     }
 
     /**
-     *
      * @param handler
      * @param host
      * @param realm
      */
     private void showHttpAuthDialog(final HttpAuthHandler handler, final String host,
-                                    final String realm)
-    {
+                                    final String realm) {
         final Activity activity = UnityPlayer.currentActivity;
-        final AlertDialog.Builder mHttpAuthDialog = new AlertDialog.Builder(activity);
+        final android.app.AlertDialog.Builder mHttpAuthDialog = new android.app.AlertDialog.Builder(activity);
         LinearLayout layout = new LinearLayout(activity);
 
         mHttpAuthDialog.setTitle("Enter the password").setCancelable(false);

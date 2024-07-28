@@ -19,16 +19,24 @@ namespace tlab {
     }
 
     std::once_flag glProcOnceFlag;
+
     static bool initGLExtProc() noexcept {
         std::call_once(glProcOnceFlag, []() {
-            glext::eglGetNativeClientBufferANDROID = (PFNEGLGETNATIVECLIENTBUFFERANDROIDPROC) eglGetProcAddress("eglGetNativeClientBufferANDROID");
-            glext::glEGLImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC) eglGetProcAddress("glEGLImageTargetTexture2DOES");
-            glext::eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress("eglCreateImageKHR");
-            glext::eglDestroyImageKHR = (PFNEGLDESTROYIMAGEKHRPROC) eglGetProcAddress("eglDestroyImageKHR");
-            glext::eglCreateSyncKHR = (PFNEGLCREATESYNCKHRPROC) eglGetProcAddress("eglCreateSyncKHR");
-            glext::eglDestroySyncKHR = (PFNEGLDESTROYSYNCKHRPROC) eglGetProcAddress("eglDestroySyncKHR");
+            glext::eglGetNativeClientBufferANDROID = (PFNEGLGETNATIVECLIENTBUFFERANDROIDPROC) eglGetProcAddress(
+                    "eglGetNativeClientBufferANDROID");
+            glext::glEGLImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC) eglGetProcAddress(
+                    "glEGLImageTargetTexture2DOES");
+            glext::eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress(
+                    "eglCreateImageKHR");
+            glext::eglDestroyImageKHR = (PFNEGLDESTROYIMAGEKHRPROC) eglGetProcAddress(
+                    "eglDestroyImageKHR");
+            glext::eglCreateSyncKHR = (PFNEGLCREATESYNCKHRPROC) eglGetProcAddress(
+                    "eglCreateSyncKHR");
+            glext::eglDestroySyncKHR = (PFNEGLDESTROYSYNCKHRPROC) eglGetProcAddress(
+                    "eglDestroySyncKHR");
             glext::eglWaitSyncKHR = (PFNEGLWAITSYNCKHRPROC) eglGetProcAddress("eglWaitSyncKHR");
-            glext::eglDupNativeFenceFDANDROID = (PFNEGLDUPNATIVEFENCEFDANDROIDPROC) eglGetProcAddress("eglDupNativeFenceFDANDROID");
+            glext::eglDupNativeFenceFDANDROID = (PFNEGLDUPNATIVEFENCEFDANDROIDPROC) eglGetProcAddress(
+                    "eglDupNativeFenceFDANDROID");
         });
         return glext::eglGetNativeClientBufferANDROID
                && glext::glEGLImageTargetTexture2DOES
@@ -40,7 +48,7 @@ namespace tlab {
                && glext::eglDupNativeFenceFDANDROID;
     }
 
-    RenderAPI*
+    RenderAPI *
     CreateRenderAPI_OpenGLCoreES(UnityGfxRenderer apiType) {
         return new RenderAPI_OpenGLCoreES(apiType);
     }
@@ -51,10 +59,9 @@ namespace tlab {
     }
 
     void
-    RenderAPI_OpenGLCoreES::ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces* interfaces)
-    {
-        switch (type)
-        {
+    RenderAPI_OpenGLCoreES::ProcessDeviceEvent(UnityGfxDeviceEventType type,
+                                               IUnityInterfaces *interfaces) {
+        switch (type) {
             case kUnityGfxDeviceEventInitialize:
 
                 break;
@@ -77,13 +84,15 @@ namespace tlab {
                                                            AHardwareBuffer *hwBuffer) {
         m_mutex.lock();
 
-        auto* hwbImage = new GLESHWBImage();
+        auto *hwbImage = new GLESHWBImage();
 
         CreateHWBufferConnectedGLESImage(width, height, hwBuffer, hwbImage);
 
-        long platformTexID = (long)(hwbImage->image);
+        long platformTexID = (long) (hwbImage->image);
 
-        m_GLESImageMap.insert(std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()), *hwbImage));
+        m_GLESImageMap.insert(
+                std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()),
+                               *hwbImage));
 
         DEVLOGD("[sharedtex-jni] regist platform texture %ld", platformTexID);
 
@@ -96,8 +105,10 @@ namespace tlab {
     RenderAPI_OpenGLCoreES::UnRegistHWBufferConnectedTexture(long platformTexID) {
         m_mutex.lock();
 
-        if (m_GLESImageMap.find(std::make_pair(platformTexID, std::this_thread::get_id())) != m_GLESImageMap.end()) {
-            GLESHWBImage image = m_GLESImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
+        if (m_GLESImageMap.find(std::make_pair(platformTexID, std::this_thread::get_id())) !=
+            m_GLESImageMap.end()) {
+            GLESHWBImage image = m_GLESImageMap[std::make_pair(platformTexID,
+                                                               std::this_thread::get_id())];
             ImmediateDestroyGLESHWBImage(image);
             m_GLESImageMap.erase(std::make_pair(platformTexID, std::this_thread::get_id()));
 
@@ -108,27 +119,43 @@ namespace tlab {
     }
 
     bool
-    RenderAPI_OpenGLCoreES::AVAILABLE = initGLExtProc();
+            RenderAPI_OpenGLCoreES::AVAILABLE = initGLExtProc();
 
-    const char*
+    const char *
     RenderAPI_OpenGLCoreES::getEGLError() {
         switch (eglGetError()) {
-            case EGL_SUCCESS:return "EGL_SUCCESS";
-            case EGL_NOT_INITIALIZED:return "EGL_NOT_INITIALIZED";
-            case EGL_BAD_ACCESS:return "EGL_BAD_ACCESS";
-            case EGL_BAD_ALLOC:return "EGL_BAD_ALLOC";
-            case EGL_BAD_ATTRIBUTE:return "EGL_BAD_ATTRIBUTE";
-            case EGL_BAD_CONTEXT:return "EGL_BAD_CONTEXT";
-            case EGL_BAD_CONFIG:return "EGL_BAD_CONFIG";
-            case EGL_BAD_CURRENT_SURFACE:return "EGL_BAD_CURRENT_SURFACE";
-            case EGL_BAD_DISPLAY:return "EGL_BAD_DISPLAY";
-            case EGL_BAD_SURFACE:return "EGL_BAD_SURFACE";
-            case EGL_BAD_MATCH:return "EGL_BAD_MATCH";
-            case EGL_BAD_PARAMETER:return "EGL_BAD_PARAMETER";
-            case EGL_BAD_NATIVE_PIXMAP:return "EGL_BAD_NATIVE_PIXMAP";
-            case EGL_BAD_NATIVE_WINDOW:return "EGL_BAD_NATIVE_WINDOW";
-            case EGL_CONTEXT_LOST:return "EGL_CONTEXT_LOST";
-            default:return "Unknown error";
+            case EGL_SUCCESS:
+                return "EGL_SUCCESS";
+            case EGL_NOT_INITIALIZED:
+                return "EGL_NOT_INITIALIZED";
+            case EGL_BAD_ACCESS:
+                return "EGL_BAD_ACCESS";
+            case EGL_BAD_ALLOC:
+                return "EGL_BAD_ALLOC";
+            case EGL_BAD_ATTRIBUTE:
+                return "EGL_BAD_ATTRIBUTE";
+            case EGL_BAD_CONTEXT:
+                return "EGL_BAD_CONTEXT";
+            case EGL_BAD_CONFIG:
+                return "EGL_BAD_CONFIG";
+            case EGL_BAD_CURRENT_SURFACE:
+                return "EGL_BAD_CURRENT_SURFACE";
+            case EGL_BAD_DISPLAY:
+                return "EGL_BAD_DISPLAY";
+            case EGL_BAD_SURFACE:
+                return "EGL_BAD_SURFACE";
+            case EGL_BAD_MATCH:
+                return "EGL_BAD_MATCH";
+            case EGL_BAD_PARAMETER:
+                return "EGL_BAD_PARAMETER";
+            case EGL_BAD_NATIVE_PIXMAP:
+                return "EGL_BAD_NATIVE_PIXMAP";
+            case EGL_BAD_NATIVE_WINDOW:
+                return "EGL_BAD_NATIVE_WINDOW";
+            case EGL_CONTEXT_LOST:
+                return "EGL_CONTEXT_LOST";
+            default:
+                return "Unknown error";
         }
     }
 
@@ -140,7 +167,8 @@ namespace tlab {
         }
 
         EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        EGLSyncKHR eglSync = glext::eglCreateSyncKHR(display, EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
+        EGLSyncKHR eglSync = glext::eglCreateSyncKHR(display, EGL_SYNC_NATIVE_FENCE_ANDROID,
+                                                     nullptr);
         if (eglSync == EGL_NO_SYNC_KHR) {
             LOGE("createEGLFence null: eglCreateSyncKHR null: %s", getEGLError());
             return EGL_NO_NATIVE_FENCE_FD_ANDROID;
@@ -168,7 +196,8 @@ namespace tlab {
 
         EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         EGLint attribs[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, fenceFd, EGL_NONE};
-        EGLSyncKHR eglSync = glext::eglCreateSyncKHR(display, EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
+        EGLSyncKHR eglSync = glext::eglCreateSyncKHR(display, EGL_SYNC_NATIVE_FENCE_ANDROID,
+                                                     attribs);
         if (eglSync == EGL_NO_SYNC_KHR) {
             LOGE("waitEGLFence failed: eglCreateSyncKHR null: %s", getEGLError());
             close(fenceFd);
@@ -188,7 +217,8 @@ namespace tlab {
 
     bool
     RenderAPI_OpenGLCoreES::CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
-                                                             AHardwareBuffer *hwBuffer, GLESHWBImage *hwbImage) {
+                                                             AHardwareBuffer *hwBuffer,
+                                                             GLESHWBImage *hwbImage) {
 
         if (!AVAILABLE) {
             LOGE("CreateHWBufferConnectedGLESImage null: not AVAILABLE");
@@ -216,7 +246,8 @@ namespace tlab {
         EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
         EGLint eglImageAttributes[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
-        hwbImage->eglImage = glext::eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID,
+        hwbImage->eglImage = glext::eglCreateImageKHR(display, EGL_NO_CONTEXT,
+                                                      EGL_NATIVE_BUFFER_ANDROID,
                                                       clientBuffer, eglImageAttributes);
         if (hwbImage->eglImage == EGL_NO_IMAGE_KHR) {
             LOGE("bindTexture failed: eglCreateImageKHR null: %s", getEGLError());
@@ -225,9 +256,10 @@ namespace tlab {
 
         glBindTexture(GL_TEXTURE_2D, HWBTexID[0]);
 
-        DEVLOGD("[sharedtex-jni] texture create %d, thread %d", HWBTexID[0], std::this_thread::get_id());
+        DEVLOGD("[sharedtex-jni] texture create %d, thread %d", HWBTexID[0],
+                std::this_thread::get_id());
 
-        glext::glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES)hwbImage->eglImage);
+        glext::glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES) hwbImage->eglImage);
 
         return true;
     }
@@ -239,7 +271,8 @@ namespace tlab {
             HWBTexID[0] = hwbImage.image;
             glDeleteTextures(1, HWBTexID);
 
-            DEVLOGD("[sharedtex-jni] texture delete %d, thread %d", HWBTexID[0], std::this_thread::get_id());
+            DEVLOGD("[sharedtex-jni] texture delete %d, thread %d", HWBTexID[0],
+                    std::this_thread::get_id());
         }
 
         if (hwbImage.hwBuffer != nullptr) {
@@ -254,12 +287,10 @@ namespace tlab {
     }
 
     void
-    RenderAPI_OpenGLCoreES::GarbageCollect(bool force /*= false*/)
-    {
+    RenderAPI_OpenGLCoreES::GarbageCollect(bool force /*= false*/) {
         auto it = m_GLESImageMap.begin();
 
-        while (it != m_GLESImageMap.end())
-        {
+        while (it != m_GLESImageMap.end()) {
             ImmediateDestroyGLESHWBImage(it->second);
             m_GLESImageMap.erase(it++);
         }

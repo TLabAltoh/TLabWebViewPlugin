@@ -52,7 +52,7 @@ namespace robot9 {
         static bool AVAILABLE;
 
         bool m_isVulkan = false;
-        RenderAPI* m_renderAPI = nullptr;
+        RenderAPI *m_renderAPI = nullptr;
         AHardwareBuffer *m_buffer = nullptr;
         int m_width = 0;
         int m_height = 0;

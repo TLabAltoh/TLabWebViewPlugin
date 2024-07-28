@@ -19,15 +19,16 @@ namespace tlab {
     // and "modify a texture" at this point.
     //
     // There are implementations of this base class for D3D9, D3D11, OpenGL etc.; see individual RenderAPI_* files.
-    class RenderAPI
-    {
+    class RenderAPI {
     public:
-        virtual ~RenderAPI() { }
+        virtual ~RenderAPI() {}
 
         // Process general event like initialization, shutdown, device loss/reset etc.
-        virtual void ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces* interfaces) = 0;
+        virtual void
+        ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces *interfaces) = 0;
 
-        virtual long RegistHWBufferConnectedTexture(uint32_t width, uint32_t height, AHardwareBuffer* hwBuffer) = 0;
+        virtual long RegistHWBufferConnectedTexture(uint32_t width, uint32_t height,
+                                                    AHardwareBuffer *hwBuffer) = 0;
 
         virtual void UnRegistHWBufferConnectedTexture(long platformTexID) = 0;
 
@@ -39,13 +40,13 @@ namespace tlab {
     };
 
     // Create a graphics API implementation instance for the given API type.
-    RenderAPI* CreateRenderAPI(UnityGfxRenderer apiType);
+    RenderAPI *CreateRenderAPI(UnityGfxRenderer apiType);
 
 #if SUPPORT_OPENGL_UNIFIED
-    inline RenderAPI* m_glesAPI;
+    inline RenderAPI *m_glesAPI;
 #endif
 
 #if SUPPORT_VULKAN
-    inline RenderAPI* m_vulkanAPI;
+    inline RenderAPI *m_vulkanAPI;
 #endif
 }

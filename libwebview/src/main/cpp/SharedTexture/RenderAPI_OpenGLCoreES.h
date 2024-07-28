@@ -23,8 +23,11 @@
 #define UNITY_ANDROID 1
 
 #include <assert.h>
+
 #if UNITY_ANDROID
+
 #	include <GLES2/gl2.h>
+
 #elif UNITY_LINUX
 #	define GL_GLEXT_PROTOTYPES
 #	include <GL/gl.h>
@@ -38,34 +41,46 @@
 #	error Unknown platform
 #endif
 
-namespace tlab  {
+namespace tlab {
 
     struct GLESHWBImage {
         GLuint image = 0;
-        AHardwareBuffer* hwBuffer = nullptr;
+        AHardwareBuffer *hwBuffer = nullptr;
         EGLImageKHR eglImage = EGL_NO_IMAGE_KHR;
     };
 
-    class RenderAPI_OpenGLCoreES : public RenderAPI
-    {
+    class RenderAPI_OpenGLCoreES : public RenderAPI {
     public:
         RenderAPI_OpenGLCoreES(UnityGfxRenderer apiType);
-        virtual ~RenderAPI_OpenGLCoreES() { }
 
-        virtual void ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces* interfaces);
-        virtual long RegistHWBufferConnectedTexture(uint32_t width, uint32_t height, AHardwareBuffer* hwBuffer);
+        virtual ~RenderAPI_OpenGLCoreES() {}
+
+        virtual void ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces *interfaces);
+
+        virtual long
+        RegistHWBufferConnectedTexture(uint32_t width, uint32_t height, AHardwareBuffer *hwBuffer);
+
         virtual void UnRegistHWBufferConnectedTexture(long platformTexID);
+
         virtual void DownloadHardwareBuffer(long platformTexID);
+
         virtual long GetPlatformNativeTexture(long unityTexID);
+
         virtual void UpdateUnityTexture(long unityPlatformTexID, long platformTexID);
 
     private:
         static bool AVAILABLE;
-        static const char* getEGLError();
+
+        static const char *getEGLError();
+
         static int CreateEGLFence();
+
         static bool WaitEGLFence(int fenceFd);
+
         static bool CreateHWBufferConnectedGLESImage(uint32_t width, uint32_t height,
-                                                     AHardwareBuffer* hwBuffer, GLESHWBImage* hwbImage);
+                                                     AHardwareBuffer *hwBuffer,
+                                                     GLESHWBImage *hwbImage);
+
         static void ImmediateDestroyGLESHWBImage(GLESHWBImage &hwbImage);
 
     private:

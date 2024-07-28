@@ -14,7 +14,8 @@ namespace tlab {
         }
 
         if (!vkCreateInstance) {
-            vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance");
+            vkCreateInstance = (PFN_vkCreateInstance) vkGetInstanceProcAddr(VK_NULL_HANDLE,
+                                                                            "vkCreateInstance");
             DEVLOGD("[sharedtex-jni] [LoadVulkanAPI] vkCreateInstance");
         }
 
@@ -31,9 +32,11 @@ namespace tlab {
     }
 
     static VKAPI_ATTR VkResult VKAPI_CALL
-    Hook_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+    Hook_vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
+                          const VkAllocationCallbacks *pAllocator, VkInstance *pInstance) {
         DEVLOGD("[sharedtex-jni] [Hook_vkCreateInstance] pass 0 (start)");
-        vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance");
+        vkCreateInstance = (PFN_vkCreateInstance) vkGetInstanceProcAddr(VK_NULL_HANDLE,
+                                                                        "vkCreateInstance");
         VkResult result = vkCreateInstance(pCreateInfo, pAllocator, pInstance);
         if (result == VK_SUCCESS) {
             LoadVulkanAPI(vkGetInstanceProcAddr, *pInstance);
@@ -44,14 +47,16 @@ namespace tlab {
     }
 
     static int
-    FindMemoryTypeIndex(VkPhysicalDeviceMemoryProperties const & physicalDeviceMemoryProperties,
+    FindMemoryTypeIndex(VkPhysicalDeviceMemoryProperties const &physicalDeviceMemoryProperties,
                         uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
 
         // Search memory types to find first index with those properties
-        for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < VK_MAX_MEMORY_TYPES; ++memoryTypeIndex) {
+        for (uint32_t memoryTypeIndex = 0;
+             memoryTypeIndex < VK_MAX_MEMORY_TYPES; ++memoryTypeIndex) {
             if ((memoryTypeBits & 1) == 1) {
                 // Type is available, does it match user properties?
-                if ((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags) {
+                if ((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags &
+                     memoryPropertyFlags) == memoryPropertyFlags) {
                     return memoryTypeIndex;
                 }
             }
@@ -62,7 +67,7 @@ namespace tlab {
     }
 
     static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
-    Hook_vkGetInstanceProcAddr(VkInstance device, const char* funcName) {
+    Hook_vkGetInstanceProcAddr(VkInstance device, const char *funcName) {
         if (!funcName) {
             DEVLOGE("[sharedtex-jni] [Hook_vkGetInstanceProcAddr] function name is null");
             return NULL;
@@ -76,21 +81,22 @@ namespace tlab {
     }
 
     static PFN_vkGetInstanceProcAddr UNITY_INTERFACE_API
-    InterceptVulkanInitialization(PFN_vkGetInstanceProcAddr getInstanceProcAddr, void*) {
+    InterceptVulkanInitialization(PFN_vkGetInstanceProcAddr getInstanceProcAddr, void *) {
         DEVLOGD("[sharedtex-jni] [InterceptVulkanInitialization] pass 0 (start)");
         vkGetInstanceProcAddr = getInstanceProcAddr;
         DEVLOGD("[sharedtex-jni] [InterceptVulkanInitialization] pass 1 (end)");
         return Hook_vkGetInstanceProcAddr;
     }
 
-    extern "C" void RenderAPI_Vulkan_OnPluginLoad(IUnityInterfaces* interfaces) {
+    extern "C" void RenderAPI_Vulkan_OnPluginLoad(IUnityInterfaces *interfaces) {
         DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (start)");
-        if (auto* vulkanInterfaceV2 = interfaces->Get<IUnityGraphicsVulkanV2>()) {
+        if (auto *vulkanInterfaceV2 = interfaces->Get<IUnityGraphicsVulkanV2>()) {
             DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (v2)");
-            if (!vulkanInterfaceV2->AddInterceptInitialization(InterceptVulkanInitialization, NULL, 0)) {
+            if (!vulkanInterfaceV2->AddInterceptInitialization(InterceptVulkanInitialization, NULL,
+                                                               0)) {
                 DEVLOGE("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] filed to intercept initialization v2");
             }
-        } else if (auto* vulkanInterface = interfaces->Get<IUnityGraphicsVulkan>()) {
+        } else if (auto *vulkanInterface = interfaces->Get<IUnityGraphicsVulkan>()) {
             DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (v1)");
             if (!vulkanInterface->InterceptInitialization(InterceptVulkanInitialization, NULL)) {
                 DEVLOGE("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] filed to intercept initialization v1");
@@ -99,7 +105,7 @@ namespace tlab {
         DEVLOGD("[sharedtex-jni] [RenderAPI_Vulkan_OnPluginLoad] pass 1 (end)");
     }
 
-    RenderAPI*
+    RenderAPI *
     CreateRenderAPI_Vulkan() {
         return new RenderAPI_Vulkan();
     }
@@ -110,7 +116,7 @@ namespace tlab {
     }
 
     void
-    RenderAPI_Vulkan::DeviceEventInitialize(IUnityInterfaces* interfaces) {
+    RenderAPI_Vulkan::DeviceEventInitialize(IUnityInterfaces *interfaces) {
         m_UnityVulkan = interfaces->Get<IUnityGraphicsVulkan>();
         m_Instance = m_UnityVulkan->Instance();
 
@@ -120,22 +126,22 @@ namespace tlab {
         UnityVulkanPluginEventConfig config_1{};
         config_1.graphicsQueueAccess = kUnityVulkanGraphicsQueueAccess_DontCare;
         config_1.renderPassPrecondition = kUnityVulkanRenderPass_EnsureInside;
-        config_1.flags = kUnityVulkanEventConfigFlag_EnsurePreviousFrameSubmission | kUnityVulkanEventConfigFlag_ModifiesCommandBuffersState;
+        config_1.flags = kUnityVulkanEventConfigFlag_EnsurePreviousFrameSubmission |
+                         kUnityVulkanEventConfigFlag_ModifiesCommandBuffersState;
         m_UnityVulkan->ConfigureEvent(1, &config_1);
     }
 
     void
-    RenderAPI_Vulkan::ProcessDeviceEvent(UnityGfxDeviceEventType type, IUnityInterfaces* interfaces) {
-        switch (type)
-        {
+    RenderAPI_Vulkan::ProcessDeviceEvent(UnityGfxDeviceEventType type,
+                                         IUnityInterfaces *interfaces) {
+        switch (type) {
             case kUnityGfxDeviceEventInitialize:
                 DeviceEventInitialize(interfaces);
 
                 break;
             case kUnityGfxDeviceEventShutdown:
 
-                if (m_Instance.device != VK_NULL_HANDLE)
-                {
+                if (m_Instance.device != VK_NULL_HANDLE) {
                     GarbageCollect(true);
                 }
 
@@ -153,12 +159,15 @@ namespace tlab {
     }
 
     long
-    RenderAPI_Vulkan::RegistHWBufferConnectedTexture(uint32_t width, uint32_t height, AHardwareBuffer* hwBuffer) {
+    RenderAPI_Vulkan::RegistHWBufferConnectedTexture(uint32_t width, uint32_t height,
+                                                     AHardwareBuffer *hwBuffer) {
         m_mutex.lock();
 
-        auto* hwbImage = new VulkanHWBImage();
-        CreateHWBufferConnectedVulkanImage(width, height, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, hwBuffer, hwbImage,
-                                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        auto *hwbImage = new VulkanHWBImage();
+        CreateHWBufferConnectedVulkanImage(width, height, VK_FORMAT_B8G8R8A8_UNORM,
+                                           VK_IMAGE_TILING_OPTIMAL, hwBuffer, hwbImage,
+                                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                           VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         // NOTE: In Unity, Vulkan's texture id is defined as a VImage pointer.
         // https://docs.unity3d.com/ScriptReference/Texture.GetNativeTexturePtr.html
@@ -175,9 +184,11 @@ namespace tlab {
 
         // The key of the hashmap used the pointer of VkImage, because VkImage has the possibility to update the value.
 
-        long platformTexID = (long)(hwbImage->unityVulkanImage.image);
+        long platformTexID = (long) (hwbImage->unityVulkanImage.image);
 
-        m_VulkanImageMap.insert(std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()), *hwbImage));
+        m_VulkanImageMap.insert(
+                std::make_pair(std::make_pair(platformTexID, std::this_thread::get_id()),
+                               *hwbImage));
 
         DEVLOGD("[sharedtex-jni] regist platform texture %ld", platformTexID);
 
@@ -190,8 +201,10 @@ namespace tlab {
     RenderAPI_Vulkan::UnRegistHWBufferConnectedTexture(long platformTexID) {
         m_mutex.lock();
 
-        if (m_VulkanImageMap.find(std::make_pair(platformTexID, std::this_thread::get_id())) != m_VulkanImageMap.end()) {
-            VulkanHWBImage image = m_VulkanImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
+        if (m_VulkanImageMap.find(std::make_pair(platformTexID, std::this_thread::get_id())) !=
+            m_VulkanImageMap.end()) {
+            VulkanHWBImage image = m_VulkanImageMap[std::make_pair(platformTexID,
+                                                                   std::this_thread::get_id())];
             ImmediateDestroyVulkanHWBImage(image);
             m_VulkanImageMap.erase(std::make_pair(platformTexID, std::this_thread::get_id()));
 
@@ -203,7 +216,10 @@ namespace tlab {
 
     bool
     RenderAPI_Vulkan::CreateHWBufferConnectedVulkanImage(uint32_t width, uint32_t height,
-                                                         VkFormat format, VkImageTiling tiling, AHardwareBuffer* hwBuffer, VulkanHWBImage* hwbImage, VkImageUsageFlags usage) const {
+                                                         VkFormat format, VkImageTiling tiling,
+                                                         AHardwareBuffer *hwBuffer,
+                                                         VulkanHWBImage *hwbImage,
+                                                         VkImageUsageFlags usage) const {
 
         // Create an image to bind to our AHardwareBuffer
         // https://android.googlesource.com/platform/cts/+/master/tests/tests/graphics/jni/VulkanTestHelpers.cpp
@@ -220,7 +236,8 @@ namespace tlab {
         hwbProperties.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
         hwbProperties.pNext = &hwbFormatInfo;
 
-        if (vkGetAndroidHardwareBufferPropertiesANDROID(m_Instance.device, hwBuffer, &hwbProperties) != VK_SUCCESS) {
+        if (vkGetAndroidHardwareBufferPropertiesANDROID(m_Instance.device, hwBuffer,
+                                                        &hwbProperties) != VK_SUCCESS) {
             throw std::runtime_error("filed to get external properties!");
         }
 
@@ -241,9 +258,11 @@ namespace tlab {
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.pNext = &exportInfo;
         allocateInfo.allocationSize = hwbProperties.allocationSize;
-        allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(physicalDeviceProperties, hwbProperties.memoryTypeBits, 0u);;
+        allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(physicalDeviceProperties,
+                                                           hwbProperties.memoryTypeBits, 0u);;
 
-        if (vkAllocateMemory(m_Instance.device, &allocateInfo, nullptr, &hwbImage->unityVulkanImage.memory.memory) != VK_SUCCESS) {
+        if (vkAllocateMemory(m_Instance.device, &allocateInfo, nullptr,
+                             &hwbImage->unityVulkanImage.memory.memory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate hardware buffer to device memory!");
         }
 
@@ -280,17 +299,21 @@ namespace tlab {
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.flags = 0;
 
-        if (vkCreateImage(m_Instance.device, &imageInfo, nullptr, &hwbImage->unityVulkanImage.image) != VK_SUCCESS) {
+        if (vkCreateImage(m_Instance.device, &imageInfo, nullptr,
+                          &hwbImage->unityVulkanImage.image) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
         }
 
-        DEVLOGD("[sharedtex-jni] texture create %ld, thread %d", (long)(hwbImage->unityVulkanImage.image), std::this_thread::get_id());
+        DEVLOGD("[sharedtex-jni] texture create %ld, thread %d",
+                (long) (hwbImage->unityVulkanImage.image), std::this_thread::get_id());
 
         DEVLOGD("[sharedtex-jni] [CreateHWBufferConnectedVulkanImage] vkCreateImage success");
 
         uint memoryOffset = 0;
 
-        if (vkBindImageMemory(m_Instance.device, hwbImage->unityVulkanImage.image, hwbImage->unityVulkanImage.memory.memory, memoryOffset) != VK_SUCCESS) {
+        if (vkBindImageMemory(m_Instance.device, hwbImage->unityVulkanImage.image,
+                              hwbImage->unityVulkanImage.memory.memory, memoryOffset) !=
+            VK_SUCCESS) {
             throw std::runtime_error("failed to allocate hardware buffer to image memory!");
         }
 
@@ -305,7 +328,8 @@ namespace tlab {
         DEVLOGD("[sharedtex-jni] [CreateHWBufferConnectedVulkanImage] vkBindImageMemory success");
 
         VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_Instance.device, hwbImage->unityVulkanImage.image, &memRequirements);
+        vkGetImageMemoryRequirements(m_Instance.device, hwbImage->unityVulkanImage.image,
+                                     &memRequirements);
 
         hwbImage->unityVulkanImage.memory.offset = memoryOffset;
         hwbImage->unityVulkanImage.memory.size = memRequirements.size;
@@ -326,8 +350,7 @@ namespace tlab {
 
     void
     RenderAPI_Vulkan::ImmediateDestroyVulkanHWBImage(VulkanHWBImage &hwbImage) const {
-        if (hwbImage.unityVulkanImage.memory.memory != VK_NULL_HANDLE)
-        {
+        if (hwbImage.unityVulkanImage.memory.memory != VK_NULL_HANDLE) {
             vkFreeMemory(m_Instance.device, hwbImage.unityVulkanImage.memory.memory, NULL);
             hwbImage.unityVulkanImage.memory.memory = VK_NULL_HANDLE;
         }
@@ -335,7 +358,8 @@ namespace tlab {
         if (hwbImage.unityVulkanImage.image != VK_NULL_HANDLE) {
             vkDestroyImage(m_Instance.device, hwbImage.unityVulkanImage.image, NULL);
 
-            DEVLOGD("[sharedtex-jni] texture delete %ld, thread %d", (long)(hwbImage.unityVulkanImage.image), std::this_thread::get_id());
+            DEVLOGD("[sharedtex-jni] texture delete %ld, thread %d",
+                    (long) (hwbImage.unityVulkanImage.image), std::this_thread::get_id());
 
             hwbImage.unityVulkanImage.image = VK_NULL_HANDLE;
         }
@@ -350,14 +374,13 @@ namespace tlab {
         UnityVulkanRecordingState recordingState{};
         if (force)
             recordingState.safeFrameNumber = ~0ull;
-        else
-        if (!m_UnityVulkan->CommandRecordingState(&recordingState, kUnityVulkanGraphicsQueueAccess_DontCare))
+        else if (!m_UnityVulkan->CommandRecordingState(&recordingState,
+                                                       kUnityVulkanGraphicsQueueAccess_DontCare))
             return;
 
         auto it = m_VulkanImageMap.begin();
 
-        while (it != m_VulkanImageMap.end())
-        {
+        while (it != m_VulkanImageMap.end()) {
             ImmediateDestroyVulkanHWBImage(it->second);
             m_VulkanImageMap.erase(it++);
         }
@@ -365,10 +388,13 @@ namespace tlab {
 
     void
     RenderAPI_Vulkan::DownloadHardwareBuffer(long platformTexID) {
-        VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
+        VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID,
+                                                                  std::this_thread::get_id())];
 
         uint8_t *pData;
-        vkMapMemory(m_Instance.device, hwbImage.unityVulkanImage.memory.memory, hwbImage.unityVulkanImage.memory.offset, hwbImage.unityVulkanImage.memory.size, 0, (void**)&pData);
+        vkMapMemory(m_Instance.device, hwbImage.unityVulkanImage.memory.memory,
+                    hwbImage.unityVulkanImage.memory.offset, hwbImage.unityVulkanImage.memory.size,
+                    0, (void **) &pData);
 
         DEVLOGD("[sharedtex-jni] memory mapping success %d", pData[(512 * 128 + 128) * 4]);
 
@@ -381,24 +407,25 @@ namespace tlab {
     RenderAPI_Vulkan::UpdateUnityTexture(long unityPlatformTexID, long platformTexID) {
 
         UnityVulkanRecordingState recordingState{};
-        if (!m_UnityVulkan->CommandRecordingState(&recordingState, kUnityVulkanGraphicsQueueAccess_DontCare))
-        {
+        if (!m_UnityVulkan->CommandRecordingState(&recordingState,
+                                                  kUnityVulkanGraphicsQueueAccess_DontCare)) {
             return;
         }
 
-        VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID, std::this_thread::get_id())];
+        VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID,
+                                                                  std::this_thread::get_id())];
 
-        VkImageCopy copyRegion {};
-        copyRegion.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
-        copyRegion.srcOffset = { 0, 0, 0 };
-        copyRegion.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
-        copyRegion.dstOffset = { 0, 0, 0 };
-        copyRegion.extent = { hwbImage.width, hwbImage.height, 1 };
+        VkImageCopy copyRegion{};
+        copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copyRegion.srcOffset = {0, 0, 0};
+        copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copyRegion.dstOffset = {0, 0, 0};
+        copyRegion.extent = {hwbImage.width, hwbImage.height, 1};
         vkCmdCopyImage(
                 recordingState.commandBuffer,
-                (VkImage)hwbImage.unityVulkanImage.image,
+                (VkImage) hwbImage.unityVulkanImage.image,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                (VkImage)unityPlatformTexID,
+                (VkImage) unityPlatformTexID,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1,
                 &copyRegion);
@@ -406,10 +433,10 @@ namespace tlab {
 
     long
     RenderAPI_Vulkan::GetPlatformNativeTexture(long unityTexID) {
-        VkImageSubresource subResource { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
-        UnityVulkanImage dstUnityImage {};
+        VkImageSubresource subResource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+        UnityVulkanImage dstUnityImage{};
         if (!m_UnityVulkan->AccessTexture(
-                (void*)unityTexID,
+                (void *) unityTexID,
                 &subResource,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -422,7 +449,7 @@ namespace tlab {
 
         DEVLOGD("[sharedtex-jni] success to access texture");
 
-        return (long)dstUnityImage.image;
+        return (long) dstUnityImage.image;
     }
 }
 

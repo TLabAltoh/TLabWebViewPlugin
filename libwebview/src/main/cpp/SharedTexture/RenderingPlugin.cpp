@@ -8,11 +8,11 @@ using namespace tlab;
 
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType);
 
-static IUnityInterfaces* s_UnityInterfaces = NULL;
-static IUnityGraphics* s_Graphics = NULL;
+static IUnityInterfaces *s_UnityInterfaces = NULL;
+static IUnityGraphics *s_Graphics = NULL;
 
 extern "C" {
-using UnityRenderEvent = void(*)(int);
+using UnityRenderEvent = void (*)(int);
 
 UnityRenderEvent DummyRenderEventFunc();
 
@@ -27,8 +27,8 @@ void DummyRenderEvent(int instance_ptr) {
 
 }
 
-extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
-{
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+UnityPluginLoad(IUnityInterfaces *unityInterfaces) {
     DEVLOGD("[sharedtex-jni] [UnityPluginLoad] pass 0 (start)");
 
     s_UnityInterfaces = unityInterfaces;
@@ -37,10 +37,9 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 
 #if SUPPORT_VULKAN
     DEVLOGD("[sharedtex-jni] [UnityPluginLoad] current renderer %d", s_Graphics->GetRenderer());
-    if (s_Graphics->GetRenderer() == kUnityGfxRendererNull)
-    {
+    if (s_Graphics->GetRenderer() == kUnityGfxRendererNull) {
         DEVLOGD("[sharedtex-jni] [UnityPluginLoad] [RenderAPI_Vulkan_OnPluginLoad] pass 0 (star)");
-        extern void RenderAPI_Vulkan_OnPluginLoad(IUnityInterfaces*);
+        extern void RenderAPI_Vulkan_OnPluginLoad(IUnityInterfaces *);
         RenderAPI_Vulkan_OnPluginLoad(unityInterfaces);
         DEVLOGD("[sharedtex-jni] [UnityPluginLoad] [RenderAPI_Vulkan_OnPluginLoad] pass 1 (end)");
     }
@@ -52,12 +51,11 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
     DEVLOGD("[sharedtex-jni] [UnityPluginLoad] pass 1 (end)");
 }
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
-{
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload() {
     s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 }
 
-static RenderAPI* s_CurrentAPI = NULL;
+static RenderAPI *s_CurrentAPI = NULL;
 static UnityGfxRenderer s_DeviceType = kUnityGfxRendererNull;
 
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType) {

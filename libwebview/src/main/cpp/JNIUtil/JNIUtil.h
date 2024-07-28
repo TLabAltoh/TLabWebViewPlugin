@@ -19,7 +19,7 @@ namespace {
     jfieldID g_field_is_shared_buffer_updated = nullptr;
 
     // https://stackoverflow.com/questions/7096350/can-you-cache-jnienv
-    JNIEnv* g_main_thread_env = nullptr;
+    JNIEnv *g_main_thread_env = nullptr;
 
     pthread_key_t g_jni_ptr;
 }

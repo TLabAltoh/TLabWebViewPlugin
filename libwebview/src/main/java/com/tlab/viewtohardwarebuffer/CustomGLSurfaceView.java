@@ -19,13 +19,12 @@ public class CustomGLSurfaceView extends GLSurfaceView {
     private static final String TAG = "libwebview";
 
     /**
-     *
      * @return
      */
     private int[] getContextAttributes() {
         // https://developer.android.com/reference/android/opengl/EGL14#EGL_CONTEXT_CLIENT_VERSION
-        return new int[] {
-                EGL14.EGL_CONTEXT_CLIENT_VERSION /* 0x3098 */, 3 ,
+        return new int[]{
+                EGL14.EGL_CONTEXT_CLIENT_VERSION /* 0x3098 */, 3,
                 EGL15.EGL_CONTEXT_MAJOR_VERSION, 3,
                 EGL15.EGL_CONTEXT_MINOR_VERSION, 2,
                 EGLExt.EGL_CONTEXT_MAJOR_VERSION_KHR, 3,
@@ -41,7 +40,8 @@ public class CustomGLSurfaceView extends GLSurfaceView {
          * @param context
          */
         @Override
-        public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) { }
+        public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) {
+        }
 
         /**
          *
@@ -63,7 +63,6 @@ public class CustomGLSurfaceView extends GLSurfaceView {
     };
 
     /**
-     *
      * @param renderer the renderer to use to perform OpenGL drawing.
      */
     @Override
@@ -73,15 +72,17 @@ public class CustomGLSurfaceView extends GLSurfaceView {
     }
 
     /**
-     *
      * @param context
      */
-    public CustomGLSurfaceView(Context context) { super(context); }
+    public CustomGLSurfaceView(Context context) {
+        super(context);
+    }
 
     /**
-     *
      * @param context
      * @param attrs
      */
-    public CustomGLSurfaceView(Context context, AttributeSet attrs) { super(context, attrs); }
+    public CustomGLSurfaceView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
 }

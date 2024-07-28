@@ -13,14 +13,24 @@
 
 namespace robot9 {
     typedef int (*Func_AHardwareBuffer_allocate)(const AHardwareBuffer_Desc *, AHardwareBuffer **);
+
     typedef void (*Func_AHardwareBuffer_release)(AHardwareBuffer *);
-    typedef int (*Func_AHardwareBuffer_lock)(AHardwareBuffer *buffer, uint64_t usage, int32_t fence, const ARect *rect, void **outVirtualAddress);
+
+    typedef int (*Func_AHardwareBuffer_lock)(AHardwareBuffer *buffer, uint64_t usage, int32_t fence,
+                                             const ARect *rect, void **outVirtualAddress);
+
     typedef int (*Func_AHardwareBuffer_unlock)(AHardwareBuffer *buffer, int32_t *fence);
-    typedef void (*Func_AHardwareBuffer_describe)(const AHardwareBuffer *buffer, AHardwareBuffer_Desc *outDesc);
+
+    typedef void (*Func_AHardwareBuffer_describe)(const AHardwareBuffer *buffer,
+                                                  AHardwareBuffer_Desc *outDesc);
+
     typedef void (*Func_AHardwareBuffer_acquire)(AHardwareBuffer *buffer);
 
-    typedef AHardwareBuffer *(*Func_AHardwareBuffer_fromHardwareBuffer)(JNIEnv *env, jobject hardwareBufferObj);
-    typedef jobject (*Func_AHardwareBuffer_toHardwareBuffer)(JNIEnv *env, AHardwareBuffer *hardwareBuffer);
+    typedef AHardwareBuffer *(*Func_AHardwareBuffer_fromHardwareBuffer)(JNIEnv *env,
+                                                                        jobject hardwareBufferObj);
+
+    typedef jobject (*Func_AHardwareBuffer_toHardwareBuffer)(JNIEnv *env,
+                                                             AHardwareBuffer *hardwareBuffer);
 
     class HWDriver {
     public:
@@ -91,10 +101,13 @@ namespace robot9 {
             LOGE("Make failed: AHardwareBuffer_allocate error: %d", errCode);
             return nullptr;
         }
-        return std::shared_ptr<SharedTexture>(new SharedTexture(buffer, static_cast<int>(desc.width), static_cast<int>(desc.height), isVulkan));
+        return std::shared_ptr<SharedTexture>(
+                new SharedTexture(buffer, static_cast<int>(desc.width),
+                                  static_cast<int>(desc.height), isVulkan));
     }
 
-    std::shared_ptr<SharedTexture> SharedTexture::MakeAdopted(AHardwareBuffer *buffer, bool isVulkan) {
+    std::shared_ptr<SharedTexture>
+    SharedTexture::MakeAdopted(AHardwareBuffer *buffer, bool isVulkan) {
         DEVLOGD("[sharedtex-jni] [MakeAdopted] pass 0 (start)");
         if (!AVAILABLE) {
             LOGE("MakeAdopted failed: not AVAILABLE");
@@ -108,10 +121,13 @@ namespace robot9 {
         HWDriver::AHardwareBuffer_describe(buffer, &desc);
         HWDriver::AHardwareBuffer_acquire(buffer);
         DEVLOGD("[sharedtex-jni] [MakeAdopted] pass 1 (end)");
-        return std::shared_ptr<SharedTexture>(new SharedTexture(buffer, static_cast<int>(desc.width), static_cast<int>(desc.height), isVulkan));
+        return std::shared_ptr<SharedTexture>(
+                new SharedTexture(buffer, static_cast<int>(desc.width),
+                                  static_cast<int>(desc.height), isVulkan));
     }
 
-    std::shared_ptr<SharedTexture> SharedTexture::MakeAdoptedJObject(JNIEnv *env, jobject buffer, bool isVulkan) {
+    std::shared_ptr<SharedTexture>
+    SharedTexture::MakeAdoptedJObject(JNIEnv *env, jobject buffer, bool isVulkan) {
         if (!AVAILABLE) {
             LOGE("MakeAdoptedJObject failed: not AVAILABLE");
             return nullptr;
@@ -150,7 +166,8 @@ namespace robot9 {
             DEVLOGE("[sharedtex-jni] [SharedTexture] render api is null");
         }
 
-        m_bindedPlatformTexID = m_renderAPI->RegistHWBufferConnectedTexture(m_width, m_height, m_buffer);
+        m_bindedPlatformTexID = m_renderAPI->RegistHWBufferConnectedTexture(m_width, m_height,
+                                                                            m_buffer);
 
         if (m_bindedPlatformTexID == 0) {
             LOGE("constructor failed: m_bindTextureId");

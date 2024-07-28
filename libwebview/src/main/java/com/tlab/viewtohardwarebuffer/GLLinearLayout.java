@@ -13,7 +13,6 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
     public float mRatioHeight = 1;
 
     /**
-     *
      * @param context
      * @param ratioWidth
      * @param ratioHeight
@@ -25,7 +24,6 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
     }
 
     /**
-     *
      * @param context
      * @param attrs
      */
@@ -34,7 +32,6 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
     }
 
     /**
-     *
      * @param context
      * @param attrs
      * @param defStyle
@@ -44,7 +41,6 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
     }
 
     /**
-     *
      * @param canvas The Canvas to which the View is rendered.
      */
     @Override
@@ -54,7 +50,7 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
         }
 
         Canvas glAttachedCanvas = mViewToHWBRenderer.onDrawViewBegin();
-        
+
         if (glAttachedCanvas != null) {
             super.draw(glAttachedCanvas);
         }
@@ -63,7 +59,6 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
     }
 
     /**
-     *
      * @param viewToHWBRenderer
      */
     @Override

@@ -52,7 +52,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
     /**
      *
-     *
      */
 
     private HardwareBuffer mSharedBuffer;
@@ -60,7 +59,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     private SharedTexture mSharedTexture;
 
     /**
-     *
      *
      */
 
@@ -76,7 +74,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     private int[] mGLTexCoordID;
 
     /**
-     *
      * FBO (pixel data on GPU) for EGL_IMAGE_KHR (Hardware Buffer)
      */
 
@@ -86,7 +83,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     private boolean mInitialized;
 
     /**
-     *
      *
      */
     public void initSamplerShader() {
@@ -121,18 +117,17 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
         mGLSamplerProgram = GlUtil.createProgram(vertexShader, fragmentShader);
 
-        if (mGLSamplerProgram == 0){
+        if (mGLSamplerProgram == 0) {
             Log.e(TAG, "Load sampler shader filed");
             return;
         }
 
         mGLSamplerTexID = GLES30.glGetUniformLocation(mGLSamplerProgram, "inputTex");
         mGLSamplerPositionID = GLES30.glGetAttribLocation(mGLSamplerProgram, "position");
-        mGLSamplerTexCoordID = GLES30.glGetAttribLocation(mGLSamplerProgram,"inputTexCoord");
+        mGLSamplerTexCoordID = GLES30.glGetAttribLocation(mGLSamplerProgram, "inputTexCoord");
     }
 
     /**
-     *
      *
      */
     private void destroyHWBFboTexture() {
@@ -146,14 +141,13 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
             mHWBFboID = null;
         }
 
-        if(mSharedTexture != null){
+        if (mSharedTexture != null) {
             mSharedTexture.release();
             mSharedTexture = null;
         }
     }
 
     /**
-     *
      *
      */
     private void initHWBFboTexture() {
@@ -165,7 +159,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
         // Plugin returns long variable, but in OpenGL, texture id can be used by int, so cast here.
         assert mSharedTexture != null;
-        mHWBFboTexID[0] = (int)mSharedTexture.getBindedPlatformTexture();
+        mHWBFboTexID[0] = (int) mSharedTexture.getBindedPlatformTexture();
 
         GLES30.glGenFramebuffers(1, mHWBFboID, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mHWBFboID[0]);
@@ -176,17 +170,16 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
     /**
      *
-     *
      */
     public void releaseSurfaceAndSurfaceTexture() {
-        if(mSurface != null) {
+        if (mSurface != null) {
             mSurface.release();
             mSurface = null;
 
             //Log.i(TAG, "[VHWBR] release surface");
         }
 
-        if(mSurfaceTexture != null) {
+        if (mSurfaceTexture != null) {
             mSurfaceTexture.release();
             mSurfaceTexture = null;
 
@@ -204,7 +197,8 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
     /**
      * Generate the surface and surface texture to where android view will be rendered
-     * @param width view's resolution x
+     *
+     * @param width  view's resolution x
      * @param height view's resolution y
      */
     public void createSurfaceAndSurfaceTexture(int width, int height) {
@@ -217,7 +211,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mSurfaceTextureID[0]);
 
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER,GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
         GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
@@ -242,8 +236,8 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
     private void initVbo() {
         final float[] VEX_CUBE = {
-                -1.0f,  1.0f, // Bottom left.
-                1.0f,  1.0f, // Bottom right.
+                -1.0f, 1.0f, // Bottom left.
+                1.0f, 1.0f, // Bottom right.
                 -1.0f, -1.0f, // Top left.
                 1.0f, -1.0f, // Top right.
         };
@@ -283,7 +277,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
 
         initSamplerShader();
 
-        GLES30.glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+        GLES30.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         mInitialized = true;
 
@@ -291,11 +285,10 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     /**
-     *
-     * @param gl the GL interface. Use <code>instanceof</code> to
-     * test if the interface supports GL11 or higher interfaces.
+     * @param gl     the GL interface. Use <code>instanceof</code> to
+     *               test if the interface supports GL11 or higher interfaces.
      * @param config the EGLConfig of the created surface. Can be used
-     * to create matching pbuffers.
+     *               to create matching pbuffers.
      */
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -308,11 +301,9 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
 
-
     /**
-     *
-     * @param gl the GL interface. Use <code>instanceof</code> to
-     * test if the interface supports GL11 or higher interfaces.
+     * @param gl     the GL interface. Use <code>instanceof</code> to
+     *               test if the interface supports GL11 or higher interfaces.
      * @param width
      * @param height
      */
@@ -352,7 +343,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         GLES30.glVertexAttribPointer(mGLSamplerTexCoordID, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
         GLES30.glEnableVertexAttribArray(mGLSamplerTexCoordID);
 
-        GLES30.glBindBuffer( GLES30.GL_ARRAY_BUFFER, 0 );
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
 
         GLES30.glUniform1i(mGLSamplerTexID, 0);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mHWBFboID[0]);
@@ -370,9 +361,8 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     /**
-     *
      * @param gl the GL interface. Use <code>instanceof</code> to
-     * test if the interface supports GL11 or higher interfaces.
+     *           test if the interface supports GL11 or higher interfaces.
      */
     @Override
     public void onDrawFrame(GL10 gl) {
@@ -401,7 +391,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         if (mSurface != null) {
             try {
                 mSurfaceCanvas = mSurface.lockHardwareCanvas();
-            }catch (Exception e){
+            } catch (Exception e) {
                 Log.e(TAG, e.toString());
             }
         }
@@ -413,7 +403,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
      *
      */
     public void onDrawViewEnd() {
-        if(mSurfaceCanvas != null) {
+        if (mSurfaceCanvas != null) {
             mSurface.unlockCanvasAndPost(mSurfaceCanvas);
         }
 
@@ -421,7 +411,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     /**
-     *
      * @return
      */
     public HardwareBuffer getHardwareBuffer() {
@@ -429,7 +418,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     /**
-     *
      * @param textureWidth
      * @param textureHeight
      */
@@ -442,10 +430,11 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         mForceResizeTex = true;
     }
 
-    public void requestResizeWeb() { mForceResizeWeb = true; }
+    public void requestResizeWeb() {
+        mForceResizeWeb = true;
+    }
 
     /**
-     *
      *
      */
     public final void destroy() {

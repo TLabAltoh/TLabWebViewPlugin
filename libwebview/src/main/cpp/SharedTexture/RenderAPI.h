@@ -21,7 +21,7 @@ namespace tlab {
     // There are implementations of this base class for D3D9, D3D11, OpenGL etc.; see individual RenderAPI_* files.
     class RenderAPI {
     public:
-        virtual ~RenderAPI() {}
+        virtual ~RenderAPI() = default;
 
         // Process general event like initialization, shutdown, device loss/reset etc.
         virtual void

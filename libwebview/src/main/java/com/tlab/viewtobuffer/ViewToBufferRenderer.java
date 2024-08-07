@@ -1,8 +1,7 @@
-package com.tlab.viewtohardwarebuffer;
+package com.tlab.viewtobuffer;
 
 import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
-import android.hardware.HardwareBuffer;
 import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.opengl.GLES11Ext;
@@ -13,7 +12,6 @@ import android.view.Surface;
 
 import com.android.grafika.gles.EglCore;
 import com.android.grafika.gles.GlUtil;
-import com.robot9.shared.SharedTexture;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -22,65 +20,50 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
+public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
 
-    private static final String TAG = "libwebview";
+    protected static final String TAG = "libwebview";
 
-    private static final int DEFAULT_TEXTURE_WIDTH = 512;
-    private static final int DEFAULT_TEXTURE_HEIGHT = 512;
+    protected static final int DEFAULT_TEXTURE_WIDTH = 512;
+    protected static final int DEFAULT_TEXTURE_HEIGHT = 512;
 
-    private static final int SIZEOF_FLOAT = Float.SIZE / 8;
+    protected static final int SIZEOF_FLOAT = Float.SIZE / 8;
 
-    private EglCore mEglCore;
+    protected EglCore mEglCore;
 
-    private int mTextureWidth = DEFAULT_TEXTURE_WIDTH;
-    private int mTextureHeight = DEFAULT_TEXTURE_HEIGHT;
+    protected int mTextureWidth = DEFAULT_TEXTURE_WIDTH;
+    protected int mTextureHeight = DEFAULT_TEXTURE_HEIGHT;
 
-    private int mWebWidth = DEFAULT_TEXTURE_WIDTH;
-    private int mWebHeight = DEFAULT_TEXTURE_HEIGHT;
+    protected int mWebWidth = DEFAULT_TEXTURE_WIDTH;
+    protected int mWebHeight = DEFAULT_TEXTURE_HEIGHT;
 
-    private boolean mForceResizeTex = false;
-    private boolean mForceResizeWeb = false;
+    protected boolean mForceResizeTex = false;
+    protected boolean mForceResizeWeb = false;
 
-    private SurfaceTexture mSurfaceTexture;
+    protected SurfaceTexture mSurfaceTexture;
 
-    private int[] mSurfaceTextureID;
+    protected int[] mSurfaceTextureID;
 
-    private Surface mSurface;
+    protected Surface mSurface;
 
-    private Canvas mSurfaceCanvas;
-
-    /**
-     *
-     */
-
-    private HardwareBuffer mSharedBuffer;
-
-    private SharedTexture mSharedTexture;
+    protected Canvas mSurfaceCanvas;
 
     /**
      *
      */
 
-    private int mGLSamplerProgram;
-    private int mGLSamplerPositionID;
-    private int mGLSamplerTexID;
-    private int mGLSamplerTexCoordID;
+    protected int mGLSamplerProgram;
+    protected int mGLSamplerPositionID;
+    protected int mGLSamplerTexID;
+    protected int mGLSamplerTexCoordID;
 
     protected FloatBuffer mGLCubeBuffer;
     protected FloatBuffer mGLTextureBuffer;
 
-    private int[] mGLCubeID;
-    private int[] mGLTexCoordID;
+    protected int[] mGLCubeID;
+    protected int[] mGLTexCoordID;
 
-    /**
-     * FBO (pixel data on GPU) for EGL_IMAGE_KHR (Hardware Buffer)
-     */
-
-    private int[] mHWBFboID;
-    private int[] mHWBFboTexID;
-
-    private boolean mInitialized;
+    protected boolean mInitialized;
 
     /**
      *
@@ -130,42 +113,22 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     /**
      *
      */
-    private void destroyHWBFboTexture() {
-        if (mHWBFboTexID != null) {
-            GLES30.glDeleteTextures(mHWBFboTexID.length, mHWBFboTexID, 0);
-            mHWBFboTexID = null;
-        }
+    protected void destroyBuffer() {
 
-        if (mHWBFboID != null) {
-            GLES30.glDeleteFramebuffers(mHWBFboID.length, mHWBFboID, 0);
-            mHWBFboID = null;
-        }
-
-        if (mSharedTexture != null) {
-            mSharedTexture.release();
-            mSharedTexture = null;
-        }
     }
 
     /**
      *
      */
-    private void initHWBFboTexture() {
-        mHWBFboID = new int[1];
-        mHWBFboTexID = new int[1];
+    protected void initBuffer() {
 
-        mSharedTexture = new SharedTexture(mTextureWidth, mTextureHeight, false);
-        mSharedBuffer = mSharedTexture.getHardwareBuffer();
+    }
 
-        // Plugin returns long variable, but in OpenGL, texture id can be used by int, so cast here.
-        assert mSharedTexture != null;
-        mHWBFboTexID[0] = (int) mSharedTexture.getBindedPlatformTexture();
+    /**
+     *
+     */
+    public void CopySurfaceTextureToBuffer() {
 
-        GLES30.glGenFramebuffers(1, mHWBFboID, 0);
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mHWBFboID[0]);
-        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mHWBFboTexID[0], 0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
     }
 
     /**
@@ -223,7 +186,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         mSurface = new Surface(mSurfaceTexture);
     }
 
-    private void destroyVbo() {
+    protected void destroyVbo() {
         if (mGLCubeID != null) {
             GLES30.glDeleteBuffers(1, mGLCubeID, 0);
             mGLCubeID = null;
@@ -234,7 +197,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    private void initVbo() {
+    protected void initVbo() {
         final float[] VEX_CUBE = {
                 -1.0f, 1.0f, // Bottom left.
                 1.0f, 1.0f, // Bottom right.
@@ -267,7 +230,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * SIZEOF_FLOAT, mGLTextureBuffer, GLES30.GL_STATIC_DRAW);
     }
 
-    private void init() {
+    protected void init() {
         //Log.i(TAG, "[VHWBR] [init] pass 0 (start)");
         EGLContext context = EGL14.eglGetCurrentContext();
 
@@ -317,47 +280,10 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         // surface, but then both oes and fbo are not released propary).
 
         releaseSurfaceAndSurfaceTexture();
-        destroyHWBFboTexture();
+        destroyBuffer();
 
         createSurfaceAndSurfaceTexture(mWebWidth, mWebHeight);
-        initHWBFboTexture();
-    }
-
-    public void CopySurfaceTextureToHWB() {
-        if (!mInitialized || mHWBFboID == null) {
-            return;
-        }
-
-        GLES30.glGetError();
-        GLES30.glUseProgram(mGLSamplerProgram);
-
-        GLES30.glViewport(0, 0, mTextureWidth, mTextureHeight);
-        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mSurfaceTextureID[0]);
-
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLCubeID[0]);
-        GLES30.glVertexAttribPointer(mGLSamplerPositionID, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
-        GLES30.glEnableVertexAttribArray(mGLSamplerPositionID);
-
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLTexCoordID[0]);
-        GLES30.glVertexAttribPointer(mGLSamplerTexCoordID, 2, GLES30.GL_FLOAT, false, 4 * 2, 0);
-        GLES30.glEnableVertexAttribArray(mGLSamplerTexCoordID);
-
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
-
-        GLES30.glUniform1i(mGLSamplerTexID, 0);
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mHWBFboID[0]);
-        GLES30.glDisable(GLES30.GL_CULL_FACE);
-        GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
-
-        GLES30.glFlush();
-
-        GLES30.glDisableVertexAttribArray(mGLSamplerPositionID);
-        GLES30.glDisableVertexAttribArray(mGLSamplerTexCoordID);
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-
-        //Log.i(TAG, "[VHWBR] [CopySurfaceTextureToHWB]");
+        initBuffer();
     }
 
     /**
@@ -369,14 +295,14 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
         synchronized (this) {
 
             if (mForceResizeTex) {
-                destroyHWBFboTexture();
-                initHWBFboTexture();
+                destroyBuffer();
+                initBuffer();
 
                 mForceResizeTex = false;
             }
 
             mSurfaceTexture.updateTexImage();
-            CopySurfaceTextureToHWB();
+            CopySurfaceTextureToBuffer();
         }
     }
 
@@ -411,13 +337,6 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     }
 
     /**
-     * @return
-     */
-    public HardwareBuffer getHardwareBuffer() {
-        return mSharedBuffer;
-    }
-
-    /**
      * @param textureWidth
      * @param textureHeight
      */
@@ -440,7 +359,7 @@ public class ViewToHWBRenderer implements GLSurfaceView.Renderer {
     public final void destroy() {
         mInitialized = false;
 
-        destroyHWBFboTexture();
+        destroyBuffer();
         destroyVbo();
         GLES30.glDeleteProgram(mGLSamplerProgram);
 

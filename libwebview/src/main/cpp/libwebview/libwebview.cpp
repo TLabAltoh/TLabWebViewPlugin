@@ -1,4 +1,4 @@
-#include "JNIUtil.h"
+#include "libwebview.h"
 #include "JNILog.h"
 
 extern "C" {

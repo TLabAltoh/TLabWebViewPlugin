@@ -1,4 +1,4 @@
-package com.tlab.viewtohardwarebuffer;
+package com.tlab.viewtobuffer;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;

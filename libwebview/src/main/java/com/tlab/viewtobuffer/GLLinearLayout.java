@@ -1,4 +1,4 @@
-package com.tlab.viewtohardwarebuffer;
+package com.tlab.viewtobuffer;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -7,7 +7,7 @@ import android.widget.LinearLayout;
 
 public class GLLinearLayout extends LinearLayout implements GLRenderable {
 
-    private ViewToHWBRenderer mViewToHWBRenderer;
+    private ViewToBufferRenderer mViewToBufferRenderer;
 
     public float mRatioWidth = 1;
     public float mRatioHeight = 1;
@@ -45,24 +45,24 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
      */
     @Override
     public void draw(Canvas canvas) {
-        if (mViewToHWBRenderer == null) {
+        if (mViewToBufferRenderer == null) {
             return;
         }
 
-        Canvas glAttachedCanvas = mViewToHWBRenderer.onDrawViewBegin();
+        Canvas glAttachedCanvas = mViewToBufferRenderer.onDrawViewBegin();
 
         if (glAttachedCanvas != null) {
             super.draw(glAttachedCanvas);
         }
 
-        mViewToHWBRenderer.onDrawViewEnd();
+        mViewToBufferRenderer.onDrawViewEnd();
     }
 
     /**
-     * @param viewToHWBRenderer
+     * @param viewToBufferRenderer
      */
     @Override
-    public void setViewToGLRenderer(ViewToHWBRenderer viewToHWBRenderer) {
-        mViewToHWBRenderer = viewToHWBRenderer;
+    public void setViewToGLRenderer(ViewToBufferRenderer viewToBufferRenderer) {
+        mViewToBufferRenderer = viewToBufferRenderer;
     }
 }

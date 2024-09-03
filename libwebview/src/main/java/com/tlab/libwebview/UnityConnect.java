@@ -317,12 +317,20 @@ public class UnityConnect extends Fragment {
         if (downloaded) {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnStartEmpty()) {
-                    String argument = "var " + mDlEventCallback.varDlUrlName + " = '" + url + "'; " + "var " + mDlEventCallback.varDlIdName + " = -1; ";
+                    //@formatter:off
+                    String argument =
+                            "var " + mDlEventCallback.varDlUrlName  + " = '" + url + "'; " +
+                            "var " + mDlEventCallback.varDlIdName   + " = -1; ";
+                    //@formatter:on
                     evaluateJS(argument + mDlEventCallback.onStart);
                 }
 
                 if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnFinishEmpty()) {
-                    String argument = "var " + mDlEventCallback.varDlUriName + " = 'none'; " + "var " + mDlEventCallback.varDlIdName + " = -1; ";
+                    //@formatter:off
+                    String argument =
+                            "var " + mDlEventCallback.varDlUriName  + " = 'none'; " +
+                            "var " + mDlEventCallback.varDlIdName   + " = -1; ";
+                    //@formatter:on
                     evaluateJS(argument + mDlEventCallback.onFinish);
                 }
             }, 500);
@@ -411,11 +419,10 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 *
-                 * @param view The WebView that is initiating the callback.
-                 * @param url The url to be loaded.
+                 * @param view    The WebView that is initiating the callback.
+                 * @param url     The url to be loaded.
                  * @param favicon The favicon for this page if it already exists in the
-                 *            database.
+                 *                database.
                  */
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -424,9 +431,8 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 *
                  * @param view The WebView that is initiating the callback.
-                 * @param url The url of the page.
+                 * @param url  The url of the page.
                  */
                 @Override
                 public void onPageFinished(WebView view, String url) {
@@ -442,9 +448,8 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 *
                  * @param view The WebView that is initiating the callback.
-                 * @param url The url of the resource the WebView will load.
+                 * @param url  The url of the resource the WebView will load.
                  */
                 @Override
                 public void onLoadResource(WebView view, String url) {
@@ -453,11 +458,10 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 *
-                 * @param view The WebView that is initiating the callback.
+                 * @param view    The WebView that is initiating the callback.
                  * @param handler An {@link SslErrorHandler} that will handle the user's
-                 *            response.
-                 * @param error The SSL error object.
+                 *                response.
+                 * @param error   The SSL error object.
                  */
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
@@ -482,8 +486,7 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 *
-                 * @param view The WebView that is initiating the callback.
+                 * @param view    The WebView that is initiating the callback.
                  * @param request Object containing the details of the request.
                  * @return
                  */
@@ -548,7 +551,6 @@ public class UnityConnect extends Fragment {
                 }
 
                 /**
-                 *
                  * @param request the PermissionRequest from current web content.
                  */
                 @Override
@@ -587,10 +589,9 @@ public class UnityConnect extends Fragment {
             });
             mWebView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
                 /**
-                 *
-                 * @param v The view whose scroll position has changed.
-                 * @param x Current horizontal scroll origin.
-                 * @param y Current vertical scroll origin.
+                 * @param v    The view whose scroll position has changed.
+                 * @param x    Current horizontal scroll origin.
+                 * @param y    Current vertical scroll origin.
                  * @param oldX Previous horizontal scroll origin.
                  * @param oldY Previous vertical scroll origin.
                  */
@@ -604,9 +605,8 @@ public class UnityConnect extends Fragment {
             // create download complete event receiver.
             mOnDownloadComplete = new BroadcastReceiver() {
                 /**
-                 *
                  * @param context The Context in which the receiver is running.
-                 * @param intent The Intent being received.
+                 * @param intent  The Intent being received.
                  */
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -615,7 +615,11 @@ public class UnityConnect extends Fragment {
                     Uri uri = dm.getUriForDownloadedFile(downloadedID);
 
                     if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnFinishEmpty()) {
-                        String argument = "var " + mDlEventCallback.varDlUriName + " = '" + uri + "'; " + "var " + mDlEventCallback.varDlIdName + " = " + downloadedID + "; ";
+                        //@formatter:off
+                        String argument =
+                                "var " + mDlEventCallback.varDlUriName  + " = '"    + uri           + "'; "   +
+                                "var " + mDlEventCallback.varDlIdName   + " = "     + downloadedID  + "; ";
+                        //@formatter:on
                         evaluateJS(argument + mDlEventCallback.onFinish);
                     }
                 }
@@ -911,7 +915,11 @@ public class UnityConnect extends Fragment {
             id = dm.enqueue(request);
 
             if (mWebView.getSettings().getJavaScriptEnabled() && !mDlEventCallback.isOnStartEmpty()) {
-                String argument = "var " + mDlEventCallback.varDlUrlName + " = '" + url + "'; " + "var " + mDlEventCallback.varDlIdName + " = " + id + "; ";
+                //@formatter:off
+                String argument =
+                        "var " + mDlEventCallback.varDlUrlName  + " = '"    + url   + "'; " +
+                        "var " + mDlEventCallback.varDlIdName   + " = "     + id    + "; ";
+                //@formatter:on
                 evaluateJS(argument + mDlEventCallback.onStart);
             }
         } else if (url.startsWith("data:")) { // data url scheme
@@ -919,8 +927,43 @@ public class UnityConnect extends Fragment {
             writeDataUrlToStorage(url, mimetype);
         } else if (url.startsWith("blob:")) { // blob url scheme
             // get base64 from blob url and write to file stream
-            String js = "function writeBuffer(buffer, bufferName, segmentSize, offset)" + "{" + "    if (segmentSize === 0) return;" + "" + "    var i = offset;" + "    while(i + segmentSize <= buffer.length)" + "    {" + "       window.TLabWebViewActivity.writeForBlobDlEvent(bufferName, buffer.slice(i, i + segmentSize));" + "       i += segmentSize" + "    }" + "" + "    writeBuffer(buffer, bufferName, parseInt(segmentSize / 2), i);" + "}" + "var xhr = new XMLHttpRequest();" + "xhr.open('GET', '" + url + "', true);" + "xhr.setRequestHeader('Content-type','" + mimetype + ";charset=UTF-8');" + "xhr.responseType = 'blob';" + "xhr.onload = function(e) {" + "    if (this.status == 200) {" + "        var blobFile = this.response;" + "        var reader = new FileReader();" + "        reader.readAsDataURL(blobFile);" + "        reader.onloadend = function() {" + "            base64data = reader.result;" + "            bufferName = '" + url + "';" + "            buffer = new TextEncoder().encode(base64data);" + "            window.TLabWebViewActivity.mallocForBlobDlEvent(bufferName, buffer.length);" + "            writeBuffer(buffer, bufferName, 500000, 0);" + "            window.TLabWebViewActivity.onBlobMapBufferFinish('" + url + "','" + mimetype + "');" + "        }" + "    }" + "};" + "xhr.send();";
-            ;
+            //@formatter:off
+            String js =
+                    "function writeBuffer(buffer, bufferName, segmentSize, offset)" +
+                    "{" +
+                    "    if (segmentSize === 0) return;" +
+                    "" +
+                    "    var i = offset;" +
+                    "    while(i + segmentSize <= buffer.length)" +
+                    "    {" +
+                    "       window.TLabWebViewActivity.writeForBlobDlEvent(bufferName, buffer.slice(i, i + segmentSize));" +
+                    "       i += segmentSize" +
+                    "    }" +
+                    "" +
+                    "" +
+                    "    writeBuffer(buffer, bufferName, parseInt(segmentSize / 2), i);" +
+                    "}" +
+                    "var xhr = new XMLHttpRequest();" +
+                    "xhr.open('GET', '" + url + "', true);" +
+                    "xhr.setRequestHeader('Content-type','" + mimetype + ";charset=UTF-8');" +
+                    "xhr.responseType = 'blob';" +
+                    "xhr.onload = function(e) {" +
+                    "    if (this.status == 200) {" +
+                    "        var blobFile = this.response;" +
+                    "        var reader = new FileReader();" +
+                    "        reader.readAsDataURL(blobFile);" +
+                    "        reader.onloadend = function() {" +
+                    "            base64data = reader.result;" +
+                    "            bufferName = '" + url + "';" +
+                    "            buffer = new TextEncoder().encode(base64data);" +
+                    "            window.TLabWebViewActivity.mallocForBlobDlEvent(bufferName, buffer.length);" +
+                    "            writeBuffer(buffer, bufferName, 500000, 0);" +
+                    "            window.TLabWebViewActivity.onBlobMapBufferFinish('" + url + "','" + mimetype + "');" +
+                    "        }" +
+                    "    }" +
+                    "};" +
+                    "xhr.send();";
+            //@formatter:on
 
             evaluateJS(js);
         }

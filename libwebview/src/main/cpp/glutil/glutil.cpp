@@ -41,15 +41,12 @@ Java_com_tlab_viewtobuffer_ViewToPBORenderer_glUtilGetPboBuffer(JNIEnv *env, job
 static jbyteArray
 ConvertDataProc(JNIEnv *env, jobject thiz, jbyte *srcBuff, jint width, jint height) {
     int srcSize = width * height;
-    uint8_t *dstBuff = NULL;
     int dstSize;
     dstSize = srcSize << 2;
     jbyteArray buffer = env->NewByteArray(dstSize);
     if (srcBuff != NULL) {
-        env->SetByteArrayRegion(buffer, 0, dstSize,
-                                (dstBuff != NULL ? (jbyte *) dstBuff : srcBuff));
+        env->SetByteArrayRegion(buffer, 0, dstSize, srcBuff);
     }
-    delete[] dstBuff;
 
     return buffer;
 }

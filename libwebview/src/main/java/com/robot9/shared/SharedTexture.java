@@ -84,9 +84,9 @@ public class SharedTexture {
         return 0;
     }
 
-    public long getBindedPlatformTexture() {
+    public long getPlatformTexture() {
         if (mNativeContext != 0) {
-            return getBindedPlatformTexture(mNativeContext);
+            return getPlatformTexture(mNativeContext);
         }
         return 0;
     }
@@ -165,7 +165,7 @@ public class SharedTexture {
 
     private native int getHeight(long ctx);
 
-    private native long getBindedPlatformTexture(long ctx);
+    private native long getPlatformTexture(long ctx);
 
     private native void setUnityTexture(long ctx, long unityTexID);
 

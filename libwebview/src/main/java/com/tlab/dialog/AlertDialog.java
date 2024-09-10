@@ -9,84 +9,79 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 @SuppressLint("ViewConstructor")
 public class AlertDialog extends Dialog implements DialogInterface {
 
-    private final HashMap<String, OnSelectOptionListener> mOptionAndCallbackMap = new HashMap<>();
+    private final HashMap<String, OnSelectOptionListener> m_optionAndCallbackMap = new HashMap<>();
 
-    private final TextView mTitle;
-    private final TextView mBody;
-    private final TextView mDummy;
+    private final TextView m_title;
+    private final TextView m_body;
+    private final LinearLayout m_options;
 
-    private final LinearLayout mOptions;
-
-    public AlertDialog(Context context, int viewSize) {
+    public AlertDialog(Context context) {
         super(context);
 
-        mViewSize = viewSize;
-
-        setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        setLayoutParams(new LayoutParams(DEFAULT_VIEW_SIZE, DEFAULT_VIEW_SIZE));
         setGravity(Gravity.CENTER);
 
-        LinearLayout layout = new LinearLayout(context);
+        LinearLayout vertical = new LinearLayout(context);
 
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        vertical.setOrientation(LinearLayout.VERTICAL);
+        vertical.setBackgroundColor(Color.WHITE);
+        vertical.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
-        mTitle = new TextView(context);
-        mTitle.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        mTitle.setGravity(Gravity.LEFT | Gravity.TOP);
-        //mTitle.setBackgroundColor(Color.RED);
-        layout.addView(mTitle);
+        m_title = new TextView(context);
+        //m_title.setBackgroundColor(Color.GREEN);
+        m_title.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        m_title.setGravity(Gravity.LEFT | Gravity.TOP);
+        m_title.setTextSize(32);
+        vertical.addView(m_title);
 
-        mBody = new TextView(context);
-        mBody.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        mBody.setGravity(Gravity.CENTER);
-        //mBody.setBackgroundColor(Color.GREEN);
-        layout.addView(mBody);
+        m_body = new TextView(context);
+        //m_body.setBackgroundColor(Color.RED);
+        m_body.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        m_body.setGravity(Gravity.CENTER);
+        m_body.setTextSize(24);
+        vertical.addView(m_body);
 
         // I know this is bad practice. But I need to dynamically rescale
         // dialog component when parent size changes. TextView is
         // convenient to use as a scalable margin.
-        mDummy = new TextView(context);
-        mDummy.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        mDummy.setText("  ");
-        layout.addView(mDummy);
+        TextView dummy = new TextView(context);
+        dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        dummy.setText("  ");
+        dummy.setTextSize(15);
+        vertical.addView(dummy);
 
-        mOptions = new LinearLayout(context);
-        mOptions.setOrientation(LinearLayout.HORIZONTAL);
-        mOptions.setGravity(Gravity.RIGHT | Gravity.BOTTOM);
-        //mOptions.setBackgroundColor(Color.BLUE);
-        mOptions.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        layout.addView(mOptions);
+        m_options = new LinearLayout(context);
+        m_options.setOrientation(LinearLayout.HORIZONTAL);
+        m_options.setGravity(Gravity.RIGHT | Gravity.BOTTOM);
+        m_options.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        vertical.addView(m_options);
 
-        addView(layout);
+        addView(vertical);
     }
 
     public void setMessage(String title, String body) {
-        mTitle.setText(title);
-        mBody.setText(body);
+        m_title.setText(title);
+        m_body.setText(body);
     }
 
     public void setOptions(String option, final DialogInterface.OnSelectOptionListener listener) {
-        TextView dummy = new TextView(mContext);
+        TextView dummy = new TextView(m_context);
         dummy.setText("     ");
+        dummy.setTextSize(15);
         dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
-        mOptions.addView(dummy);
+        m_options.addView(dummy);
 
-        Button button = new Button(mContext);
+        Button button = new Button(m_context);
+        button.setTextSize(15);
         button.setText(option);
-        button.setMinWidth(0);
-        button.setMinHeight(0);
-        button.setMinimumWidth(0);
-        button.setMinimumHeight(0);
         button.setTextColor(Color.GREEN);
         button.setBackgroundColor(Color.TRANSPARENT);
-        button.setPadding(0, 0, 0, 0);
 
         button.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         button.setOnClickListener(new OnClickListener() {
@@ -96,27 +91,6 @@ public class AlertDialog extends Dialog implements DialogInterface {
             }
         });
 
-        mOptions.addView(button);
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        super.onLayout(changed, l, t, r, b);
-
-        mViewSize = Math.min(getWidth(), getHeight());
-
-        mTitle.setTextSize(32 * (float) mViewSize / DEFAULT_VIEW_SIZE);
-        mBody.setTextSize(24 * (float) mViewSize / DEFAULT_VIEW_SIZE);
-        mDummy.setTextSize(5 * (float) mViewSize / DEFAULT_VIEW_SIZE);
-
-        ArrayList<TextView> texts = getViewsByType(mOptions, TextView.class);
-        texts.forEach((text -> {
-            text.setTextSize(15 * (float) mViewSize / DEFAULT_VIEW_SIZE);
-        }));
+        m_options.addView(button);
     }
 }

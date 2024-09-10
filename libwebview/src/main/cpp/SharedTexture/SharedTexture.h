@@ -39,7 +39,7 @@ namespace robot9 {
 
         int getHeight() const;
 
-        long getBindedPlatformTexture() const;
+        long getPlatformTexture() const;
 
         void setUnityTexture(long unityTexID);
 
@@ -56,7 +56,7 @@ namespace robot9 {
         AHardwareBuffer *m_buffer = nullptr;
         int m_width = 0;
         int m_height = 0;
-        long m_bindedPlatformTexID = 0;
+        long m_platformTexID = 0;
         long m_unityTexID = 0;
         long m_unityPlatformTexID = 0;
     };

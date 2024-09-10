@@ -8,11 +8,13 @@ UnityRenderEvent UpdateSurfaceFunc();
 
 void UpdateSurface(int);
 
-long GetBindedPlatformTextureID(int);
+long GetPlatformTextureID(int);
 
 void SetUnityTextureID(int, long);
 
 void ReleaseSharedTexture(int);
+
+bool ContentExists(int);
 
 bool GetSharedBufferUpdateFlag(int);
 
@@ -22,7 +24,7 @@ void SetHardwareBufferUpdateFlag(int, bool);
 JavaVM *g_jvm;
 
 JNIEnv *GetEnv() {
-    void *env = NULL;
+    void *env = nullptr;
     jint status = g_jvm->GetEnv(&env, JNI_VERSION_1_6);
     return reinterpret_cast<JNIEnv *>(env);
 }
@@ -36,7 +38,7 @@ static void ThreadDestructor(void *prev_jni_ptr) {
     if (GetEnv() == prev_jni_ptr) {
         jint status = g_jvm->DetachCurrentThread();
 
-        if (!(status == JNI_OK)) {
+        if (status != JNI_OK) {
             LOGE("JNI filed to detach env from this thread");
         }
     }
@@ -51,46 +53,54 @@ static void CreateJNIPtrKey() {
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     g_jvm = vm;
 
-    g_jvm->AttachCurrentThread(&g_main_thread_env, NULL);
+    g_jvm->AttachCurrentThread(&g_main_thread_env, nullptr);
 
     g_class_unity_connect = (jclass) g_main_thread_env->NewGlobalRef(
             g_main_thread_env->FindClass("com/tlab/libwebview/UnityConnect"));
 
-    if (g_class_unity_connect == NULL) {
+    if (g_class_unity_connect == nullptr) {
         LOGE("JNI Class 'UnityConnect' not found");
     }
 
     g_func_update_surface = g_main_thread_env->GetMethodID(g_class_unity_connect, "updateSurface",
                                                            "()V");
 
-    if (g_func_update_surface == NULL) {
+    if (g_func_update_surface == nullptr) {
         LOGE("JNI Function 'updateSurface' not found");
     }
 
-    g_func_get_binded_platform_texture_id = g_main_thread_env->GetMethodID(g_class_unity_connect,
-                                                                           "getBindedPlatformTextureID",
-                                                                           "()J");
+    g_func_get_platform_texture_id = g_main_thread_env->GetMethodID(g_class_unity_connect,
+                                                                    "getPlatformTextureID",
+                                                                    "()J");
 
-    if (g_func_get_binded_platform_texture_id == NULL) {
-        LOGE("JNI Function 'GetBindedPlatformTextureID' not found");
+    if (g_func_get_platform_texture_id == nullptr) {
+        LOGE("JNI Function 'GetPlatformTextureID' not found");
     }
 
     g_func_release_shared_texture = g_main_thread_env->GetMethodID(g_class_unity_connect,
                                                                    "releaseSharedTexture", "()V");
 
-    if (g_func_release_shared_texture == NULL) {
+    if (g_func_release_shared_texture == nullptr) {
         LOGE("JNI Function 'setUnityTextureID' not found");
     }
 
     g_func_set_unity_texture_id = g_main_thread_env->GetMethodID(g_class_unity_connect,
                                                                  "setUnityTextureID", "(J)V");
 
-    if (g_func_set_unity_texture_id == NULL) {
+    if (g_func_content_exists == nullptr) {
+        LOGE("JNI Function 'contentExists' not found");
+    }
+
+    g_func_content_exists = g_main_thread_env->GetMethodID(g_class_unity_connect,
+                                                           "contentExists", "()Z");
+
+    if (g_func_set_unity_texture_id == nullptr) {
         LOGE("JNI Function 'setUnityTextureID' not found");
     }
 
-    g_field_is_shared_buffer_updated = g_main_thread_env->GetFieldID(g_class_unity_connect,
-                                                                     "mSharedBufferUpdated", "Z");
+    g_field_is_shared_buffer_exchanged = g_main_thread_env->GetFieldID(g_class_unity_connect,
+                                                                       "m_isSharedBufferExchanged",
+                                                                       "Z");
 
     return JNI_VERSION_1_6;
 }
@@ -102,9 +112,9 @@ JNIEnv *AttachCurrentThreadIfNeeded() {
         return jni;
     }
 
-    JNIEnv *env = NULL;
+    JNIEnv *env = nullptr;
 
-    int status = g_jvm->AttachCurrentThread(&env, NULL);
+    int status = g_jvm->AttachCurrentThread(&env, nullptr);
 
     if (status != JNI_OK) {
         LOGE("JNIEnv Filed to attach current thread: %d", status);
@@ -124,7 +134,7 @@ JNIEnv *AttachCurrentThreadIfNeeded() {
 void UpdateSurface(int instance_ptr) {
     JNIEnv *env = AttachCurrentThreadIfNeeded();
 
-    jobject instance = (jobject) ((long) instance_ptr);
+    auto instance = (jobject) ((long) instance_ptr);
 
     env->CallVoidMethod(instance, g_func_update_surface);
 }
@@ -133,33 +143,39 @@ UnityRenderEvent UpdateSurfaceFunc() {
     return UpdateSurface;
 }
 
-long GetBindedPlatformTextureID(int instance_ptr) {
-    jobject instance = (jobject) ((long) instance_ptr);
+long GetPlatformTextureID(int instance_ptr) {
+    auto instance = (jobject) ((long) instance_ptr);
 
-    return g_main_thread_env->CallLongMethod(instance, g_func_get_binded_platform_texture_id);
+    return g_main_thread_env->CallLongMethod(instance, g_func_get_platform_texture_id);
 }
 
 void SetUnityTextureID(int instance_ptr, long unity_texture_id) {
-    jobject instance = (jobject) ((long) instance_ptr);
+    auto instance = (jobject) ((long) instance_ptr);
 
     return g_main_thread_env->CallVoidMethod(instance, g_func_set_unity_texture_id,
                                              (jlong) unity_texture_id);
 }
 
 void ReleaseSharedTexture(int instance_ptr) {
-    jobject instance = (jobject) ((long) instance_ptr);
+    auto instance = (jobject) ((long) instance_ptr);
 
     g_main_thread_env->CallVoidMethod(instance, g_func_release_shared_texture);
 }
 
-bool GetSharedBufferUpdateFlag(int instance_ptr) {
-    jobject instance = (jobject) ((long) instance_ptr);
+bool ContentExists(int instance_ptr) {
+    auto instance = (jobject) ((long) instance_ptr);
 
-    return g_main_thread_env->GetBooleanField(instance, g_field_is_shared_buffer_updated);
+    return g_main_thread_env->CallBooleanMethod(instance, g_func_content_exists);
+}
+
+bool GetSharedBufferUpdateFlag(int instance_ptr) {
+    auto instance = (jobject) ((long) instance_ptr);
+
+    return g_main_thread_env->GetBooleanField(instance, g_field_is_shared_buffer_exchanged);
 }
 
 void SetHardwareBufferUpdateFlag(int instance_ptr, bool value) {
-    jobject instance = (jobject) ((long) instance_ptr);
+    auto instance = (jobject) ((long) instance_ptr);
 
-    g_main_thread_env->SetBooleanField(instance, g_field_is_shared_buffer_updated, value);
+    g_main_thread_env->SetBooleanField(instance, g_field_is_shared_buffer_exchanged, value);
 }

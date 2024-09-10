@@ -7,10 +7,10 @@ import android.widget.LinearLayout;
 
 public class GLLinearLayout extends LinearLayout implements GLRenderable {
 
-    private ViewToBufferRenderer mViewToBufferRenderer;
+    private ViewToBufferRenderer m_viewToBufferRenderer;
 
-    public float mRatioWidth = 1;
-    public float mRatioHeight = 1;
+    public float ratioWidth = 1;
+    public float ratioHeight = 1;
 
     /**
      * @param context
@@ -19,8 +19,8 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
      */
     public GLLinearLayout(Context context, float ratioWidth, float ratioHeight) {
         super(context);
-        mRatioWidth = ratioWidth;
-        mRatioHeight = ratioHeight;
+        this.ratioWidth = ratioWidth;
+        this.ratioHeight = ratioHeight;
     }
 
     /**
@@ -45,17 +45,17 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
      */
     @Override
     public void draw(Canvas canvas) {
-        if (mViewToBufferRenderer == null) {
+        if (m_viewToBufferRenderer == null) {
             return;
         }
 
-        Canvas glAttachedCanvas = mViewToBufferRenderer.onDrawViewBegin();
+        Canvas glAttachedCanvas = m_viewToBufferRenderer.onDrawViewBegin();
 
         if (glAttachedCanvas != null) {
             super.draw(glAttachedCanvas);
         }
 
-        mViewToBufferRenderer.onDrawViewEnd();
+        m_viewToBufferRenderer.onDrawViewEnd();
     }
 
     /**
@@ -63,6 +63,6 @@ public class GLLinearLayout extends LinearLayout implements GLRenderable {
      */
     @Override
     public void setViewToGLRenderer(ViewToBufferRenderer viewToBufferRenderer) {
-        mViewToBufferRenderer = viewToBufferRenderer;
+        m_viewToBufferRenderer = viewToBufferRenderer;
     }
 }

@@ -32,7 +32,7 @@ public class CustomGLSurfaceView extends GLSurfaceView {
                 EGL10.EGL_NONE};
     }
 
-    private EGLContextFactory mEGLContextFactory = new EGLContextFactory() {
+    private EGLContextFactory m_eglContextFactory = new EGLContextFactory() {
         /**
          *
          * @param egl
@@ -67,7 +67,7 @@ public class CustomGLSurfaceView extends GLSurfaceView {
      */
     @Override
     public void setRenderer(Renderer renderer) {
-        setEGLContextFactory(mEGLContextFactory);
+        setEGLContextFactory(m_eglContextFactory);
         super.setRenderer(renderer);
     }
 

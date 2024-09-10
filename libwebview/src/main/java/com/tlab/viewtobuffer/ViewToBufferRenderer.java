@@ -29,47 +29,54 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
 
     protected static final int SIZEOF_FLOAT = Float.SIZE / 8;
 
-    protected EglCore mEglCore;
+    protected EglCore m_eglCore;
 
-    protected int mTextureWidth = DEFAULT_TEXTURE_WIDTH;
-    protected int mTextureHeight = DEFAULT_TEXTURE_HEIGHT;
+    protected int m_textureWidth = DEFAULT_TEXTURE_WIDTH;
+    protected int m_textureHeight = DEFAULT_TEXTURE_HEIGHT;
 
-    protected int mWebWidth = DEFAULT_TEXTURE_WIDTH;
-    protected int mWebHeight = DEFAULT_TEXTURE_HEIGHT;
+    protected int m_webWidth = DEFAULT_TEXTURE_WIDTH;
+    protected int m_webHeight = DEFAULT_TEXTURE_HEIGHT;
 
-    protected boolean mForceResizeTex = false;
-    protected boolean mForceResizeWeb = false;
+    protected boolean m_forceResizeTex = false;
+    protected boolean m_forceResizeWeb = false;
 
-    protected SurfaceTexture mSurfaceTexture;
+    protected boolean m_surfaceDestroyed = false;
+    protected boolean m_contentExists = false;
 
-    protected int[] mSurfaceTextureID;
+    protected SurfaceTexture m_surfaceTexture;
 
-    protected Surface mSurface;
+    protected int[] m_surfaceTextureID;
 
-    protected Canvas mSurfaceCanvas;
+    protected Surface m_surface;
+
+    protected Canvas m_surfaceCanvas;
 
     /**
      *
      */
 
-    protected int mGLSamplerProgram;
-    protected int mGLSamplerPositionID;
-    protected int mGLSamplerTexID;
-    protected int mGLSamplerTexCoordID;
+    protected int m_glSamplerProgram;
+    protected int m_glSamplerPositionID;
+    protected int m_glSamplerTexID;
+    protected int m_glSamplerTexCoordID;
 
-    protected FloatBuffer mGLCubeBuffer;
-    protected FloatBuffer mGLTextureBuffer;
+    protected FloatBuffer m_glCubeBuffer;
+    protected FloatBuffer m_glTextureBuffer;
 
-    protected int[] mGLCubeID;
-    protected int[] mGLTexCoordID;
+    protected int[] m_glCubeID;
+    protected int[] m_glTexCoordID;
 
-    protected boolean mInitialized;
+    protected boolean m_initialized;
+
+    protected boolean m_frameAvailable = false;
 
     /**
      *
      */
     public void initSamplerShader() {
-        String vertexShader = "attribute vec4 position;\n" +
+        //@formatter:off
+        String vertexShader =
+                "attribute vec4 position;\n" +
                 "attribute vec4 inputTexCoord;\n" +
                 "\n" +
                 "varying vec2 texCoord;\n" +
@@ -81,7 +88,8 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
                 "    gl_Position = position;\n" +
                 "}\n";
 
-        String fragmentShader = "#extension GL_OES_EGL_image_external : require\n" +
+        String fragmentShader =
+                "#extension GL_OES_EGL_image_external : require\n" +
                 "\n" +
                 "precision mediump float;\n" +
                 "\n" +
@@ -97,17 +105,18 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
                 "    col = pow(col, vec4(2.2));\n" +
                 "    gl_FragColor = col;\n" +
                 "}";
+        //@formatter:on
 
-        mGLSamplerProgram = GlUtil.createProgram(vertexShader, fragmentShader);
+        m_glSamplerProgram = GlUtil.createProgram(vertexShader, fragmentShader);
 
-        if (mGLSamplerProgram == 0) {
+        if (m_glSamplerProgram == 0) {
             Log.e(TAG, "Load sampler shader filed");
             return;
         }
 
-        mGLSamplerTexID = GLES30.glGetUniformLocation(mGLSamplerProgram, "inputTex");
-        mGLSamplerPositionID = GLES30.glGetAttribLocation(mGLSamplerProgram, "position");
-        mGLSamplerTexCoordID = GLES30.glGetAttribLocation(mGLSamplerProgram, "inputTexCoord");
+        m_glSamplerTexID = GLES30.glGetUniformLocation(m_glSamplerProgram, "inputTex");
+        m_glSamplerPositionID = GLES30.glGetAttribLocation(m_glSamplerProgram, "position");
+        m_glSamplerTexCoordID = GLES30.glGetAttribLocation(m_glSamplerProgram, "inputTexCoord");
     }
 
     /**
@@ -135,27 +144,31 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
      *
      */
     public void releaseSurfaceAndSurfaceTexture() {
-        if (mSurface != null) {
-            mSurface.release();
-            mSurface = null;
+        if (m_surface != null) {
+            m_surface.release();
+            m_surface = null;
 
             //Log.i(TAG, "[VHWBR] release surface");
         }
 
-        if (mSurfaceTexture != null) {
-            mSurfaceTexture.release();
-            mSurfaceTexture = null;
+        if (m_surfaceTexture != null) {
+            m_surfaceTexture.release();
+            m_surfaceTexture = null;
 
             //Log.i(TAG, "[VHWBR] release surface texture");
         }
 
-        if (mSurfaceTextureID != null) {
-            GLES30.glDeleteTextures(mSurfaceTextureID.length, mSurfaceTextureID, 0);
+        if (m_surfaceTextureID != null) {
+            GLES30.glDeleteTextures(m_surfaceTextureID.length, m_surfaceTextureID, 0);
 
-            //Log.i(TAG, "[VHWBR] release surface texture id: " + mSurfaceTextureID[0]);
+            //Log.i(TAG, "[VHWBR] release surface texture id: " + m_surfaceTextureID[0]);
 
-            mSurfaceTextureID = null;
+            m_surfaceTextureID = null;
         }
+    }
+
+    public boolean contentExists() {
+        return m_contentExists;
     }
 
     /**
@@ -165,14 +178,14 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
      * @param height view's resolution y
      */
     public void createSurfaceAndSurfaceTexture(int width, int height) {
-        mSurfaceTextureID = new int[1];
+        m_surfaceTextureID = new int[1];
 
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-        GLES30.glGenTextures(1, mSurfaceTextureID, 0);
+        GLES30.glGenTextures(1, m_surfaceTextureID, 0);
 
-        //Log.i(TAG, "[VHWBR] texture surface id: " + mSurfaceTextureID[0]);
+        //Log.i(TAG, "[VHWBR] texture surface id: " + m_surfaceTextureID[0]);
 
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mSurfaceTextureID[0]);
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, m_surfaceTextureID[0]);
 
         GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
@@ -181,60 +194,74 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
 
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 
-        mSurfaceTexture = new SurfaceTexture(mSurfaceTextureID[0]);
-        mSurfaceTexture.setDefaultBufferSize(width, height);
-        mSurface = new Surface(mSurfaceTexture);
+        m_frameAvailable = false;
+
+        m_surfaceTexture = new SurfaceTexture(m_surfaceTextureID[0]);
+        m_surfaceTexture.setDefaultBufferSize(width, height);
+        m_surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                synchronized (this) {
+                    m_frameAvailable = true;
+                }
+            }
+        });
+        m_surface = new Surface(m_surfaceTexture);
     }
 
     protected void destroyVbo() {
-        if (mGLCubeID != null) {
-            GLES30.glDeleteBuffers(1, mGLCubeID, 0);
-            mGLCubeID = null;
+        if (m_glCubeID != null) {
+            GLES30.glDeleteBuffers(1, m_glCubeID, 0);
+            m_glCubeID = null;
         }
-        if (mGLTexCoordID != null) {
-            GLES30.glDeleteBuffers(1, mGLTexCoordID, 0);
-            mGLTexCoordID = null;
+        if (m_glTexCoordID != null) {
+            GLES30.glDeleteBuffers(1, m_glTexCoordID, 0);
+            m_glTexCoordID = null;
         }
     }
 
     protected void initVbo() {
         final float[] VEX_CUBE = {
-                -1.0f, 1.0f, // Bottom left.
-                1.0f, 1.0f, // Bottom right.
+                //@formatter:off
+                -1.0f,  1.0f, // Bottom left.
+                 1.0f,  1.0f, // Bottom right.
                 -1.0f, -1.0f, // Top left.
-                1.0f, -1.0f, // Top right.
+                 1.0f, -1.0f, // Top right.
+                //@formatter:on
         };
 
         final float[] TEX_COORD = {
-                0.0f, 0.0f, // Bottom left.
-                1.0f, 0.0f, // Bottom right.
-                0.0f, 1.0f, // Top left.
-                1.0f, 1.0f // Top right.
+                //@formatter:off
+                 0.0f,  0.0f, // Bottom left.
+                 1.0f,  0.0f, // Bottom right.
+                 0.0f,  1.0f, // Top left.
+                 1.0f,  1.0f, // Top right.
+                //@formatter:on
         };
 
-        mGLCubeBuffer = ByteBuffer.allocateDirect(VEX_CUBE.length * SIZEOF_FLOAT).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        mGLCubeBuffer.put(VEX_CUBE).position(0);
+        m_glCubeBuffer = ByteBuffer.allocateDirect(VEX_CUBE.length * SIZEOF_FLOAT).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        m_glCubeBuffer.put(VEX_CUBE).position(0);
 
-        mGLTextureBuffer = ByteBuffer.allocateDirect(TEX_COORD.length * SIZEOF_FLOAT).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        mGLTextureBuffer.put(TEX_COORD).position(0);
+        m_glTextureBuffer = ByteBuffer.allocateDirect(TEX_COORD.length * SIZEOF_FLOAT).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        m_glTextureBuffer.put(TEX_COORD).position(0);
 
-        mGLCubeID = new int[1];
-        mGLTexCoordID = new int[1];
+        m_glCubeID = new int[1];
+        m_glTexCoordID = new int[1];
 
-        GLES30.glGenBuffers(1, mGLCubeID, 0);
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLCubeID[0]);
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLCubeBuffer.capacity() * SIZEOF_FLOAT, mGLCubeBuffer, GLES30.GL_STATIC_DRAW);
+        GLES30.glGenBuffers(1, m_glCubeID, 0);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, m_glCubeID[0]);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, m_glCubeBuffer.capacity() * SIZEOF_FLOAT, m_glCubeBuffer, GLES30.GL_STATIC_DRAW);
 
-        GLES30.glGenBuffers(1, mGLTexCoordID, 0);
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mGLTexCoordID[0]);
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, mGLTextureBuffer.capacity() * SIZEOF_FLOAT, mGLTextureBuffer, GLES30.GL_STATIC_DRAW);
+        GLES30.glGenBuffers(1, m_glTexCoordID, 0);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, m_glTexCoordID[0]);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, m_glTextureBuffer.capacity() * SIZEOF_FLOAT, m_glTextureBuffer, GLES30.GL_STATIC_DRAW);
     }
 
     protected void init() {
         //Log.i(TAG, "[VHWBR] [init] pass 0 (start)");
         EGLContext context = EGL14.eglGetCurrentContext();
 
-        mEglCore = new EglCore(context, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
+        m_eglCore = new EglCore(context, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
 
         initVbo();
 
@@ -242,7 +269,7 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
 
         GLES30.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        mInitialized = true;
+        m_initialized = true;
 
         //Log.i(TAG, "[VHWBR] [init] pass 0 (end)");
     }
@@ -255,8 +282,7 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
      */
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-
-        if (mInitialized) {
+        if (m_initialized) {
             return;
         }
 
@@ -272,8 +298,9 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
      */
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        mWebWidth = width;
-        mWebHeight = height;
+        m_surfaceDestroyed = false;
+        m_webWidth = width;
+        m_webHeight = height;
 
         // I need to destroy both the surface and the FBO at once before
         // creating them. (At first I call destroy fbo after create
@@ -282,7 +309,7 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
         releaseSurfaceAndSurfaceTexture();
         destroyBuffer();
 
-        createSurfaceAndSurfaceTexture(mWebWidth, mWebHeight);
+        createSurfaceAndSurfaceTexture(m_webWidth, m_webHeight);
         initBuffer();
     }
 
@@ -293,16 +320,16 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         synchronized (this) {
-
-            if (mForceResizeTex) {
+            if (m_forceResizeTex) {
                 destroyBuffer();
                 initBuffer();
 
-                mForceResizeTex = false;
+                m_forceResizeTex = false;
             }
 
-            mSurfaceTexture.updateTexImage();
+            m_surfaceTexture.updateTexImage();
             CopySurfaceTextureToBuffer();
+            m_contentExists = !m_surfaceDestroyed && m_frameAvailable;
         }
     }
 
@@ -312,28 +339,28 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
      * @return hardware canvas (this is the result of hardware acceleration).
      */
     public Canvas onDrawViewBegin() {
-        mSurfaceCanvas = null;
+        m_surfaceCanvas = null;
 
-        if (mSurface != null) {
+        if (m_surface != null) {
             try {
-                mSurfaceCanvas = mSurface.lockHardwareCanvas();
+                m_surfaceCanvas = m_surface.lockHardwareCanvas();
             } catch (Exception e) {
                 Log.e(TAG, e.toString());
             }
         }
 
-        return mSurfaceCanvas;
+        return m_surfaceCanvas;
     }
 
     /**
      *
      */
     public void onDrawViewEnd() {
-        if (mSurfaceCanvas != null) {
-            mSurface.unlockCanvasAndPost(mSurfaceCanvas);
+        if (m_surfaceCanvas != null) {
+            m_surface.unlockCanvasAndPost(m_surfaceCanvas);
         }
 
-        mSurfaceCanvas = null;
+        m_surfaceCanvas = null;
     }
 
     /**
@@ -341,31 +368,51 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
      * @param textureHeight
      */
     public void SetTextureResolution(int textureWidth, int textureHeight) {
-        mTextureWidth = textureWidth;
-        mTextureHeight = textureHeight;
+        m_textureWidth = textureWidth;
+        m_textureHeight = textureHeight;
+    }
+
+    public void disable() {
+        synchronized (this) {
+            m_contentExists = false;
+            m_frameAvailable = false;
+            m_surfaceDestroyed = true;
+        }
     }
 
     public void requestResizeTex() {
-        mForceResizeTex = true;
+        synchronized (this) {
+            m_forceResizeTex = true;
+
+            m_contentExists = false;
+            m_frameAvailable = false;
+            m_surfaceDestroyed = true;
+        }
     }
 
     public void requestResizeWeb() {
-        mForceResizeWeb = true;
+        synchronized (this) {
+            m_forceResizeWeb = true;
+
+            m_contentExists = false;
+            m_frameAvailable = false;
+            m_surfaceDestroyed = true;
+        }
     }
 
     /**
      *
      */
     public final void destroy() {
-        mInitialized = false;
+        m_initialized = false;
 
         destroyBuffer();
         destroyVbo();
-        GLES30.glDeleteProgram(mGLSamplerProgram);
+        GLES30.glDeleteProgram(m_glSamplerProgram);
 
-        if (mEglCore != null) {
-            mEglCore.release();
-            mEglCore = null;
+        if (m_eglCore != null) {
+            m_eglCore.release();
+            m_eglCore = null;
         }
     }
 }

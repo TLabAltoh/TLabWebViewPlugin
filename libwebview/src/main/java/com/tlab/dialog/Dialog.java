@@ -1,5 +1,6 @@
 package com.tlab.dialog;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,17 +8,16 @@ import android.widget.RelativeLayout;
 
 import java.util.ArrayList;
 
+@SuppressLint("ViewConstructor")
 public class Dialog extends RelativeLayout implements DialogInterface {
 
-    protected final Context mContext;
+    protected final Context m_context;
 
     protected static final int DEFAULT_VIEW_SIZE = 1024;
 
-    protected int mViewSize;
-
     public Dialog(Context context) {
         super(context);
-        mContext = context;
+        m_context = context;
     }
 
     @Override
@@ -28,6 +28,13 @@ public class Dialog extends RelativeLayout implements DialogInterface {
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
+    }
+
+    public void setScale(int parentSize) {
+        setScaleX((float) parentSize / DEFAULT_VIEW_SIZE);
+        setScaleY((float) parentSize / DEFAULT_VIEW_SIZE);
+        setTranslationX((float) (parentSize - DEFAULT_VIEW_SIZE) / 2);
+        setTranslationY((float) (parentSize - DEFAULT_VIEW_SIZE) / 2);
     }
 
     public static <T extends View> ArrayList<T> getViewsByType(ViewGroup root, Class<T> tClass) {

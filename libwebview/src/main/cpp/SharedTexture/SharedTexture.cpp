@@ -166,10 +166,10 @@ namespace robot9 {
             DEVLOGE("[sharedtex-jni] [SharedTexture] render api is null");
         }
 
-        m_bindedPlatformTexID = m_renderAPI->RegistHWBufferConnectedTexture(m_width, m_height,
-                                                                            m_buffer);
+        m_platformTexID = m_renderAPI->RegistHWBufferConnectedTexture(m_width, m_height,
+                                                                      m_buffer);
 
-        if (m_bindedPlatformTexID == 0) {
+        if (m_platformTexID == 0) {
             LOGE("constructor failed: m_bindTextureId");
             return;
         }
@@ -180,11 +180,11 @@ namespace robot9 {
     SharedTexture::~SharedTexture() {
         LOGD("~SharedTexture");
 
-        if (m_bindedPlatformTexID != 0) {
-            m_renderAPI->UnRegistHWBufferConnectedTexture(m_bindedPlatformTexID);
+        if (m_platformTexID != 0) {
+            m_renderAPI->UnRegistHWBufferConnectedTexture(m_platformTexID);
         }
 
-        m_bindedPlatformTexID = NULL;
+        m_platformTexID = NULL;
         m_unityTexID = NULL;
         m_unityPlatformTexID = NULL;
 
@@ -206,8 +206,8 @@ namespace robot9 {
     }
 
     void SharedTexture::downloadBuffer() const {
-        if (m_renderAPI && m_bindedPlatformTexID != 0) {
-            m_renderAPI->DownloadHardwareBuffer(m_bindedPlatformTexID);
+        if (m_renderAPI && m_platformTexID != 0) {
+            m_renderAPI->DownloadHardwareBuffer(m_platformTexID);
         }
     }
 
@@ -219,8 +219,8 @@ namespace robot9 {
         return m_height;
     }
 
-    long SharedTexture::getBindedPlatformTexture() const {
-        return m_bindedPlatformTexID;
+    long SharedTexture::getPlatformTexture() const {
+        return m_platformTexID;
     }
 
     void SharedTexture::setUnityTexture(long unityTexID) {
@@ -231,8 +231,8 @@ namespace robot9 {
     }
 
     void SharedTexture::updateUnityTexture() {
-        if (m_renderAPI && m_unityPlatformTexID && m_bindedPlatformTexID) {
-            m_renderAPI->UpdateUnityTexture(m_unityPlatformTexID, m_bindedPlatformTexID);
+        if (m_renderAPI && m_unityPlatformTexID && m_platformTexID) {
+            m_renderAPI->UpdateUnityTexture(m_unityPlatformTexID, m_platformTexID);
         }
     }
 }

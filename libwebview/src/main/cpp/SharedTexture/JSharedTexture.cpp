@@ -112,8 +112,8 @@ Java_com_robot9_shared_SharedTexture_getHeight(JNIEnv *env, jobject /* this */,
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_robot9_shared_SharedTexture_getBindedPlatformTexture(JNIEnv *env, jobject /* this */,
-                                                              jlong ctx) {
+Java_com_robot9_shared_SharedTexture_getPlatformTexture(JNIEnv *env, jobject /* this */,
+                                                        jlong ctx) {
     if (ctx == 0) {
         return 0;
     }
@@ -122,7 +122,7 @@ Java_com_robot9_shared_SharedTexture_getBindedPlatformTexture(JNIEnv *env, jobje
     if (!_ctx->buffer) {
         return 0;
     }
-    return static_cast<jlong>(_ctx->buffer->getBindedPlatformTexture());
+    return static_cast<jlong>(_ctx->buffer->getPlatformTexture());
 }
 
 extern "C"

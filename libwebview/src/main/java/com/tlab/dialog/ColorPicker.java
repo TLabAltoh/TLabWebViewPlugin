@@ -131,6 +131,19 @@ public class ColorPicker extends Dialog implements DialogInterface {
 
         m_options.addView(dummy);
 
+        Button button = getButton(option, listener);
+
+        m_options.addView(button);
+
+        dummy = new TextView(m_context);
+        dummy.setText("  ");
+        dummy.setTextSize(15);
+        dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+
+        m_options.addView(dummy);
+    }
+
+    private Button getButton(String option, OnSelectOptionListener listener) {
         Button button = new Button(m_context);
         button.setPadding(10, 10, 10, 10);
         button.setMinWidth(0);
@@ -143,20 +156,7 @@ public class ColorPicker extends Dialog implements DialogInterface {
         button.setBackgroundColor(Color.WHITE);
 
         button.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        button.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                listener.OnSelectOption(option);
-            }
-        });
-
-        m_options.addView(button);
-
-        dummy = new TextView(m_context);
-        dummy.setText("  ");
-        dummy.setTextSize(15);
-        dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-
-        m_options.addView(dummy);
+        button.setOnClickListener(v -> listener.OnSelectOption(option));
+        return button;
     }
 }

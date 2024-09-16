@@ -18,6 +18,8 @@ namespace {
 
     jmethodID g_func_content_exists = nullptr;
 
+    jmethodID g_func_set_surface = nullptr;
+
     jfieldID g_field_is_shared_buffer_exchanged = nullptr;
 
     // https://stackoverflow.com/questions/7096350/can-you-cache-jnienv

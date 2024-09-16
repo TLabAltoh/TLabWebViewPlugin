@@ -84,12 +84,7 @@ public class AlertDialog extends Dialog implements DialogInterface {
         button.setBackgroundColor(Color.TRANSPARENT);
 
         button.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        button.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                listener.OnSelectOption(option);
-            }
-        });
+        button.setOnClickListener(v -> listener.OnSelectOption(option));
 
         m_options.addView(button);
     }

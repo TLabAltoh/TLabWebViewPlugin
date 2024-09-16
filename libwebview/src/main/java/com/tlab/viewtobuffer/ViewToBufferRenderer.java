@@ -38,7 +38,6 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
     protected int m_webHeight = DEFAULT_TEXTURE_HEIGHT;
 
     protected boolean m_forceResizeTex = false;
-    protected boolean m_forceResizeWeb = false;
 
     protected boolean m_surfaceDestroyed = false;
     protected boolean m_contentExists = false;
@@ -383,16 +382,6 @@ public class ViewToBufferRenderer implements GLSurfaceView.Renderer {
     public void requestResizeTex() {
         synchronized (this) {
             m_forceResizeTex = true;
-
-            m_contentExists = false;
-            m_frameAvailable = false;
-            m_surfaceDestroyed = true;
-        }
-    }
-
-    public void requestResizeWeb() {
-        synchronized (this) {
-            m_forceResizeWeb = true;
 
             m_contentExists = false;
             m_frameAvailable = false;

@@ -16,6 +16,8 @@ void ReleaseSharedTexture(int);
 
 bool ContentExists(int);
 
+void SetSurface(int, int);
+
 bool GetSharedBufferUpdateFlag(int);
 
 void SetHardwareBufferUpdateFlag(int, bool);
@@ -98,6 +100,13 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
         LOGE("JNI Function 'setUnityTextureID' not found");
     }
 
+    g_func_set_surface = g_main_thread_env->GetMethodID(g_class_unity_connect, "setSurface",
+                                                        "(Ljava/lang/Object;)V");
+
+    if (g_func_set_surface == nullptr) {
+        LOGE("JNI Function 'setSurface' not found");
+    }
+
     g_field_is_shared_buffer_exchanged = g_main_thread_env->GetFieldID(g_class_unity_connect,
                                                                        "m_isSharedBufferExchanged",
                                                                        "Z");
@@ -166,6 +175,13 @@ bool ContentExists(int instance_ptr) {
     auto instance = (jobject) ((long) instance_ptr);
 
     return g_main_thread_env->CallBooleanMethod(instance, g_func_content_exists);
+}
+
+void SetSurface(int instance_ptr, int surface_ptr) {
+    auto instance = (jobject) ((long) instance_ptr);
+    auto surface_obj = (jobject) ((long) surface_ptr);
+
+    g_main_thread_env->CallVoidMethod(instance, g_func_set_surface, surface_obj);
 }
 
 bool GetSharedBufferUpdateFlag(int instance_ptr) {

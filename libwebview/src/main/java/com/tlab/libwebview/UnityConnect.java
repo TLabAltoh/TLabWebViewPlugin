@@ -36,6 +36,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -46,6 +47,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
+import com.robot9.shared.SharedTexture;
 import com.tlab.dialog.AlertDialog;
 import com.tlab.dialog.ColorPicker;
 import com.tlab.dialog.DataTimePickerDialog;
@@ -54,14 +56,12 @@ import com.tlab.dialog.OptionSelector;
 import com.tlab.eventcallback.CatchDownloadUrlCallback;
 import com.tlab.eventcallback.DownloadEventCallback;
 import com.tlab.viewtobuffer.CustomGLSurfaceView;
-import com.tlab.viewtobuffer.ViewToPBORenderer;
+import com.tlab.viewtobuffer.ViewToBufferLayout;
 import com.tlab.viewtobuffer.ViewToBufferRenderer;
+import com.tlab.viewtobuffer.ViewToHWBRenderer;
+import com.tlab.viewtobuffer.ViewToPBORenderer;
 import com.tlab.viewtobuffer.ViewToSurfaceLayout;
 import com.unity3d.player.UnityPlayer;
-
-import com.robot9.shared.SharedTexture;
-import com.tlab.viewtobuffer.ViewToHWBRenderer;
-import com.tlab.viewtobuffer.ViewToBufferLayout;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -91,6 +91,7 @@ public class UnityConnect extends Fragment {
     //
 
     private BitmapWebView m_webview;
+    private View m_videoView;
 
     // ---------------------------------------------------------------------------------------------------------
     // Layout
@@ -122,10 +123,15 @@ public class UnityConnect extends Fragment {
     private int m_scrollX;
     private int m_scrollY;
 
+    private static final int INPUT_FILE_REQUEST_CODE = 1;
+
+    private ValueCallback<Uri[]> m_filePathCallback;
+
     private DownloadOption m_downloadOption;
     private float m_downloadProgress = 0.0f;
     private String m_downloadSubDirectory;
     private String m_onPageFinish;
+    private String m_varTmp = "__tmp";
     private BroadcastReceiver m_onDownloadComplete;
     private final Map<String, ByteBuffer> m_blobDlBuffer = new Hashtable<>();
     private final DownloadEventCallback m_downloadEventCallback = new DownloadEventCallback();
@@ -274,13 +280,13 @@ public class UnityConnect extends Fragment {
     // File download
     //
 
-    public void writeDataUrlToStorage(String url, String mimetype) {
+    public void writeDataUrlToStorage(String url, String dataUrl, String mimetype) {
 
         Context context = UnityPlayer.currentActivity.getApplicationContext();
 
         String extension = MimeTypes.getDefaultExt(mimetype);
 
-        String base64 = url.replaceFirst("^data:.+;base64,", "");
+        String base64 = dataUrl.replaceFirst("^data:.+;base64,", "");
 
         byte[] data = Base64.decode(base64, 0);
 
@@ -343,7 +349,7 @@ public class UnityConnect extends Fragment {
 
         if (downloaded) {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (m_webview.getSettings().getJavaScriptEnabled() && !m_downloadEventCallback.isOnStartEmpty()) {
+                if (!m_downloadEventCallback.isOnStartEmpty()) {
                     //@formatter:off
                     String argument =
                             "var " +  m_downloadEventCallback.varUrl  + " = '" + url + "'; " +
@@ -352,7 +358,7 @@ public class UnityConnect extends Fragment {
                     evaluateJS(argument + m_downloadEventCallback.onStart);
                 }
 
-                if (m_webview.getSettings().getJavaScriptEnabled() && !m_downloadEventCallback.isOnFinishEmpty()) {
+                if (!m_downloadEventCallback.isOnFinishEmpty()) {
                     //@formatter:off
                     String argument =
                             "var " +  m_downloadEventCallback.varUri  + " = 'none'; " +
@@ -371,7 +377,7 @@ public class UnityConnect extends Fragment {
     /**
      *
      */
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "CommitTransaction"})
     private void initWebView() {
         final UnityConnect self = this;
 
@@ -391,9 +397,17 @@ public class UnityConnect extends Fragment {
         //                          |
         //                          | m_glSurfaceView
 
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        setRetainInstance(true);
 
-            m_rootLayout = new RelativeLayout(UnityPlayer.currentActivity);
+        final Activity a = UnityPlayer.currentActivity;
+        a.getFragmentManager()
+                .beginTransaction()
+                .add(0, self)
+                .commitAllowingStateLoss();
+
+        a.runOnUiThread(() -> {
+
+            m_rootLayout = new RelativeLayout(a);
             m_rootLayout.setGravity(Gravity.TOP);
             m_rootLayout.setX(m_screenWidth);
             m_rootLayout.setY(m_screenHeight);
@@ -410,26 +424,26 @@ public class UnityConnect extends Fragment {
                 }
                 m_viewToBufferRenderer.SetTextureResolution(m_texWidth, m_texHeight);
 
-                m_glSurfaceView = new CustomGLSurfaceView(UnityPlayer.currentActivity);
+                m_glSurfaceView = new CustomGLSurfaceView(a);
                 m_glSurfaceView.setEGLContextClientVersion(3);
                 m_glSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
                 m_glSurfaceView.setPreserveEGLContextOnPause(true);
                 m_glSurfaceView.setRenderer(m_viewToBufferRenderer);
                 m_glSurfaceView.setBackgroundColor(0x00000000);
 
-                m_captureLayout = new ViewToBufferLayout(UnityPlayer.currentActivity, m_viewToBufferRenderer);
+                m_captureLayout = new ViewToBufferLayout(a, m_viewToBufferRenderer);
             } else if (m_captureMode == CaptureMode.surface) {
-                m_captureLayout = new ViewToSurfaceLayout(UnityPlayer.currentActivity);
+                m_captureLayout = new ViewToSurfaceLayout(a);
             }
 
             m_captureLayout.setOrientation(ViewToBufferLayout.VERTICAL);
             m_captureLayout.setGravity(Gravity.START);
             m_captureLayout.setBackgroundColor(Color.WHITE);
 
-            m_frameLayout = new FrameLayout(UnityPlayer.currentActivity);
+            m_frameLayout = new FrameLayout(a);
 
             if (m_webview == null) {
-                m_webview = new BitmapWebView(UnityPlayer.currentActivity);
+                m_webview = new BitmapWebView(a);
             }
 
             // --------------------------------------------------------------------------------------------------------
@@ -479,83 +493,81 @@ public class UnityConnect extends Fragment {
                     m_canGoForward = m_webview.canGoForward();
                     m_actualUrl = url;
 
-                    if (m_webview.getSettings().getJavaScriptEnabled()) {
-                        if (m_onPageFinish != null && !m_onPageFinish.isEmpty() || m_useCustomWidget) {
-                            //@formatter:off
-                            String js =
-                                    "__tmp = document.getElementsByTagName(\"input\");" +
-                                    "__tmp = Array.from(__tmp);\n" +
-                                    "__tmp.forEach(input => {\n" +
-                                    "    switch (input.getAttribute(\"type\")){\n" +
-                                    "        case \"time\":\n" +
-                                    "            input[\"onclick\"] = function(e){\n" +
-                                    "                e = e || event;\n" +
-                                    "                e.preventDefault();\n" +
-                                    "                if (typeof __tmp == \"undefined\") {\n" +
-                                    "                   window.__tmp = input;" +
-                                    "                   window.TLabWebViewActivity.showDateTimePicker(false, true);\n" +
-                                    "                }\n" +
-                                    "                return false;\n" +
-                                    "            };" +
-                                    "            break;\n" +
-                                    "        case \"date\":\n" +
-                                    "            input[\"onclick\"] = function(e){\n" +
-                                    "                e = e || event;\n" +
-                                    "                e.preventDefault();\n" +
-                                    "                if (typeof __tmp == \"undefined\") {\n" +
-                                    "                   window.__tmp = input;" +
-                                    "                   window.TLabWebViewActivity.showDateTimePicker(true, false);\n" +
-                                    "                }\n" +
-                                    "                return false;\n" +
-                                    "            };" +
-                                    "            break;\n" +
-                                    "        case \"datetime-local\":\n" +
-                                    "            input[\"onclick\"] = function(e){\n" +
-                                    "                e = e || event;\n" +
-                                    "                e.preventDefault();\n" +
-                                    "                if (typeof __tmp == \"undefined\") {\n" +
-                                    "                   window.__tmp = input;" +
-                                    "                   window.TLabWebViewActivity.showDateTimePicker(true, true);\n" +
-                                    "                }\n" +
-                                    "                return false;\n" +
-                                    "            };" +
-                                    "            break;\n" +
-                                    "        case \"color\":\n" +
-                                    "            input[\"onclick\"] = function(e){\n" +
-                                    "                e = e || event;\n" +
-                                    "                e.preventDefault();\n" +
-                                    "                if (typeof __tmp == \"undefined\") {\n" +
-                                    "                   window.__tmp = input;" +
-                                    "                   window.TLabWebViewActivity.showColorPicker();\n" +
-                                    "                }\n" +
-                                    "                return false;\n" +
-                                    "            };" +
-                                    "            break;\n" +
-                                    "    }\n" +
-                                    "});" +
-                                    "__tmp = document.getElementsByTagName(\"select\");\n" +
-                                    "__tmp = Array.from(__tmp);\n" +
-                                    "__tmp.forEach(select => {\n" +
-                                    "    select[\"onmousedown\"] = function(e) {\n" +
-                                    "        e = e || event;\n" +
-                                    "        e.preventDefault();\n" +
-                                    "        if (typeof __tmp == \"undefined\") {\n" +
-                                    "           var texts = [];\n" +
-                                    "           var flags = [];\n" +
-                                    "           for (var i = 0; i < select.options.length; i++) {\n" +
-                                    "               texts.push(select.options[i].text);\n" +
-                                    "               flags.push(select.options[i].selected);\n" +
-                                    "           }\n" +
-                                    "           window.__tmp = select;" +
-                                    "           window.TLabWebViewActivity.showOptionSelector(Array.from(texts), Array.from(flags), select.multiple);\n" +
-                                    "        }\n" +
-                                    "        return false;\n" +
-                                    "    }\n" +
-                                    "});"+
-                                    "__tmp = undefined;";
-                            //@formatter:on
-                            evaluateJS(js + m_onPageFinish);
-                        }
+                    if (m_onPageFinish != null && !m_onPageFinish.isEmpty() || m_useCustomWidget) {
+                        //@formatter:off
+                        String js =
+                                m_varTmp + " = document.getElementsByTagName(\"input\");" +
+                                        m_varTmp + " = Array.from(" + m_varTmp + ");\n" +
+                                        m_varTmp + ".forEach(input => {\n" +
+                                        "    switch (input.getAttribute(\"type\")){\n" +
+                                        "        case \"time\":\n" +
+                                        "            input[\"onclick\"] = function(e){\n" +
+                                        "                e = e || event;\n" +
+                                        "                e.preventDefault();\n" +
+                                        "                if (typeof " + m_varTmp + " == \"undefined\") {\n" +
+                                        "                   window." + m_varTmp + " = input;" +
+                                        "                   window.TLabWebViewActivity.showDateTimePicker(false, true);\n" +
+                                        "                }\n" +
+                                        "                return false;\n" +
+                                        "            };" +
+                                        "            break;\n" +
+                                        "        case \"date\":\n" +
+                                        "            input[\"onclick\"] = function(e){\n" +
+                                        "                e = e || event;\n" +
+                                        "                e.preventDefault();\n" +
+                                        "                if (typeof " + m_varTmp + " == \"undefined\") {\n" +
+                                        "                   window." + m_varTmp + " = input;" +
+                                        "                   window.TLabWebViewActivity.showDateTimePicker(true, false);\n" +
+                                        "                }\n" +
+                                        "                return false;\n" +
+                                        "            };" +
+                                        "            break;\n" +
+                                        "        case \"datetime-local\":\n" +
+                                        "            input[\"onclick\"] = function(e){\n" +
+                                        "                e = e || event;\n" +
+                                        "                e.preventDefault();\n" +
+                                        "                if (typeof " + m_varTmp + " == \"undefined\") {\n" +
+                                        "                   window." + m_varTmp + " = input;" +
+                                        "                   window.TLabWebViewActivity.showDateTimePicker(true, true);\n" +
+                                        "                }\n" +
+                                        "                return false;\n" +
+                                        "            };" +
+                                        "            break;\n" +
+                                        "        case \"color\":\n" +
+                                        "            input[\"onclick\"] = function(e){\n" +
+                                        "                e = e || event;\n" +
+                                        "                e.preventDefault();\n" +
+                                        "                if (typeof " + m_varTmp + " == \"undefined\") {\n" +
+                                        "                   window." + m_varTmp + " = input;" +
+                                        "                   window.TLabWebViewActivity.showColorPicker();\n" +
+                                        "                }\n" +
+                                        "                return false;\n" +
+                                        "            };" +
+                                        "            break;\n" +
+                                        "    }\n" +
+                                        "});" +
+                                        m_varTmp + " = document.getElementsByTagName(\"select\");\n" +
+                                        m_varTmp + " = Array.from(" + m_varTmp + ");\n" +
+                                        m_varTmp + ".forEach(select => {\n" +
+                                        "    select[\"onmousedown\"] = function(e) {\n" +
+                                        "        e = e || event;\n" +
+                                        "        e.preventDefault();\n" +
+                                        "        if (typeof " + m_varTmp + " == \"undefined\") {\n" +
+                                        "           var texts = [];\n" +
+                                        "           var flags = [];\n" +
+                                        "           for (var i = 0; i < select.options.length; i++) {\n" +
+                                        "               texts.push(select.options[i].text);\n" +
+                                        "               flags.push(select.options[i].selected);\n" +
+                                        "           }\n" +
+                                        "           window." + m_varTmp + " = select;" +
+                                        "           window.TLabWebViewActivity.showOptionSelector(Array.from(texts), Array.from(flags), select.multiple);\n" +
+                                        "        }\n" +
+                                        "        return false;\n" +
+                                        "    }\n" +
+                                        "});"+
+                                        m_varTmp + " = undefined;";
+                        //@formatter:on
+                        evaluateJS(js + m_onPageFinish);
                     }
                 }
 
@@ -578,7 +590,7 @@ public class UnityConnect extends Fragment {
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                    AlertDialog alertDialog = new AlertDialog(UnityPlayer.currentActivity);
+                    AlertDialog alertDialog = new AlertDialog(a);
                     alertDialog.setMessage("ssl error", "your connection is not private");
                     alertDialog.setOptions("enter", selected -> {
                         handler.proceed();
@@ -646,7 +658,8 @@ public class UnityConnect extends Fragment {
                 @Override
                 public void onShowCustomView(View view, CustomViewCallback callback) {
                     super.onShowCustomView(view, callback);
-                    m_webview.addView(view, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    m_videoView = view;
+                    m_webview.addView(m_videoView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
                 }
 
                 /**
@@ -655,7 +668,38 @@ public class UnityConnect extends Fragment {
                 @Override
                 public void onHideCustomView() {
                     super.onHideCustomView();
-                    m_webview.removeAllViews();
+                    m_webview.removeView(m_videoView);
+                }
+
+                @Override
+                public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                    if (m_filePathCallback != null) {
+                        m_filePathCallback.onReceiveValue(null);
+                    }
+                    m_filePathCallback = filePathCallback;
+
+                    Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                    contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+                    contentSelectionIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                    contentSelectionIntent.setType("*/*");
+
+                    Intent[] intentArray = new Intent[0];
+
+                    Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+                    chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
+                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
+
+                    startActivityForResult(Intent.createChooser(chooserIntent, "Select content"), INPUT_FILE_REQUEST_CODE);
+
+                    return true;
+                }
+
+                private Intent getChooserIntent() {
+                    Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                    contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+                    contentSelectionIntent.setType("*/*");
+
+                    return contentSelectionIntent;
                 }
 
                 /**
@@ -722,7 +766,7 @@ public class UnityConnect extends Fragment {
                     DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
                     Uri uri = dm.getUriForDownloadedFile(downloadedID);
 
-                    if (m_webview.getSettings().getJavaScriptEnabled() && !m_downloadEventCallback.isOnFinishEmpty()) {
+                    if (!m_downloadEventCallback.isOnFinishEmpty()) {
                         //@formatter:off
                         String argument =
                                 "var " +  m_downloadEventCallback.varUri  + " = '"    + uri           + "'; "   +
@@ -732,7 +776,7 @@ public class UnityConnect extends Fragment {
                     }
                 }
             };
-            UnityPlayer.currentActivity.registerReceiver(m_onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
+            a.registerReceiver(m_onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
 
             m_webview.setInitialScale(100);
             m_webview.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
@@ -770,7 +814,7 @@ public class UnityConnect extends Fragment {
             webSettings.setDatabaseEnabled(true);
             webSettings.setDomStorageEnabled(true);
 
-            UnityPlayer.currentActivity.addContentView(m_rootLayout, new RelativeLayout.LayoutParams(m_webWidth, m_webHeight));
+            a.addContentView(m_rootLayout, new RelativeLayout.LayoutParams(m_webWidth, m_webHeight));
             m_frameLayout.addView(m_webview, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
             if ((m_captureMode == CaptureMode.hardwareBuffer) || (m_captureMode == CaptureMode.byteBuffer)) {
                 m_captureLayout.addView(m_frameLayout, new ViewToBufferLayout.LayoutParams(ViewToBufferLayout.LayoutParams.MATCH_PARENT, ViewToBufferLayout.LayoutParams.MATCH_PARENT));
@@ -800,6 +844,27 @@ public class UnityConnect extends Fragment {
         });
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != INPUT_FILE_REQUEST_CODE || m_filePathCallback == null) {
+            super.onActivityResult(requestCode, resultCode, data);
+            return;
+        }
+
+        Uri[] results = null;
+
+        if (resultCode == Activity.RESULT_OK) {
+            String dataString = data.getDataString();
+            if (dataString != null) {
+                results = new Uri[]{Uri.parse(dataString)};
+            }
+        }
+
+        m_filePathCallback.onReceiveValue(results);
+        m_filePathCallback = null;
+        return;
+    }
+
     /**
      * I need to call this function on unity's render thread because
      * releaseSharedTexture() call GLES or Vulkan function and it
@@ -810,6 +875,7 @@ public class UnityConnect extends Fragment {
         releaseSharedTexture();
 
         final Activity a = UnityPlayer.currentActivity;
+        final UnityConnect self = this;
         a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
@@ -820,7 +886,12 @@ public class UnityConnect extends Fragment {
             m_webview.destroy();
             m_webview = null;
 
-            UnityPlayer.currentActivity.unregisterReceiver(m_onDownloadComplete);
+            a.unregisterReceiver(m_onDownloadComplete);
+            a
+                    .getFragmentManager()
+                    .beginTransaction()
+                    .remove(self)
+                    .commitAllowingStateLoss();
         });
     }
 
@@ -845,7 +916,7 @@ public class UnityConnect extends Fragment {
             if (m_blobDlBuffer.containsKey(url)) {
                 ByteBuffer buf = m_blobDlBuffer.get(url);
                 assert buf != null;
-                writeDataUrlToStorage(new String(buf.array()), mimetype);
+                writeDataUrlToStorage(url, new String(buf.array()), mimetype);
                 m_blobDlBuffer.remove(url);
             }
         }
@@ -906,11 +977,12 @@ public class UnityConnect extends Fragment {
 
         @JavascriptInterface
         public void showDateTimePicker(boolean date, boolean time) {
-            UnityPlayer.currentActivity.runOnUiThread(() -> {
-                DataTimePickerDialog dataTimePickerDialog = new DataTimePickerDialog(UnityPlayer.currentActivity, date, time);
+            final Activity a = UnityPlayer.currentActivity;
+            a.runOnUiThread(() -> {
+                DataTimePickerDialog dataTimePickerDialog = new DataTimePickerDialog(a, date, time);
                 dataTimePickerDialog.setOptions("cancel", selected -> {
                     //@formatter:off
-                    String js = "__tmp = undefined;";
+                    String js = m_varTmp + " = undefined;";
                     //@formatter:on
                     evaluateJS(js);
                     m_frameLayout.removeView(dataTimePickerDialog);
@@ -918,8 +990,8 @@ public class UnityConnect extends Fragment {
                 dataTimePickerDialog.setOptions("ok", selected -> {
                     //@formatter:off
                     String js =
-                            "__tmp.value = " + "\"" + dataTimePickerDialog.getValue() + "\";" +
-                            "__tmp = undefined;";
+                            m_varTmp + ".value = " + "\"" + dataTimePickerDialog.getValue() + "\";" +
+                            m_varTmp + " = undefined;";
                     //@formatter:on
                     evaluateJS(js);
                     m_frameLayout.removeView(dataTimePickerDialog);
@@ -932,11 +1004,12 @@ public class UnityConnect extends Fragment {
 
         @JavascriptInterface
         public void showColorPicker() {
-            UnityPlayer.currentActivity.runOnUiThread(() -> {
-                ColorPicker colorPicker = new ColorPicker(UnityPlayer.currentActivity);
+            final Activity a = UnityPlayer.currentActivity;
+            a.runOnUiThread(() -> {
+                ColorPicker colorPicker = new ColorPicker(a);
                 colorPicker.setOptions("cancel", selected -> {
                     //@formatter:off
-                    String js = "__tmp = undefined;";
+                    String js = m_varTmp + " = undefined;";
                     //@formatter:on
                     evaluateJS(js);
                     m_frameLayout.removeView(colorPicker);
@@ -944,8 +1017,8 @@ public class UnityConnect extends Fragment {
                 colorPicker.setOptions("ok", selected -> {
                     //@formatter:off
                     String js =
-                            "__tmp.value = " + "\"" + colorPicker.getValue() + "\";" +
-                            "__tmp = undefined;";
+                            m_varTmp + ".value = " + "\"" + colorPicker.getValue() + "\";" +
+                            m_varTmp + " = undefined;";
                     //@formatter:on
                     evaluateJS(js);
                     m_frameLayout.removeView(colorPicker);
@@ -958,11 +1031,12 @@ public class UnityConnect extends Fragment {
 
         @JavascriptInterface
         public void showOptionSelector(String[] texts, boolean[] flags, boolean multiple) {
-            UnityPlayer.currentActivity.runOnUiThread(() -> {
-                OptionSelector optionSelector = new OptionSelector(UnityPlayer.currentActivity, texts, flags, multiple);
+            final Activity a = UnityPlayer.currentActivity;
+            a.runOnUiThread(() -> {
+                OptionSelector optionSelector = new OptionSelector(a, texts, flags, multiple);
                 optionSelector.setOptions("cancel", selected -> {
                     //@formatter:off
-                    String js = "__tmp = undefined;";
+                    String js = m_varTmp + " = undefined;";
                     //@formatter:on
                     evaluateJS(js);
                     m_frameLayout.removeView(optionSelector);
@@ -972,9 +1046,9 @@ public class UnityConnect extends Fragment {
                     String js = "";
                     boolean[] values = optionSelector.getValue();
                     for (int j = 0; j < values.length; j++) {
-                        js += "__tmp.options[" + j + "].selected = " + flags[j] + ";";
+                        js += (m_varTmp + ".options[" + j + "].selected = " + flags[j] + ";");
                     }
-                    js += "__tmp = undefined;";
+                    js += (m_varTmp + " = undefined;");
                     //@formatter:on
                     evaluateJS(js);
                     m_frameLayout.removeView(optionSelector);
@@ -1016,8 +1090,9 @@ public class UnityConnect extends Fragment {
      * @param js javascript
      */
     public void evaluateJS(String js) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
-            if (m_webview == null) {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
+            if (m_webview == null || !m_webview.getSettings().getJavaScriptEnabled()) {
                 return;
             }
             m_webview.loadUrl("javascript:" + js);
@@ -1082,10 +1157,11 @@ public class UnityConnect extends Fragment {
     //
 
     /**
-     * Set up the callback of the on catch download URL with the given parameters.
+     * Register the callback that will be called before the download event starts.
+     * If this parameter is not empty, the download event is not started automatically, you must call the download event manually.
      *
-     * @param go   The name of the game object that has the function of the target instance.
-     * @param func Target Instance Function Name
+     * @param go   Name of the game object to which the function is attached
+     * @param func C# function name that is called before the download event starts
      */
     public void setOnCatchDownloadUrl(String go, String func) {
         m_catchDownloadUrlCallback.go = go;
@@ -1102,7 +1178,8 @@ public class UnityConnect extends Fragment {
      */
     public void downloadFromUrl(String url, String userAgent, String contentDisposition, String mimetype) {
         if (url.startsWith("https://") || url.startsWith("http://")) {
-            Context context = UnityPlayer.currentActivity.getApplicationContext();
+            final Activity a = UnityPlayer.currentActivity;
+            final Context context = a.getApplicationContext();
 
             String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
 
@@ -1130,10 +1207,10 @@ public class UnityConnect extends Fragment {
                 request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
             }
 
-            DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
+            DownloadManager dm = (DownloadManager) a.getSystemService(Context.DOWNLOAD_SERVICE);
             id = dm.enqueue(request);
 
-            if (m_webview.getSettings().getJavaScriptEnabled() && !m_downloadEventCallback.isOnStartEmpty()) {
+            if (!m_downloadEventCallback.isOnStartEmpty()) {
                 //@formatter:off
                 String argument =
                         "var " +  m_downloadEventCallback.varUrl  + " = '"    + url   + "'; " +
@@ -1143,7 +1220,7 @@ public class UnityConnect extends Fragment {
             }
         } else if (url.startsWith("data:")) { // data url scheme
             // write base64 data to file stream
-            writeDataUrlToStorage(url, mimetype);
+            writeDataUrlToStorage(url, url, mimetype);
         } else if (url.startsWith("blob:")) { // blob url scheme
             // get base64 from blob url and write to file stream
             //@formatter:off
@@ -1191,9 +1268,9 @@ public class UnityConnect extends Fragment {
     /**
      * Defines the download event parameter's name. it can be accessed from javascript when a download event occurs.
      *
-     * @param varUrl URL of the file to be downloaded
-     * @param varUri The destination for the downloaded file
-     * @param varId  The ID of the download event
+     * @param varUrl Variable name for url (URL of the file to be downloaded) to use in javascript's download event callback
+     * @param varUri Variable name for uri (The destination for the downloaded file) to use in javascript's download event callback
+     * @param varId  Variable name for download id (The ID of the download event) to use in javascript's download event callback
      */
     public void setDownloadEventVariableName(String varUrl, String varUri, String varId) {
         m_downloadEventCallback.varUrl = varUrl;
@@ -1212,6 +1289,13 @@ public class UnityConnect extends Fragment {
 
     public void setFps(int fps) {
         m_fps = fps;
+    }
+
+    /**
+     * @param varTmp temporary variable name used in javascript
+     */
+    public void setVarTmp(String varTmp) {
+        m_varTmp = varTmp;
     }
 
     /**
@@ -1245,8 +1329,9 @@ public class UnityConnect extends Fragment {
      * Asynchronous capture of download event progress.
      */
     public void requestCaptureDownloadProgress() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
-            DownloadManager dm = (DownloadManager) UnityPlayer.currentActivity.getSystemService(Context.DOWNLOAD_SERVICE);
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
+            DownloadManager dm = (DownloadManager) a.getSystemService(Context.DOWNLOAD_SERVICE);
             Cursor cursor = dm.query(new DownloadManager.Query());
 
             if (cursor.moveToFirst()) {
@@ -1304,7 +1389,8 @@ public class UnityConnect extends Fragment {
      * @param baseURL baseURL
      */
     public void loadHtml(final String html, final String baseURL) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1324,7 +1410,8 @@ public class UnityConnect extends Fragment {
      */
     public void setUserAgent(final String ua, final boolean reload) {
         // https://developer.mozilla.org/ja/docs/Web/HTTP/Headers/User-Agent/Firefox
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) return;
 
             try {
@@ -1346,7 +1433,8 @@ public class UnityConnect extends Fragment {
      * Capture current userAgent async.
      */
     public void captureUserAgent() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1382,7 +1470,8 @@ public class UnityConnect extends Fragment {
      * @param url The URL of the resource to load.
      */
     public void loadUrl(String url) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1440,7 +1529,8 @@ public class UnityConnect extends Fragment {
      * Performs zoom in in this WebView.
      */
     public void zoomIn() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1452,7 +1542,8 @@ public class UnityConnect extends Fragment {
      * Performs zoom out in this WebView.
      */
     public void zoomOut() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1489,11 +1580,11 @@ public class UnityConnect extends Fragment {
      * @param y Scroll position y of the destination
      */
     public void scrollTo(int x, int y) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
-
             m_webview.scrollTo(x, y);
         });
     }
@@ -1505,11 +1596,11 @@ public class UnityConnect extends Fragment {
      * @param y The amount of pixels to scroll by vertically
      */
     public void scrollBy(int x, int y) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
-
             m_webview.scrollBy(x, y);
         });
     }
@@ -1520,11 +1611,11 @@ public class UnityConnect extends Fragment {
      * @param top True to jump to the top of the page
      */
     public void pageUp(boolean top) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
-
             m_webview.pageUp(top);
         });
     }
@@ -1535,11 +1626,11 @@ public class UnityConnect extends Fragment {
      * @param bottom True to jump to bottom of page
      */
     public void pageDown(boolean bottom) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
-
             m_webview.pageDown(bottom);
         });
     }
@@ -1579,7 +1670,8 @@ public class UnityConnect extends Fragment {
             m_viewToBufferRenderer.disable();
         }
 
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             ViewGroup.LayoutParams lp = m_rootLayout.getLayoutParams();
             lp.width = m_webWidth;
             lp.height = m_webHeight;
@@ -1613,7 +1705,8 @@ public class UnityConnect extends Fragment {
             m_viewToBufferRenderer.disable();
         }
 
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             ViewGroup.LayoutParams lp = m_rootLayout.getLayoutParams();
             lp.width = m_webWidth;
             lp.height = m_webHeight;
@@ -1640,7 +1733,8 @@ public class UnityConnect extends Fragment {
      * @param eventNum Touch event type (TOUCH_DOWN: 0, TOUCH_UP: 1, TOUCH_MOVE: 2)
      */
     public void touchEvent(int x, int y, int eventNum) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_frameLayout == null) {
                 return;
             }
@@ -1671,7 +1765,8 @@ public class UnityConnect extends Fragment {
      * @param key 'a', 'b', 'A' ....
      */
     public void keyEvent(char key) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_frameLayout == null) {
                 return;
             }
@@ -1687,7 +1782,8 @@ public class UnityConnect extends Fragment {
      * Dispatch of a backspace key event.
      */
     public void backSpaceKey() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_frameLayout == null) {
                 return;
             }
@@ -1704,7 +1800,8 @@ public class UnityConnect extends Fragment {
      * Goes back in the history of this WebView.
      */
     public void goBack() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null || !m_canGoBack) {
                 return;
             }
@@ -1716,7 +1813,8 @@ public class UnityConnect extends Fragment {
      * Goes forward in the history of this WebView.
      */
     public void goForward() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null || !m_canGoForward) {
                 return;
             }
@@ -1734,7 +1832,8 @@ public class UnityConnect extends Fragment {
      * @param includeDiskFiles If false, only the RAM cache will be cleared.
      */
     public void clearCash(boolean includeDiskFiles) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1746,7 +1845,8 @@ public class UnityConnect extends Fragment {
      * Clear WebView History.
      */
     public void clearHistory() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1758,7 +1858,8 @@ public class UnityConnect extends Fragment {
      * Clear WebView Cookie.
      */
     public void clearCookie() {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1777,7 +1878,8 @@ public class UnityConnect extends Fragment {
      * @param visibility int: One of VISIBLE, INVISIBLE, or GONE. Value is VISIBLE, INVISIBLE, or GONE
      */
     public void setVisible(int visibility) {
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1800,7 +1902,8 @@ public class UnityConnect extends Fragment {
     private void SetMargins(int left, int top, int right, int bottom) {
         final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.NO_GRAVITY);
         params.setMargins(left, top, right, bottom);
-        UnityPlayer.currentActivity.runOnUiThread(() -> {
+        final Activity a = UnityPlayer.currentActivity;
+        a.runOnUiThread(() -> {
             if (m_webview == null) {
                 return;
             }
@@ -1840,15 +1943,15 @@ public class UnityConnect extends Fragment {
     }
 
     private void showHttpAuthDialog(final HttpAuthHandler handler, final String host, final String realm) {
-        final Activity activity = UnityPlayer.currentActivity;
-        final android.app.AlertDialog.Builder mHttpAuthDialog = new android.app.AlertDialog.Builder(activity);
-        LinearLayout layout = new LinearLayout(activity);
+        final Activity a = UnityPlayer.currentActivity;
+        final android.app.AlertDialog.Builder mHttpAuthDialog = new android.app.AlertDialog.Builder(a);
+        LinearLayout layout = new LinearLayout(a);
 
         mHttpAuthDialog.setTitle("Enter the password").setCancelable(false);
-        final EditText etUserName = new EditText(activity);
+        final EditText etUserName = new EditText(a);
         etUserName.setWidth(100);
         layout.addView(etUserName);
-        final EditText etUserPass = new EditText(activity);
+        final EditText etUserPass = new EditText(a);
         etUserPass.setWidth(100);
         layout.addView(etUserPass);
         mHttpAuthDialog.setView(layout);

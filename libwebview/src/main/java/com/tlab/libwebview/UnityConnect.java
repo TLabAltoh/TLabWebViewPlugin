@@ -105,6 +105,13 @@ public class UnityConnect extends Fragment {
     //
     //
 
+    private boolean m_captureLayoutLoopKeepAlive = true;
+    private final Object m_captureLayoutLoopMutex = new Object();
+
+    // ---------------------------------------------------------------------------------------------------------
+    //
+    //
+
     private enum DownloadOption {
         applicationFolder, downloadFolder
     }
@@ -830,8 +837,10 @@ public class UnityConnect extends Fragment {
             }
 
             new Thread(() -> {
-                while (m_captureLayout != null) {
-                    m_captureLayout.postInvalidate();
+                while (m_captureLayoutLoopKeepAlive) {
+                    synchronized (m_captureLayoutLoopMutex) {
+                        m_captureLayout.postInvalidate();
+                    }
                     try {
                         Thread.sleep(1000 / m_fps);
                     } catch (InterruptedException e) {
@@ -881,10 +890,18 @@ public class UnityConnect extends Fragment {
                 return;
             }
 
-            m_webview.stopLoading();
+            synchronized (m_captureLayoutLoopMutex) {
+                m_captureLayoutLoopKeepAlive = false;
+            }
+
             m_frameLayout.removeAllViews();
-            m_webview.destroy();
-            m_webview = null;
+            m_frameLayout = null;
+
+            m_webview.post(() -> {
+                m_webview.stopLoading();
+                m_webview.destroy();
+                m_webview = null;
+            });
 
             a.unregisterReceiver(m_onDownloadComplete);
             a

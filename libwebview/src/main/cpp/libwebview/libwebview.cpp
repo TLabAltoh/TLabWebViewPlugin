@@ -89,15 +89,15 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     g_func_set_unity_texture_id = g_main_thread_env->GetMethodID(g_class_unity_connect,
                                                                  "setUnityTextureID", "(J)V");
 
-    if (g_func_content_exists == nullptr) {
-        LOGE("JNI Function 'contentExists' not found");
+    if (g_func_set_unity_texture_id == nullptr) {
+        LOGE("JNI Function 'setUnityTextureID' not found");
     }
 
     g_func_content_exists = g_main_thread_env->GetMethodID(g_class_unity_connect,
                                                            "contentExists", "()Z");
 
-    if (g_func_set_unity_texture_id == nullptr) {
-        LOGE("JNI Function 'setUnityTextureID' not found");
+    if (g_func_content_exists == nullptr) {
+        LOGE("JNI Function 'contentExists' not found");
     }
 
     g_func_set_surface = g_main_thread_env->GetMethodID(g_class_unity_connect, "setSurface",

@@ -1,5 +1,6 @@
 package com.tlab.dialog;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.Gravity;
@@ -9,9 +10,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+@SuppressLint("ViewConstructor")
 public class OptionSelector extends Dialog implements DialogInterface {
-
-    private final LinearLayout m_options;
 
     private final Button[] m_buttons;
 
@@ -34,7 +34,7 @@ public class OptionSelector extends Dialog implements DialogInterface {
         setGravity(Gravity.CENTER);
 
         LinearLayout vertical = new LinearLayout(context);
-        vertical.setBackgroundColor(Color.WHITE);
+        vertical.setBackground(getBackground());
         vertical.setOrientation(LinearLayout.VERTICAL);
         vertical.setGravity(Gravity.CENTER);
         vertical.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
@@ -50,11 +50,6 @@ public class OptionSelector extends Dialog implements DialogInterface {
         scroll.addView(items);
 
         vertical.addView(scroll);
-
-        m_options = new LinearLayout(context);
-        m_options.setOrientation(LinearLayout.HORIZONTAL);
-        m_options.setGravity(Gravity.RIGHT | Gravity.BOTTOM);
-        m_options.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
         vertical.addView(m_options);
 
@@ -93,53 +88,12 @@ public class OptionSelector extends Dialog implements DialogInterface {
         }
 
         TextView dummy = new TextView(m_context);
-        dummy.setText("  ");
+        dummy.setText(" ");
         dummy.setTextSize(7);
         dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
         vertical.addView(dummy);
 
         addView(vertical);
-    }
-
-    public void setOptions(String option, final DialogInterface.OnSelectOptionListener listener) {
-        TextView dummy = new TextView(m_context);
-        dummy.setText("  ");
-        dummy.setTextSize(15);
-        dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-
-        m_options.addView(dummy);
-        Button button = getButton(option, listener);
-
-        m_options.addView(button);
-
-        dummy = new TextView(m_context);
-        dummy.setText("  ");
-        dummy.setTextSize(15);
-        dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-
-        m_options.addView(dummy);
-    }
-
-    private Button getButton(String option, OnSelectOptionListener listener) {
-        Button button = new Button(m_context);
-        button.setPadding(10, 10, 10, 10);
-        button.setMinWidth(0);
-        button.setMinHeight(0);
-        button.setMinimumWidth(0);
-        button.setMinimumHeight(0);
-        button.setTextSize(15);
-        button.setText(option);
-        button.setTextColor(Color.GREEN);
-        button.setBackgroundColor(Color.WHITE);
-
-        button.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        button.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                listener.OnSelectOption(option);
-            }
-        });
-        return button;
     }
 }

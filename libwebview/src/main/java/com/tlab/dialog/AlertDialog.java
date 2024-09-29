@@ -18,7 +18,6 @@ public class AlertDialog extends Dialog implements DialogInterface {
 
     private final TextView m_title;
     private final TextView m_body;
-    private final LinearLayout m_options;
 
     public AlertDialog(Context context) {
         super(context);
@@ -51,14 +50,10 @@ public class AlertDialog extends Dialog implements DialogInterface {
         // convenient to use as a scalable margin.
         TextView dummy = new TextView(context);
         dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        dummy.setText("  ");
+        dummy.setText(" ");
         dummy.setTextSize(15);
         vertical.addView(dummy);
 
-        m_options = new LinearLayout(context);
-        m_options.setOrientation(LinearLayout.HORIZONTAL);
-        m_options.setGravity(Gravity.RIGHT | Gravity.BOTTOM);
-        m_options.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         vertical.addView(m_options);
 
         addView(vertical);
@@ -67,25 +62,5 @@ public class AlertDialog extends Dialog implements DialogInterface {
     public void setMessage(String title, String body) {
         m_title.setText(title);
         m_body.setText(body);
-    }
-
-    public void setOptions(String option, final DialogInterface.OnSelectOptionListener listener) {
-        TextView dummy = new TextView(m_context);
-        dummy.setText("     ");
-        dummy.setTextSize(15);
-        dummy.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-
-        m_options.addView(dummy);
-
-        Button button = new Button(m_context);
-        button.setTextSize(15);
-        button.setText(option);
-        button.setTextColor(Color.GREEN);
-        button.setBackgroundColor(Color.TRANSPARENT);
-
-        button.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        button.setOnClickListener(v -> listener.OnSelectOption(option));
-
-        m_options.addView(button);
     }
 }

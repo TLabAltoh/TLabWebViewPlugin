@@ -1,30 +1,31 @@
 # TLabWebViewPlugin
-Source code of java plugin used in TLabWebView
+Source code of java plugin used in [```TLabWebView```](https://github.com/TLabAltoh/TLabWebView)
 
 ## Operating Environment
 ```
 Android Studio Version:
- Android Studio Giraffe | 2022.3.1 Patch 2
- Build #AI-223.8836.35.2231.10811636, built on September 15, 2023
- Runtime version: 17.0.6+0-b2043.56-10027231 amd64
- VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
- Windows 10 10.0
- GC: G1 Young Generation, G1 Old Generation
- Memory: 1280M
- Cores: 24
- Registry:
- external.system.auto.import.disabled=true
- ide.text.editor.with.preview.show.floating.toolbar=false
-
+Android Studio Koala | 2024.1.1
+Build #AI-241.15989.150.2411.11948838, built on June 11, 2024
+Runtime version: 17.0.10+0--11609105 amd64
+VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
+Windows 10.0
+GC: G1 Young Generation, G1 Old Generation
+Memory: 4096M
+Cores: 24
+Registry:
+  debugger.new.tool.window.layout=true
+  ide.experimental.ui=true
 Non-Bundled Plugins:
-com.google.idea.bazel.aswb (2023.10.10-aswb.0.1-api-version-223)
+  OpenGL-Plugin (1.1.3)
+  GLSL (1.24)
+  name.kropp.intellij.makefile (241.14494.150)
 
 OS: Windows 10  
 ```
 
 ## Current Issue
 ### Did not find frame
-- The following error occurs when using lockhardwarecanvas in unity 2021
+- The following error occurs when using [```lockHardwareCanvas```](https://developer.android.com/reference/android/view/SurfaceHolder#lockHardwareCanvas()) in unity 2021
 ```
 2023/11/13 15:40:53.051 13492 13511 Error FrameEvents updateAcquireFence: Did not find frame.
 ```
@@ -32,22 +33,20 @@ Corresponding part of the code
 ```java
 // ViewToGLRenderer.java
 public Canvas onDrawViewBegin() {
-    mSurfaceCanvas = null;
-    if (mSurface != null) {
+    m_surfaceCanvas = null;
+    if (m_surface != null) {
         try {
             //mSurfaceCanvas = mSurface.lockCanvas(null);
             // https://learn.microsoft.com/en-us/dotnet/api/android.views.surface.lockhardwarecanvas?view=xamarin-android-sdk-13
-            mSurfaceCanvas = mSurface.lockHardwareCanvas();
+            m_surfaceCanvas = mSurface.lockHardwareCanvas();
         }catch (Exception e){
             Log.e(TAG, "error while rendering view to gl: " + e);
         }
     }
-    return mSurfaceCanvas;
+    return m_surfaceCanvas;
 }
 ```
-- [Issues that may be relevant](https://github.com/flutter/flutter/issues/104268)
 
 ## Link
-- [UnityAsset using this plugin](https://github.com/TLabAltoh/TLabWebView)
-- [SharedTexture](https://github.com/keith2018/SharedTexture)
-- [Reference repositorie](https://bitbucket.org/HoshiyamaTakaaki/pixelreadstest/src/master/)
+- [OpenGL Texture to hardwarebuffer](https://github.com/keith2018/SharedTexture)
+- [WebView to bytebuffer](https://bitbucket.org/HoshiyamaTakaaki/pixelreadstest/src/master/)

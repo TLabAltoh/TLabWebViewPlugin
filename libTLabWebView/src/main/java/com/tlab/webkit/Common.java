@@ -208,11 +208,11 @@ public class Common {
 
     public static class Download {
         public enum Directory {
-            APPLICATION, DOWNLOAD
+            Application, Download
         }
 
         public static class Option {
-            public Directory directory = Directory.APPLICATION;
+            public Directory directory = Directory.Application;
             public String subDirectory;
 
             public void update(Directory directory, String subDirectory) {
@@ -427,9 +427,9 @@ public class Common {
             String directory = "";
             boolean makeCompleteFlag = false;
 
-            if (mDownloadOption.directory == Download.Directory.APPLICATION) {
+            if (mDownloadOption.directory == Download.Directory.Application) {
                 directory = Objects.requireNonNull(context.getExternalFilesDir(null)).getPath();
-            } else if (mDownloadOption.directory == Download.Directory.DOWNLOAD) {
+            } else if (mDownloadOption.directory == Download.Directory.Download) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                     directory = Environment.DIRECTORY_DOWNLOADS;
                 else {
@@ -577,9 +577,9 @@ public class Common {
             request.allowScanningByMediaScanner();
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
 
-            if (mDownloadOption.directory == Download.Directory.APPLICATION) {
+            if (mDownloadOption.directory == Download.Directory.Application) {
                 request.setDestinationInExternalFilesDir(context, mDownloadOption.subDirectory, filename);
-            } else if (mDownloadOption.directory == Download.Directory.DOWNLOAD) {
+            } else if (mDownloadOption.directory == Download.Directory.Download) {
                 if (!mDownloadOption.subDirectory.isEmpty())
                     filename = mDownloadOption.subDirectory + "/" + filename;
                 request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);

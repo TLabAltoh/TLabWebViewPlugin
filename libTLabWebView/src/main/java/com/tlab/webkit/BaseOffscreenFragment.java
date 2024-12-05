@@ -22,10 +22,10 @@ public abstract class BaseOffscreenFragment extends Fragment {
     private static final String TAG = "BaseOffscreenFragment";
 
     public enum CaptureMode {
-        HARDWARE_BUFFER, BYTE_BUFFER, SURFACE
+        HardwareBuffer, ByteBuffer, Surface
     }
 
-    protected CaptureMode mCaptureMode = CaptureMode.HARDWARE_BUFFER;
+    protected CaptureMode mCaptureMode = CaptureMode.HardwareBuffer;
 
     protected final Common.ResolutionState mResState = new Common.ResolutionState();
 
@@ -53,9 +53,9 @@ public abstract class BaseOffscreenFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if ((mCaptureMode != CaptureMode.SURFACE) && (mViewToBufferRenderer != null))
+        if ((mCaptureMode != CaptureMode.Surface) && (mViewToBufferRenderer != null))
             mViewToBufferRenderer.disable();
-        else if (mCaptureMode == CaptureMode.SURFACE) RemoveSurface();
+        else if (mCaptureMode == CaptureMode.Surface) RemoveSurface();
     }
 
     @Override

@@ -48,5 +48,5 @@ public Canvas onDrawViewBegin() {
 ```
 
 ## Link
-- [OpenGL Texture to hardwarebuffer](https://github.com/keith2018/SharedTexture)
+- [OpenGL Texture to HardwareBuffer](https://github.com/keith2018/SharedTexture)
 - [WebView to ByteBuffer](https://bitbucket.org/HoshiyamaTakaaki/pixelreadstest/src/master/)

@@ -22,12 +22,12 @@ public class OffscreenBrowser extends BaseOffscreenBrowser {
         mRootLayout.setY(mResState.screen.y);
         mRootLayout.setBackgroundColor(0xFFFFFFFF);
 
-        if ((mCaptureMode == CaptureMode.HARDWARE_BUFFER) || (mCaptureMode == CaptureMode.BYTE_BUFFER)) {
+        if ((mCaptureMode == CaptureMode.HardwareBuffer) || (mCaptureMode == CaptureMode.ByteBuffer)) {
             switch (mCaptureMode) {
-                case HARDWARE_BUFFER:
+                case HardwareBuffer:
                     mViewToBufferRenderer = new ViewToHWBRenderer();
                     break;
-                case BYTE_BUFFER:
+                case ByteBuffer:
                     mViewToBufferRenderer = new ViewToPBORenderer();
                     break;
             }

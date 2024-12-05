@@ -167,7 +167,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
         public void onGlobalLayout() {
             if (mDisplay == null) return;
 
-            if ((mCaptureMode != BaseOffscreenFragment.CaptureMode.SURFACE) && (mSurfaceView != null)) {
+            if ((mCaptureMode != BaseOffscreenFragment.CaptureMode.Surface) && (mSurfaceView != null)) {
                 mSurfaceView.getLocationOnScreen(mOrigin);
                 mDisplay.screenOriginChanged(mOrigin[0], mOrigin[1]);
                 // cutout support
@@ -245,7 +245,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
         super(context);
         mCaptureMode = captureMode;
         mViewToBufferRenderer = renderer;
-        if ((mViewToBufferRenderer != null) && (mCaptureMode != BaseOffscreenFragment.CaptureMode.SURFACE))
+        if ((mViewToBufferRenderer != null) && (mCaptureMode != BaseOffscreenFragment.CaptureMode.Surface))
             mViewToBufferRenderer.setSurfaceCallback(this::onSurfaceChanged);
         init();
     }
@@ -254,7 +254,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
         super(context, attrs);
         mCaptureMode = captureMode;
         mViewToBufferRenderer = renderer;
-        if ((mViewToBufferRenderer != null) && (mCaptureMode != BaseOffscreenFragment.CaptureMode.SURFACE))
+        if ((mViewToBufferRenderer != null) && (mCaptureMode != BaseOffscreenFragment.CaptureMode.Surface))
             mViewToBufferRenderer.setSurfaceCallback(this::onSurfaceChanged);
         init();
     }
@@ -284,7 +284,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
         // transparent).
         setWillNotCacheDrawing(false);
 
-        if (mCaptureMode != BaseOffscreenFragment.CaptureMode.SURFACE) {
+        if (mCaptureMode != BaseOffscreenFragment.CaptureMode.Surface) {
             CustomGLSurfaceView surfaceView = new CustomGLSurfaceView(getContext());
             surfaceView.setEGLContextClientVersion(3);
             surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
@@ -325,7 +325,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
     private void coverUntilFirstPaintInternal(final int color) {
         ThreadUtils.assertOnUiThread();
 
-        if ((mCaptureMode != BaseOffscreenFragment.CaptureMode.SURFACE) && (mSurfaceView != null)) {
+        if ((mCaptureMode != BaseOffscreenFragment.CaptureMode.Surface) && (mSurfaceView != null)) {
             mSurfaceView.setBackgroundColor(color);
         }
     }
@@ -358,7 +358,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
      * @param backend Any of {@link #BACKEND_SURFACE_VIEW BACKEND_*}.
      */
     public void setViewBackend(final @ViewBackend int backend) {
-        if ((mCaptureMode == BaseOffscreenFragment.CaptureMode.SURFACE) || (mSurfaceView == null))
+        if ((mCaptureMode == BaseOffscreenFragment.CaptureMode.Surface) || (mSurfaceView == null))
             return;
 
         removeView(mSurfaceView);
@@ -655,7 +655,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
         // For detecting changes in SurfaceView layout, we take a shortcut here and
         // override gatherTransparentRegion, instead of registering a layout listener,
         // which is more expensive.
-        if ((mCaptureMode != BaseOffscreenFragment.CaptureMode.SURFACE) && (mSurfaceView != null)) {
+        if ((mCaptureMode != BaseOffscreenFragment.CaptureMode.Surface) && (mSurfaceView != null)) {
             mDisplay.onGlobalLayout();
         }
         return super.gatherTransparentRegion(region);
@@ -1191,7 +1191,7 @@ public class OffscreenGeckoView extends FrameLayout implements GeckoDisplay.NewS
         // callback, which we probably are here. We therefore post a Runnable to toggle the visibility
         // from outside of the current callback.
 
-        if ((mCaptureMode == BaseOffscreenFragment.CaptureMode.SURFACE) || (mSurfaceView == null))
+        if ((mCaptureMode == BaseOffscreenFragment.CaptureMode.Surface) || (mSurfaceView == null))
             return;
 
         post(() -> {

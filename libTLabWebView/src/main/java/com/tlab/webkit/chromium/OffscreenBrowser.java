@@ -30,12 +30,12 @@ public class OffscreenBrowser extends BaseOffscreenBrowser {
         mRootLayout.setY(mResState.screen.y);
         mRootLayout.setBackgroundColor(0xFFFFFFFF);
 
-        if ((mCaptureMode == CaptureMode.HARDWARE_BUFFER) || (mCaptureMode == CaptureMode.BYTE_BUFFER)) {
+        if ((mCaptureMode == CaptureMode.HardwareBuffer) || (mCaptureMode == CaptureMode.ByteBuffer)) {
             switch (mCaptureMode) {
-                case HARDWARE_BUFFER:
+                case HardwareBuffer:
                     mViewToBufferRenderer = new ViewToHWBRenderer();
                     break;
-                case BYTE_BUFFER:
+                case ByteBuffer:
                     mViewToBufferRenderer = new ViewToPBORenderer();
                     break;
             }
@@ -49,7 +49,7 @@ public class OffscreenBrowser extends BaseOffscreenBrowser {
             mGlSurfaceView.setBackgroundColor(0x00000000);
 
             mCaptureLayout = new ViewToBufferLayout(a, mViewToBufferRenderer);
-        } else if (mCaptureMode == CaptureMode.SURFACE) {
+        } else if (mCaptureMode == CaptureMode.Surface) {
             mCaptureLayout = new ViewToSurfaceLayout(a);
         }
 
@@ -58,10 +58,10 @@ public class OffscreenBrowser extends BaseOffscreenBrowser {
         mCaptureLayout.setBackgroundColor(Color.WHITE);
 
         a.addContentView(mRootLayout, new RelativeLayout.LayoutParams(mResState.view.x, mResState.view.y));
-        if ((mCaptureMode == CaptureMode.HARDWARE_BUFFER) || (mCaptureMode == CaptureMode.BYTE_BUFFER)) {
+        if ((mCaptureMode == CaptureMode.HardwareBuffer) || (mCaptureMode == CaptureMode.ByteBuffer)) {
             mRootLayout.addView(mGlSurfaceView, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
             mRootLayout.addView(mCaptureLayout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-        } else if (mCaptureMode == CaptureMode.SURFACE) {
+        } else if (mCaptureMode == CaptureMode.Surface) {
             mRootLayout.addView(mCaptureLayout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         }
 

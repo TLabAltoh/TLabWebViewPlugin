@@ -495,8 +495,6 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                 mSessionState.loadUrl = "http://" + url;
             else mSessionState.loadUrl = url;
 
-            Log.e(TAG, "loadUrl: " + mSessionState.loadUrl);
-
             Objects.requireNonNull(mWebView.getSession()).loadUri(mSessionState.loadUrl);
         });
     }

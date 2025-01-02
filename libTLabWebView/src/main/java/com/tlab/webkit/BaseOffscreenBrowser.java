@@ -90,7 +90,7 @@ public abstract class BaseOffscreenBrowser extends BaseOffscreenFragment impleme
 
         UnityPlayer.currentActivity.runOnUiThread(() -> {
             try {
-                mOnDialogResult.onResult(result, new JSONObject(json));
+                mOnDialogResult.onResult(result, json.isEmpty() ? new JSONObject() : new JSONObject(json));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }

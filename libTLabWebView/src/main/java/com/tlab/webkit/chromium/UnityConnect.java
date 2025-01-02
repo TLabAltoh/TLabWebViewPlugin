@@ -241,7 +241,8 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                  */
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                    mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
+                    if (mWebView != null)
+                        mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
                 }
 
                 /**
@@ -250,7 +251,8 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                  */
                 @Override
                 public void onPageFinished(WebView view, String url) {
-                    mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
+                    if (mWebView != null)
+                        mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
                     mSessionState.actualUrl = url;
                     EventCallback.Message message = new EventCallback.Message(EventCallback.Type.OnPageFinish, url);
                     mUnityPostMessageQueue.add(message);
@@ -262,7 +264,10 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                  */
                 @Override
                 public void onLoadResource(WebView view, String url) {
-                    mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
+                    // Need to do null check
+                    // Error AndroidRuntime java.lang.NullPointerException: Attempt to invoke virtual method 'boolean android.webkit.WebView.canGoBack()' on a null object reference
+                    if (mWebView != null)
+                        mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
                 }
 
                 /**
@@ -292,7 +297,8 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                     Uri uri = request.getUrl();
                     String url = uri.toString();
 
-                    mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
+                    if (mWebView != null)
+                        mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
 
                     if (mIntentFilters != null) {
                         for (String intentFilter : mIntentFilters) {
@@ -347,6 +353,7 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                 public void onHideCustomView() {
                     super.onHideCustomView();
                     mWebView.removeView(mVideoView);
+                    mVideoView = null;
                 }
 
                 /**
@@ -556,6 +563,11 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         a.runOnUiThread(() -> {
             if (mWebView == null) return;
             abortCaptureThread();
+
+            mWebView.stopLoading();
+            if (mVideoView != null)
+                mWebView.removeView(mVideoView);
+            mWebView.destroy();
             mWebView = null;
             mView = null;
 
@@ -658,6 +670,7 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
             if (mWebView == null) return;
+
             if (mIntentFilters != null) {
                 for (String intentFilter : mIntentFilters) {
                     Pattern pattern = Pattern.compile(intentFilter);

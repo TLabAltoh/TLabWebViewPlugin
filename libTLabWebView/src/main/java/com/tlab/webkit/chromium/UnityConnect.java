@@ -565,8 +565,7 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
             abortCaptureThread();
 
             mWebView.stopLoading();
-            if (mVideoView != null)
-                mWebView.removeView(mVideoView);
+            if (mVideoView != null) mWebView.removeView(mVideoView);
             mWebView.destroy();
             mWebView = null;
             mView = null;
@@ -582,7 +581,11 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
             if (mWebView == null || !mWebView.getSettings().getJavaScriptEnabled()) return;
-            mWebView.loadUrl("javascript:(function(){" + js + "})();");
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                mWebView.evaluateJavascript("(function(){" + js + "})();", null);
+            } else {
+                mWebView.loadUrl("javascript:(function(){" + js + "})();");
+            }
         });
     }
 

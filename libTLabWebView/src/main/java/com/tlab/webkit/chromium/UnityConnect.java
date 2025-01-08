@@ -243,6 +243,8 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
                     if (mWebView != null)
                         mPageGoState.update(mWebView.canGoBack(), mWebView.canGoForward());
+                    EventCallback.Message message = new EventCallback.Message(EventCallback.Type.OnPageStart, url);
+                    mUnityPostMessageQueue.add(message);
                 }
 
                 /**

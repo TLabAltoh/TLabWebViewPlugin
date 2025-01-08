@@ -196,8 +196,9 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
          */
         @Override
         public void onPageStart(@NonNull GeckoSession session, @NonNull String url) {
-            Log.d(TAG, "onPageStart: " + url);
             mUrl = url;
+            EventCallback.Message message = new EventCallback.Message(EventCallback.Type.OnPageStart, mUrl);
+            mUnityPostMessageQueue.add(message);
         }
 
         /**

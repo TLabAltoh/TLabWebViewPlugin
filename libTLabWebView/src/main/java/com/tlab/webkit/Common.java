@@ -310,7 +310,7 @@ public class Common {
 
     public static class EventCallback {
         public enum Type {
-            Raw, OnPageFinish, OnDownload, OnDownloadStart, OnDownloadError, OnDownloadFinish, OnDialog,
+            Raw, OnPageStart, OnPageFinish, OnDownload, OnDownloadStart, OnDownloadError, OnDownloadFinish, OnDialog,
         }
 
         public static class Message extends JSONSerialisable {

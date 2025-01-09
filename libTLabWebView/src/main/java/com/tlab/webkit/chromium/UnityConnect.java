@@ -709,7 +709,7 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
             if (mWebView == null || !mPageGoState.canGoForward) return;
-            mWebView.canGoForward();
+            mWebView.goForward();
         });
     }
 

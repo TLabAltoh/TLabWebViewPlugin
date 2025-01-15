@@ -281,12 +281,23 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+
+                    // ----------------------------------------------------------------------------------------
+
                     AlertDialog.Init dialog = new AlertDialog.Init(AlertDialog.Init.Reason.ERROR, "Ssl Error", "Your connection is not private");
                     dialog.setPositive("Enter", selected -> handler.proceed());
                     dialog.setNegative("Back to safety", selected -> handler.cancel());
                     if (mOnDialogResult != null) mOnDialogResult.dismiss();
                     mOnDialogResult = dialog.getOnResultListener();
                     mUnityPostMessageQueue.add(new EventCallback.Message(EventCallback.Type.OnDialog, dialog.marshall()));
+
+                    // ----------------------------------------------------------------------------------------
+
+                    // For app store compatibility
+                    // https://github.com/TLabAltoh/TLabWebViewVR/issues/35
+                    // https://github.com/TLabAltoh/TLabWebView/issues/8
+
+                    //handler.cancel();
                 }
 
                 /**

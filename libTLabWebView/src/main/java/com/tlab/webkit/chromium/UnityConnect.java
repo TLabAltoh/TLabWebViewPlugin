@@ -298,6 +298,8 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                     // https://github.com/TLabAltoh/TLabWebView/issues/8
 
                     //handler.cancel();
+
+                    // ----------------------------------------------------------------------------------------
                 }
 
                 /**

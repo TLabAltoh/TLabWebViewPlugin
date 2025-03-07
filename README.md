@@ -1,5 +1,5 @@
 # TLabWebViewPlugin
-Source code of java plugin used in [```TLabWebView```](https://github.com/TLabAltoh/TLabWebView)
+Source code of java plugin used in [```TLabWebView```](https://github.com/TLabAltoh/TLabWebView) (3D web browser / 3D WebView plugin)
 
 ## Operating Environment
 ```

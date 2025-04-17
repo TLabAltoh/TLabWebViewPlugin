@@ -415,6 +415,11 @@ namespace tlab {
         VulkanHWBImage hwbImage = m_VulkanImageMap[std::make_pair(platformTexID,
                                                                   std::this_thread::get_id())];
 
+        // WARNING: vkCmdCopyImage is causing null reference errors In a project using Unity 6 and Oculus Quest 2 (VR app).
+        // I have not yet analyzed the details of the error. A few seconds after the web page starts to display, a null
+        // reference error suddenly occurs. However, the details of the cause of the error have not yet been analyzed. This
+        // problem occurs in both scenes with only one WebView and scenes with multiple instances of WebView.
+
         VkImageCopy copyRegion{};
         copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         copyRegion.srcOffset = {0, 0, 0};

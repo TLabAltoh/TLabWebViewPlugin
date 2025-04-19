@@ -8,7 +8,7 @@ android {
     //compileSdk 31
     //compileSdk 32
     //compileSdk 33
-    compileSdk 34
+    compileSdk 35
     //buildToolsVersion "30.0.3"
 
     defaultConfig {
@@ -18,7 +18,7 @@ android {
         //targetSdk 31
         //targetSdk 32
         //targetSdk 33
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0"
         consumerProguardFiles "consumer-rules.pro"
@@ -57,7 +57,8 @@ ext {
 
 dependencies {
     compileOnly fileTree(dir: 'libs', include: 'classes.jar')
-    implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.core:core:1.16.0'
+    //implementation 'androidx.core:core:1.15.0'
     implementation 'androidx.annotation:annotation-jvm:1.9.1'
     implementation "org.mozilla.geckoview:geckoview${geckoviewChannel}:${geckoviewVersion}"
     //implementation "org.mozilla.geckoview:geckoview${geckoviewChannel}-armeabi-v7a:${geckoviewVersion}"

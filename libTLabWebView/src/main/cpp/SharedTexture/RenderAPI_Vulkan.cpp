@@ -117,6 +117,8 @@ namespace tlab {
 
     void
     RenderAPI_Vulkan::DeviceEventInitialize(IUnityInterfaces *interfaces) {
+        DEVLOGD("[sharedtex-jni] [DeviceEventInitialize] pass 0 (start)");
+
         m_UnityVulkan = interfaces->Get<IUnityGraphicsVulkan>();
         m_Instance = m_UnityVulkan->Instance();
 
@@ -129,6 +131,8 @@ namespace tlab {
         config_1.flags = kUnityVulkanEventConfigFlag_EnsurePreviousFrameSubmission |
                          kUnityVulkanEventConfigFlag_ModifiesCommandBuffersState;
         m_UnityVulkan->ConfigureEvent(1, &config_1);
+
+        DEVLOGD("[sharedtex-jni] [DeviceEventInitialize] pass 1 (end)");
     }
 
     void
@@ -416,9 +420,16 @@ namespace tlab {
                                                                   std::this_thread::get_id())];
 
         // WARNING: vkCmdCopyImage is causing null reference errors In a project using Unity 6 and Oculus Quest 2 (VR app).
-        // I have not yet analyzed the details of the error. A few seconds after the web page starts to display, a null
-        // reference error suddenly occurs. However, the details of the cause of the error have not yet been analyzed. This
-        // problem occurs in both scenes with only one WebView and scenes with multiple instances of WebView.
+        // A few seconds after the web page starts to display, a null reference error suddenly occurs. The cause of the
+        // error seems to be that the commandBuffer was null. This problem occurs in both scenes with only one WebView and
+        // scenes with multiple instances of WebView.
+
+#if 0
+        if (recordingState.commandBuffer == nullptr) {
+            DEVLOGE("[sharedtex-jni] [UpdateUnityTexture] commandBuffer is null !");
+            return;
+        }
+#endif
 
         VkImageCopy copyRegion{};
         copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};

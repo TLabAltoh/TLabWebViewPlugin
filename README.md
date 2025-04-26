@@ -16,12 +16,14 @@ Registry:
   debugger.new.tool.window.layout=true
   ide.experimental.ui=true
 Non-Bundled Plugins:
-  OpenGL-Plugin (1.1.3)
+  OpenGL-Plugin (1.1.5)
   GLSL (1.24)
-  name.kropp.intellij.makefile (241.14494.150)
 
 OS: Windows 10  
 ```
+
+> [!WARNING]
+> The latest version of Android Studio (`2024.3.1.14 Meerkat`) requires an update to `Gradle 8.*`, and plug-ins built with the latest version of Android Studio may not be able to be embedded in the current version of Unity (This project uses `Gradle 7.4`). Therefore, it is recommended to build with the Android Studio version specified in the Operating Environment (`2024.1.1 Koala`).
 
 ## Current Issue
 ### Did not find frame

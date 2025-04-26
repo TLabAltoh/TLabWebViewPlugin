@@ -297,7 +297,7 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
                     // https://github.com/TLabAltoh/TLabWebViewVR/issues/35
                     // https://github.com/TLabAltoh/TLabWebView/issues/8
 
-                    //handler.cancel();
+                    // handler.cancel();
 
                     // ----------------------------------------------------------------------------------------
                 }
@@ -596,11 +596,7 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
             if (mWebView == null || !mWebView.getSettings().getJavaScriptEnabled()) return;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                mWebView.evaluateJavascript("(function(){" + js + "})();", null);
-            } else {
-                mWebView.loadUrl("javascript:(function(){" + js + "})();");
-            }
+            mWebView.evaluateJavascript("(function(){" + js + "})();", null);
         });
     }
 

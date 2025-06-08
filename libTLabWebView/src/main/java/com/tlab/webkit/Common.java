@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Common {
+
     public static class AsyncResult extends JSONSerialisable {
 
         public static class Manager {

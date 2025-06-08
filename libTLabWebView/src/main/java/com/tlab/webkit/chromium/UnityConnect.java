@@ -58,8 +58,16 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
 
     private final static String TAG = "TLabWebView (Chromium)";
 
+    /**
+     * java methods that can be called from the javascript side
+     */
     public class JSInterface {
 
+        /**
+         * Stores the result of processing in the result queue
+         * @param id Result Id
+         * @param result Result of processing
+         */
         @JavascriptInterface
         public void postResult(final int id, final String result) {
             mAsyncResult.post(new AsyncResult(id, result), AsyncResult.Status.COMPLETE);
@@ -80,16 +88,32 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
             mAsyncResult.post(new AsyncResult(id, result), AsyncResult.Status.COMPLETE);
         }
 
+        /**
+         * Send a message to a Game Object on Unity
+         * @param go name of GameObject
+         * @param method Method name (a class with a matching method must be attached to the GameObject)
+         * @param message Message to be sent
+         */
         @JavascriptInterface
         public void unitySendMessage(String go, String method, String message) {
             UnityPlayer.UnitySendMessage(go, method, message);
         }
 
+        /**
+         * Send a message to Unity type. The sent message is handled by the receiving WebView instance.
+         * @param message Message to be sent
+         */
         @JavascriptInterface
         public void unityPostMessage(String message) {
             mUnityPostMessageQueue.add(new EventCallback.Message(EventCallback.Type.Raw, message));
         }
 
+        /**
+         * Prepare Byte Buffer on the Java side. This is mainly used when sending large data from the javascript side to Java.
+         * @param key buffer identifier
+         * @param bufferSize Buffer size
+         * @return Whether the buffer has been successfully secured
+         */
         @JavascriptInterface
         public boolean malloc(String key, int bufferSize) {
             if (!mJSPublicBuffer.containsKey(key)) {
@@ -101,12 +125,21 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
             return false;
         }
 
+        /**
+         * Release the reserved buffer
+         * @param key buffer identifier
+         */
         @JavascriptInterface
         public void free(String key) {
             mJSPublicBuffer.remove(key);
             //Log.i(TAG, "[free] ok");
         }
 
+        /**
+         * Write data sent from javascript to buffer on java side
+         * @param key buffer identifier
+         * @param bytes Data to be written
+         */
         @JavascriptInterface
         public void write(String key, byte[] bytes) {
             if (mJSPublicBuffer.containsKey(key)) {
@@ -117,6 +150,15 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
             }
         }
 
+        /**
+         * This plug-in converts a blob url to a data url for downloading from a blob url and writes
+         * the converted data url from javascript to a buffer on the Java side. In this case, it is
+         * necessary to call malloc(), write(), and free() from javascript, but the functions and the
+         * buffer list are separated to avoid conflicts of buffer identifiers between plugin users.
+         * @param url Blob url (buffer identifier)
+         * @param bufferSize Buffer size
+         * @return Whether the buffer has been successfully secured
+         */
         @JavascriptInterface
         public boolean _malloc(String url, int bufferSize) {
             if (!mJSPrivateBuffer.containsKey(url)) {
@@ -144,6 +186,13 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
             }
         }
 
+        /**
+         * After converting a blob url to a data url, call this process.
+         * The data url already written to the buffer on the java side is downloaded to local storage.
+         * @param url Blob url (buffer identifier)
+         * @param contentDisposition contentDisposition
+         * @param mimetype mimetype
+         */
         @JavascriptInterface
         public void fetchBlob(String url, String contentDisposition, String mimetype) {
             if (mJSPrivateBuffer.containsKey(url)) {
@@ -544,6 +593,16 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         mHttpAuthDialog.create().show();
     }
 
+    /**
+     *
+     * @param requestCode The integer request code originally supplied to
+     *                    startActivityForResult(), allowing you to identify who this
+     *                    result came from.
+     * @param resultCode The integer result code returned by the child activity
+     *                   through its setResult().
+     * @param data An Intent, which can return result data to the caller
+     *               (various data can be attached to Intent "extras").
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != REQUEST_FILE_PICKER || mFilePathCallback == null) {
@@ -592,6 +651,10 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         });
     }
 
+    /**
+     * Asynchronously evaluates JavaScript in the context of the currently displayed page.
+     * @param js javascript
+     */
     public void EvaluateJS(String js) {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
@@ -600,6 +663,29 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         });
     }
 
+    /**
+     * Asynchronously evaluates JavaScript in the context of the currently displayed page.
+     * The javascript executed from this function should send the result of the execution
+     * to the result queue using the result Id passed as argument.
+     * @param varNameOfResultId Variable name to store Result Id
+     * @param js javascript
+     * @return Result Id (identifier on result queue
+     */
+    public int EvaluateJSForResult(String varNameOfResultId, String js) {
+        int id = mAsyncResult.request();
+        if (id == -1) return -1;
+        EvaluateJS(Common.JSUtil.toVariable(varNameOfResultId, id) + js);
+        return id;
+    }
+
+    /**
+     * Start download event.
+     * Supported URL schemes include (https, http, data, blob)
+     * @param url                The full url to the content that should be downloaded
+     * @param userAgent          The user agent to be used for the download
+     * @param contentDisposition Content-disposition http header, if present
+     * @param mimetype           The mimetype of the content reported by the server
+     */
     public void DownloadFromUrl(String url, String userAgent, String contentDisposition, String mimetype) {
         if (url.startsWith("https://") || url.startsWith("http://")) {
             DownloadSupport support = new DownloadSupport(mDownloadOption, mDownloadProgress::put, mUnityPostMessageQueue);
@@ -649,6 +735,11 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         }
     }
 
+    /**
+     * Change the user agent used
+     * @param ua     UserAgent string
+     * @param reload If true, reload web page when userAgent is updated.
+     */
     public void SetUserAgent(final String ua, final boolean reload) {
         // https://developer.mozilla.org/ja/docs/Web/HTTP/Headers/User-Agent/Firefox
         final Activity a = UnityPlayer.currentActivity;
@@ -664,6 +755,13 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         mSessionState.userAgent = ua;
     }
 
+    /**
+     * Get the currently used user agent.
+     * The user agent retrieval must be performed on the Java plugin's UI thread,
+     * so it will not be performed synchronously when called from Unity.
+     * Therefore, the result Id is returned from this function.
+     * @return Result Id
+     */
     public int GetUserAgent() {
         int id = mAsyncResult.request();
         if (id == -1) return -1;
@@ -676,10 +774,19 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         return id;
     }
 
+    /**
+     * Get the currently loaded URL
+     * @return Get the currently loaded URL
+     */
     public String GetUrl() {
         return mSessionState.actualUrl;
     }
 
+    /**
+     * Loads the given URL.
+     * Also see compatibility note on EvaluateJavascript(String).
+     * @param url The URL of the resource to load.
+     */
     public void LoadUrl(String url) {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
@@ -706,6 +813,9 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         });
     }
 
+    /**
+     * Goes back in the history of this WebView.
+     */
     public void GoBack() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
@@ -714,6 +824,9 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         });
     }
 
+    /**
+     * Goes forward in the history of this WebView.
+     */
     public void GoForward() {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {
@@ -737,13 +850,12 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
         return null;
     }
 
-    public int EvaluateJSForResult(String varNameOfResultId, String js) {
-        int id = mAsyncResult.request();
-        if (id == -1) return -1;
-        EvaluateJS(Common.JSUtil.toVariable(varNameOfResultId, id) + js);
-        return id;
-    }
-
+    /**
+     * Loads the given data into this WebView, using baseUrl as the base URL for the content.
+     * The base URL is used both to resolve relative URLs and when applying JavaScript's same origin policy.
+     * @param html A String of data in the given encoding This value cannot be null.
+     * @param baseURL The URL to use as the page's base URL. If null defaults to 'about:blank'.
+     */
     public void LoadHtml(final String html, final String baseURL) {
         final Activity a = UnityPlayer.currentActivity;
         a.runOnUiThread(() -> {

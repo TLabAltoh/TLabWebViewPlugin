@@ -252,7 +252,12 @@ public class UnityConnect extends OffscreenBrowser implements IBrowser {
 
         a.runOnUiThread(() -> {
 
-            initParam(webWidth, webHeight, texWidth, texHeight, screenWidth, screenHeight, isVulkan, OffscreenBrowser.CaptureMode.values()[captureMode]);
+            // This is a positional offset used to keep the WebView itself from appearing on the screen.
+            // Setting the height to be greater than or equal to the screen size causes issues with
+            // downward scrolling in the WebView (https://github.com/TLabAltoh/TLabWebView/issues/17).
+            // The cause is unknown, and the current temporary solution is to set the offset height to 0
+            // while keeping the width as it is.
+            initParam(webWidth, webHeight, texWidth, texHeight, screenWidth, 0, isVulkan, OffscreenBrowser.CaptureMode.values()[captureMode]);
 
             init();
 

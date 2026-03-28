@@ -123,7 +123,7 @@ public abstract class BaseOffscreenBrowser extends BaseOffscreenFragment impleme
             if (mView == null) return;
 
             // Obtain MotionEvent object
-            final int source = InputDevice.SOURCE_CLASS_POINTER;
+            final int source = InputDevice.SOURCE_TOUCHSCREEN;
 
             // List of meta states found here: developer.android.com/reference/android/view/KeyEvent.html#getMetaState()
             final int metaState = 0;
